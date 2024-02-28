@@ -46,4 +46,6 @@ categories: 小工具
 | 将当前窗口移动到某个虚拟桌面 | `ctrl+cmd+alt+1/2/3/4/5` |
 | 重启yabai                    | `ctrl+cmd+alt+r`         |
 | 将窗口布局改为浮动           | `ctrl+cmd+alt+f`         |
+| 隐藏某个窗口                 | `cmd+h`                  |
+| 打开某个隐藏的窗口           | `cmd+tab`                |
 
