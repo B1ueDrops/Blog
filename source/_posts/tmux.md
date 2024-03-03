@@ -1,6 +1,6 @@
 ---
 title: tmux键位配置
-categories: 小工具
+categories: 工具/环境
 ---
 
 

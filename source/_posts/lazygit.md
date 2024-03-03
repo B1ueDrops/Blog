@@ -1,6 +1,6 @@
 ---
 title: lazygit的一些常见用法
-categories: 小工具
+categories: 工具/环境
 ---
 
 > 在一个pane中使用`?`可以查看cheetsheet.

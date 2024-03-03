@@ -1,6 +1,6 @@
 ---
 title: Chrome中vimium键位
-categories: 小工具
+categories: 工具/环境
 ---
 
 
