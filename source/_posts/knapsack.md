@@ -256,7 +256,7 @@ int main()
 > https://www.acwing.com/problem/content/description/9/
 
 在分组背包问题中, 不再有$n$个物品, 而是有$n$组物品, 每组物品中只能选择一个物品.
-
+时间复杂度是$O(nms)$, 其中`s`是一个组中的物品个数.
 ```cpp
 #include <iostream>
 
@@ -283,6 +283,7 @@ int main()
     {
         for (int j = m; j >= 0; j --)
         {
+            // 注意, 这里k一定要从0开始
             for (int k = 0; k < s[i]; k ++)
             {
                 if (j >= v[i][k])
@@ -417,7 +418,7 @@ int f[M];
 int main()
 {
     cin >> n >> m;
-    
+    // 在前0个数中, 选择和为0, 方案是1 
     f[0] = 1;
     
     for (int i = 1; i <= n; i ++)
