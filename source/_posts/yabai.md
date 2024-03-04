@@ -49,3 +49,10 @@ categories: 工具/环境
 | 隐藏某个窗口                 | `cmd+h`                  |
 | 打开某个隐藏的窗口           | `cmd+tab`                |
 
+
+
+## iTerm2的一些设置
+
+* iTerm2可以设置关闭顶部的状态栏:
+
+![iTerm2隐藏状态栏](./yabai/yabai-hiden-title.png)
