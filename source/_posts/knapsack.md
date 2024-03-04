@@ -251,6 +251,10 @@ int main()
 
 
 
+同类题: https://www.acwing.com/problem/content/1021/
+
+
+
 ## 分组背包问题
 
 > https://www.acwing.com/problem/content/description/9/
@@ -296,6 +300,81 @@ int main()
     return 0;
 }
 ```
+
+
+
+## 混合背包问题
+
+> https://www.acwing.com/problem/content/7/
+
+在混合背包问题中, 对于一个物品:
+
+* 它可能最多用一次(01背包).
+* 可能可以用无数次(完全背包).
+* 可能最多用`s`次(多重背包).
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 1010;
+
+int n, m;
+
+int f[N];
+
+int main()
+{
+    
+    cin >> n >> m;
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        int v, w, s;
+        
+        cin >> v >> w >> s;
+        
+        if (s == -1)
+        {
+            for (int j = m; j >= v; j --)
+            {
+                f[j] = max(f[j], f[j - v] + w);
+            }
+        }
+        else if (s == 0)
+        {
+            for (int j = v; j <= m; j ++)
+            {
+                f[j] = max(f[j], f[j - v] + w);
+            }
+        }
+        else
+        {
+            for (int k = 1; k <= s; k *= 2)
+            {
+                for (int j = m; j >= k * v; j --)
+                {
+                    f[j] = max(f[j], f[j - k * v] + k * w);
+                }
+                s -= k;
+            }
+            if (s)
+            {
+                for (int j = m; j >= s * v; j --)
+                {
+                    f[j] = max(f[j], f[j - s * v] + s * w);
+                }
+            }
+        }
+    }
+    
+    cout << f[m] << endl;
+    return 0;
+}
+```
+
+
 
 
 
@@ -388,7 +467,7 @@ int main()
 }
 ```
 
-
+同类题: 二维费用背包(https://www.acwing.com/problem/content/8/)
 
 ## 数字组合
 
@@ -587,3 +666,8 @@ int main()
 }
 ```
 
+
+
+## 多重背包问题(单调队列)
+
+使用单调队列可以在$O(nm)$的时间复杂度内解决多重背包问题.
