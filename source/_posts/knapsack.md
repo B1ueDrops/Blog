@@ -90,6 +90,7 @@ int main()
 同类题:
 
 * https://www.acwing.com/problem/content/425/
+* https://www.acwing.com/problem/content/428/
 
 ## 完全背包问题
 
@@ -469,6 +470,8 @@ int main()
 
 同类题: 二维费用背包(https://www.acwing.com/problem/content/8/)
 
+
+
 ## 数字组合
 
 > https://www.acwing.com/problem/content/280/
@@ -665,6 +668,338 @@ int main()
     return 0;
 }
 ```
+
+
+
+## 潜水员
+
+> https://www.acwing.com/problem/content/1022/
+
+这个题的背景是:
+
+* 二维费用.
+* 体积要求的是不少于, 而不是不超过.
+* 求的是价值的最小值.
+
+需要的改变是:
+
+* 初始化时, 需要用`0x3f`初始化`f`数组, 并且把初始状态`f[0][0]`设置成0.
+* 转移状态时用的是`min`.
+* 注意: 体积为负数的时候(例如`j - v1 < 0`), 状态其实是有意义的, 因为要求体积大于等于一个负值是有意义的, 但是, 因为题目中能够确定每一个体积都是大于0的, 因此如果一个状态要求体积大于等于负数, 那么就等价于要求体积大于等于0.
+
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+const int N = 110;
+
+int n, m1, m2;
+int f[N][N];
+
+int main()
+{
+    cin >> m1 >> m2;
+    cin >> n;
+    
+    memset(f, 0x3f, sizeof f);
+    f[0][0] = 0;
+    
+    for (int i = 0; i < n; i ++)
+    {
+        int v1, v2, w;
+        cin >> v1 >> v2 >> w;
+        
+        for (int j = m1; j >= 0; j --)
+        {
+            for (int k = m2; k >= 0; k --)
+            {
+                f[j][k] = min(f[j][k], f[max(0, j - v1)][max(0, k - v2)] + w);
+            }
+        }
+    }
+    
+    cout << f[m1][m2] << endl;
+    return 0;
+}
+```
+
+从这个题中, 可以总结出:
+
+* 如果题目要求体积最多是`j`:  那么`f`初始化都是0, 要求`j - v`必须大于等于0.
+* 如果题目要求体积恰好是`j`: 那么`f`初始化为`+∞`, `f[0] = 0`, 要求`j - v`必须大于等于0.
+* 如果题目要求体积至少是`j`: 那么`f`初始化为`+∞`, `f[0] = 0`, `j - v`可以小于0.
+
+
+
+## 机器分配
+
+> https://www.acwing.com/problem/content/1015/
+
+这个题目第一问是分组背包问题, 第二问是分组背包问题求方案数.
+
+在这个题中, 求方案数目等价于:
+
+* 已知`f[n][m]`, 求最优方案中, 每一个机器的体积是多少?
+
+假设在最优方案中, 第`i`个机器的体积是`v`, 那么有如下特征:
+
+* `f[i][m] = f[i - 1][m - v] + w`.
+
+因此, 我只需要从将`i`从后向前遍历, 把体积`v`从前向后遍历, 只要这个体积`v`有`f[i][m] = f[i-1][m-v]+w`, 那么这个`v`就是最小体积.
+
+* 之后再将体积减去`m -= v`即可.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 110;
+
+int n, m;
+int v[N][N], w[N][N];
+// 这里二维是要求方案
+int f[N][N];
+
+int main()
+{
+    cin >> n >> m;
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        // 注意这里一定要是1, 和一般的分组背包不同
+        for (int j = 1; j <= m; j ++)
+        {
+            cin >> w[i][j];
+            v[i][j] = j;
+        }
+    }
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        // 注意j和k一定要从0开始, 因为设备数量是0也有意义
+        for (int j = m; j >= 0; j --)
+        {
+            for (int k = 0; k <= m; k ++)
+            {
+                if (j >= v[i][k])
+                {
+                    f[i][j] = max(f[i][j], f[i - 1][j - v[i][k]] + w[i][k]);
+                }
+            }
+        }
+    }
+    
+    cout << f[n][m] << endl;
+    
+    int k = m;
+    
+    for (int i = n; i >= 1; i --)
+    {
+        for (int j = 0; j <= m; j ++)
+        {
+            if (k >= v[i][j])
+            {
+                if (f[i][k] == f[i - 1][k - v[i][j]] + w[i][j])
+                {
+                    cout << i << ' ' << v[i][j] << endl;
+                    k -= v[i][j];
+                    break;
+                }
+            }
+        }
+    }
+    return 0;
+}
+```
+
+
+
+## 01背包求方案(字典序最小)
+
+> https://www.acwing.com/problem/content/description/12/
+
+思路和上一题类似, 只需要倒过来递推就可以保证字典许最小.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 1010;
+
+int n, m;
+int v[N], w[N];
+int f[N][N];
+
+int main()
+{
+    cin >> n >> m;
+    
+    for (int i = 1; i <= n; i ++) cin >> v[i] >> w[i];
+    
+    for (int i = n; i >= 1; i --)
+    {
+        // 朴素写法
+        for (int j = 0; j <= m; j ++)
+        {
+            if (j < v[i]) f[i][j] = f[i + 1][j];
+            else f[i][j] = max(f[i + 1][j], f[i + 1][j - v[i]] + w[i]);
+        }
+    }
+    
+    int k = m;
+    for (int i = 1; i <= n; i ++)
+    {
+        if (k >= v[i] && f[i][k] == f[i + 1][k - v[i]] + w[i])
+        {
+            cout << i << ' ';
+            k -= v[i];
+        }
+    }
+    return 0;
+}
+```
+
+
+
+## 01背包求方案数
+
+> https://www.acwing.com/problem/content/11/
+
+本质上, DP问题都可以转化为最短路问题, 而求DP问题最优方案的方案数, 可以转化为求最短路的条数. 
+
+在最短路问题中, 对于一个节点, 假设它有一个属性叫做`cnt[i]`, 表示到这个点`i`的最短路的条数.
+
+那么对于下一个点`j`, 只需要遍历它的相邻节点`i`, 然后累加: `cnt[j] += cnt[i]`即可.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 1010, mod = 1e9 + 7;
+
+int n, m;
+int f[N], g[N];
+
+int main()
+{
+    cin >> n >> m;
+    
+    g[0] = 1;
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        int v, w;
+        cin >> v >> w;
+        
+        for (int j = m; j >= v; j --)
+        {
+        
+            int maxv = max(f[j], f[j - v] + w);
+        
+            int cnt = 0;
+            if (maxv == f[j]) cnt += g[j];
+            if (maxv == f[j - v] + w) cnt += g[j - v];
+        
+            g[j] = cnt % mod;
+            f[j] = maxv;
+        }
+    }
+    
+    int res = 0;
+    
+    for (int i = 0; i <= m; i ++)
+        if (f[i] == f[m])
+            res = (res + g[i]) % mod;
+    
+    cout << res << endl;
+    
+    return 0;
+}
+```
+
+
+
+## 有依赖的背包问题
+
+> https://www.acwing.com/problem/content/10/
+
+状态表示:
+
+* $f(u, j)$: 所有以$u$为根(包含$u$)的子树中选, 且总体积不超过$j$​的方案.
+* 价值的最大值.
+
+状态计算:
+
+* 首先循环每一个子树, 对于一个子树, 用体积划分, 我给他分配一个体积`k`, 那么这颗子树能给我贡献的价值是多少, 累加起来.
+* $f(u, j) = max(f(u, j), f(u, j - k) + f(son, k))$
+
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+const int N = 110;
+
+int n, m;
+int v[N], w[N];
+int h[N], e[N], ne[N], idx;
+int f[N][N];
+
+void add(int a, int b)
+{
+    e[idx] = b, ne[idx] = h[a], h[a] = idx ++;
+}
+
+void dfs(int u)
+{
+    for (int i = h[u]; i != -1; i = ne[i])
+    {
+        int son = e[i];
+        dfs(son);
+        
+        // 注意体积从m - v[u]开始
+        for (int j = m - v[u]; j >= 0; j --)
+            for (int k = 0; k <= j; k ++)
+                f[u][j] = max(f[u][j], f[u][j - k] + f[son][k]);
+    }
+    
+    // 刚才没遍历物品u, 现在加进去
+    for (int j = m; j >= v[u]; j --) f[u][j] = max(f[u][j], f[u][j - v[u]] + w[u]);
+    for (int j = 0; j < v[u]; j ++) f[u][j] = 0;
+}
+
+int main()
+{
+    memset(h, -1, sizeof h);
+    int root;
+    
+    cin >> n >> m;
+    for (int i = 1; i <= n; i ++)
+    {
+        int p;
+        cin >> v[i] >> w[i] >> p;
+        
+        if (p == -1) root = i;
+        else add(p, i);
+    }
+    
+    dfs(root);
+    
+    cout << f[root][m] << endl;
+    
+    return 0;
+}
+```
+
+
+
+
 
 
 
