@@ -970,7 +970,7 @@ void dfs(int u)
     }
     
     // 刚才没遍历物品u, 现在加进去
-    for (int j = m; j >= v[u]; j --) f[u][j] = max(f[u][j], f[u][j - v[u]] + w[u]);
+    for (int j = m; j >= v[u]; j --) f[u][j] = f[u][j - v[u]] + w[u];
     for (int j = 0; j < v[u]; j ++) f[u][j] = 0;
 }
 
@@ -995,6 +995,88 @@ int main()
     
     return 0;
 }
+```
+
+
+
+## 金明的预算方案
+
+> https://www.acwing.com/problem/content/description/489/
+
+这是另一种有依赖的背包问题.
+
+这种问题有两个特征:
+
+* 有很多个物品, 对于每一个物品来说, 它有很多子树依赖, 但是不同物品之间的依赖独立, 也就是说它们的依赖之间不连通.
+* 对于一个物品来说, 它的子树个数不多, 可以枚举.
+
+那么可以将一个物品的依赖看作一个物品组, 比如买物品`p`, 它有`i, j`两个依赖(如果买`i, j`必须买`p`), 那么这个物品组就包含:
+
+* `p`.
+* `p, i`.
+* `p, j`.
+* `p, i, j`.
+
+并且这四种选择之间互相独立, 就可以转化为分组背包问题. 
+
+枚举物品组时可以使用二进制枚举.
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+const int N = 32010;
+
+typedef pair<int, int> PII;
+
+int n, m;
+int f[N];
+
+PII master[N];
+vector<PII> slave[N];
+
+int main()
+{
+    cin >> m >> n;
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        int v, p, q;
+        cin >> v >> p >> q;
+        
+        p *= v;
+        
+        if (q == 0) master[i] = {v, p};
+        else slave[q].push_back({v, p});
+    }
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        for (int j = m; j >= 0; j --)
+        {
+            // 枚举每一个物品组
+            for (int k = 0; k < 1 << slave[i].size(); k ++)
+            {
+                int v = master[i].first;
+                int w = master[i].second;
+                for (int u = 0; u < slave[i].size(); u ++)
+                {
+                    if (k >> u & 1) {
+                        v += slave[i][u].first;
+                        w += slave[i][u].second;
+                    }
+                }
+                if (j >= v) f[j] = max(f[j], f[j - v] + w);
+            }
+        }
+    }
+    
+    cout << f[m] << endl;
+    return 0;
+}
+
 ```
 
 
