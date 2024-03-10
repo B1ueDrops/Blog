@@ -711,6 +711,8 @@ public:
 
 > https://leetcode.cn/problems/unique-binary-search-trees/
 
+> 二叉搜索树的中序遍历一定是严格递增的.
+
 假设$f(n)$表示长度为$n$, 元素为$[1, n]$的二叉搜索树的个数.
 
 初始状态是`f[0] = 1`. 注意空子树这个形态是合法的, 因为一个状态会由它的左子树和右子树的状态转移而来, 而左子树和右子树可以为空.
@@ -738,4 +740,78 @@ public:
 
 
 ## 不同的二叉搜索树求方案
+
+> https://leetcode.cn/problems/unique-binary-search-trees-ii/
+
+常规的搜索问题.
+
+```cpp
+class Solution {
+public:
+    vector<TreeNode*> generateTrees(int n) {
+        return dfs(1, n);
+    }
+
+    vector<TreeNode *> dfs(int l, int r) {
+        if (l > r) return {NULL};
+        vector<TreeNode *> res;
+
+        // 枚举根节点的位置
+        for (int i = l; i <= r; i ++) {
+            auto left = dfs(l, i - 1), right = dfs(i + 1, r);
+            for (auto p : left) {
+                for (auto q: right) {
+                    TreeNode *root = new TreeNode(i);
+                    root->left = p, root->right = q;
+                    res.push_back(root);
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+
+
+## 验证二叉搜索树
+
+> https://leetcode.cn/problems/validate-binary-search-tree/
+
+方法一: 如果一个树是二叉搜索树, 等价于中序遍历严格递增.
+
+方法二: 按照定义搜索, 需要求子树中所有元素的最小值和最大值.
+
+```cpp
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        if (!root) return true;
+        return dfs(root)[0];
+    }
+    // 返回三个信息, 是否是二叉搜索树, 子树最大值, 子树最小值
+    vector<int> dfs(TreeNode *root) {
+        vector<int> res({ 1, root->val, root->val });
+				
+        if (root->left) {
+            auto t = dfs(root->left);
+            if (!t[0] || t[2] >= root->val) res[0] = 0;
+            res[1] = min(root->val, t[1]);
+            res[2] = max(root->val, t[2]);
+        }
+        if (root->right) {
+            auto t = dfs(root->right);
+            if (!t[0] || t[1] <= root->val) res[0] = 0;
+            // 注意这里min里面是res[1], 而不是root->val, 因为取最小值要连上左子树一起比较
+            res[1] = min(res[1], t[1]);
+            res[2] = max(res[2], t[2]);
+        }
+        return res;
+    }
+};
+```
+
+
+
+
 
