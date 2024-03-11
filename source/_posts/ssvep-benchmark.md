@@ -1,5 +1,5 @@
 ---
-title: A Benchmark Dataset for SSVEP-Based Brain-Computer Interfaces
+title: 清华SSVEP的benchmark介绍
 categories: 科研
 ---
 
