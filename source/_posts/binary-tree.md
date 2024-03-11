@@ -1,5 +1,5 @@
 ---
-title: 二叉树全系列
+title: 二叉树/二叉搜索树全系列
 categories: 算法
 mathjax: true
 ---
@@ -646,6 +646,8 @@ public:
 ## 二叉树的镜像
 
 > https://www.acwing.com/problem/content/description/37/
+>
+> https://leetcode.cn/problems/invert-binary-tree/
 
 将二叉树变成镜像的方法就是递归地把左右节点交换即可.
 
@@ -676,20 +678,68 @@ public:
 
 
 
+## 二叉树的最大深度
+
+> https://leetcode.cn/problems/maximum-depth-of-binary-tree/
+
+```cpp
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if (!root) return 0;
+        return max(maxDepth(root->left), maxDepth(root->right)) + 1;
+    }
+};
+```
+
+同类题: 判断是否是平衡二叉树, 就是在`maxDepth`函数中再维护其他信息.
+
+(平衡🌲就是对于🌲中的任意一个节点, 左子树和右子树的最大深度之差绝对值不超过1, 空🌲也是平衡树).
+
+链接: https://leetcode.cn/problems/balanced-binary-tree/
+
+```cpp
+class Solution {
+public:
+    bool ans = true;
+    bool isBalanced(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+
+    int dfs(TreeNode *root) {
+        if (!root) return 0;
+        int lh = dfs(root->left), rh = dfs(root->right);
+        if (abs(lh - rh) > 1) ans = false;
+        return max(lh, rh) + 1;
+    }
+};
+```
+
+变式题: 二叉树的最小深度, https://leetcode.cn/problems/minimum-depth-of-binary-tree/
+
+```cpp
+class Solution {
+public:
+    int minDepth(TreeNode* root) {
+        if (!root) return 0;
+        // 注意一个节点为空, 另一个节点不为空的情况, 这种情况应该只取一边
+        if (!root->left) return minDepth(root->right) + 1;
+        if (!root->right) return minDepth(root->left) + 1;
+        return min(minDepth(root->left), minDepth(root->right)) + 1;
+    }
+};
+```
+
+
+
 ## 对称的二叉树
 
 > https://www.acwing.com/problem/content/description/38/
+>
+> https://leetcode.cn/problems/symmetric-tree/
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
- * };
- */
 class Solution {
 public:
     /* 判断p和q所在的子树是否对称 */
@@ -704,6 +754,75 @@ public:
     }
 };
 ```
+
+同类题: https://leetcode.cn/problems/same-tree/description/
+
+```cpp
+class Solution {
+public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        if (!p || !q) return !p && !q;
+        if (p->val != q->val) return false;
+        return isSameTree(p->left, q->left) && isSameTree(p->right, q->right);
+    }
+};
+```
+
+
+
+## 二叉树的所有路径
+
+> https://leetcode.cn/problems/binary-tree-paths/
+
+```cpp
+class Solution {
+public:
+    vector<string> ans;
+
+    vector<string> binaryTreePaths(TreeNode* root) {
+        dfs(root, "");
+        return ans;
+    }
+
+    void dfs(TreeNode *root, string path) {
+        if (!root) return ;
+
+        path += to_string(root->val);
+
+        if (!root->left && !root->right) {
+            ans.push_back(path);
+            return ;
+        }
+
+        dfs(root->left, path + "->");
+        dfs(root->right, path + "->");
+
+        return ;
+    }
+};
+```
+
+
+
+
+
+## 完全二叉树求节点个数
+
+> https://leetcode.cn/problems/count-complete-tree-nodes/
+
+通用的代码: 这个所有树都可以使用, 时间复杂度是$O(n)$.
+
+```cpp
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        if (!root) return 0;
+        return countNodes(root->left) + countNodes(root->right) + 1;
+    }
+};
+```
+
+
 
 
 

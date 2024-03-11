@@ -1,6 +1,7 @@
 ---
 title: CNN的一些基础知识
 categories: AI
+mathjax: true
 ---
 
 
