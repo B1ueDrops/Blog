@@ -243,6 +243,8 @@ public:
 > https://www.acwing.com/problem/content/description/41/
 >
 > https://www.acwing.com/problem/content/42/
+>
+> https://leetcode.cn/problems/binary-tree-level-order-traversal-ii/
 
 ```cpp
 /**
@@ -290,6 +292,8 @@ public:
 ## 之字形层序遍历
 
 > https://www.acwing.com/problem/content/description/43/
+>
+> https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal/description/
 
 在层序遍历的基础上用一个变量控制一下是否反转`level`即可.
 
@@ -512,17 +516,10 @@ public:
 ## 二叉树中和是某一值的路径
 
 > https://www.acwing.com/problem/content/description/45/
+>
+> https://leetcode.cn/problems/path-sum-ii
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
- * };
- */
 class Solution {
 public:
     vector<int> path;
@@ -564,40 +561,23 @@ public:
 > https://leetcode.cn/problems/path-sum/
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     bool hasPathSum(TreeNode* root, int targetSum) {
         if (!root) return false;
-        return dfs(root, targetSum);
-    }
-
-    bool dfs(TreeNode *root, int sum) {
         
-        if (!root) return false;
+        targetSum -= root->val;
 
-        sum -= root->val;
-
-        if (!root->left && !root->right && !sum) {
-            sum += root->val;
+        if (!root->left && !root->right && !targetSum) {
+            targetSum += root->val;
             return true;
         }
-        
-        bool left = dfs(root->left, sum);
-        bool right = dfs(root->right, sum);
+
+        auto left = hasPathSum(root->left, targetSum);
+        auto right = hasPathSum(root->right, targetSum);
 
         if (left || right) {
-            sum += root->val;
+            targetSum += root->val;
             return true;
         }
         return false;
@@ -934,5 +914,248 @@ public:
 
 
 
+## 恢复二叉搜索树
+
+> https://leetcode.cn/problems/recover-binary-search-tree/description/
+
+首先, 对于一个二叉搜索树, 它的中序遍历一定是严格单调递增的序列.
+
+如果两个节点被错误地交换了, 那么只有可能是两种情况:
+
+* 相邻的两个节点, 例如:
+
+  ```
+  1, 2, 3, 4, 5 -> 1, 3, 2, 4, 5
+  ```
+
+  这种情况下, 有一个相邻元素组成的逆序对`(3, 2)`, 只需要交换这两个元素的位置即可.
+
+* 不相邻的两个节点, 例如:
+
+  ```
+  1, 2, 3, 4, 5 -> 1, 4, 3, 2, 5
+  ```
+
+  这种情况下, 有两个相邻元素组成的逆序对`(4, 3)`和`(3, 2)`, 只需要交换4和2的位置即可.
+
+时间复杂度是$O(n)$.
+
+如果空间复杂度要求是$O(n)$的话, 可以在进行中序遍历时记录哪些节点需要交换, 直接交换即可.
+
+```cpp
+class Solution {
+public:
+    stack<TreeNode*> stk;
+    vector<TreeNode *> inorder;
+    vector<TreeNode *> element;
+    void recoverTree(TreeNode* root) {
+        if (!root) return ;
+        
+        while (root || stk.size()) {
+            while (root) {
+                stk.push(root);
+                root = root->left;
+            }
+            root = stk.top();
+            stk.pop();
+            if (inorder.size() != 0 && inorder.back()->val > root->val) {
+                element.push_back(inorder.back());
+                element.push_back(root);
+            }
+            inorder.push_back(root);
+            root = root->right;
+        }
+
+        if (element.size() == 2) {
+            int t = element[0]->val;
+            element[0]->val = element[1]->val;
+            element[1]->val = t;
+        }
+        else if (element.size() == 4) {
+            int t = element[0]->val;
+            element[0]->val = element[3]->val;
+            element[3]->val = t;
+        }
+    }
+};
+```
+
+如果空间复杂度要求是$O(1)$​的话, 就需要用到Morris遍历.
 
 
+
+### Morris中序遍历
+
+Morris遍历的流程大概如下:
+
+* 首先, 将当前节点设置成根节点: `cur = root`.
+* 如果当前节点有左子树:
+  * 找当前节点的前驱`prev`:
+    * 如果`prev`的右子树为空, 证明`cur`的左子树没有被遍历过, 将`prev->right`设置成当前节点`cur`, 然后`cur = cur->left`.
+    * 如果`prev`的右子树不为空, 证明`cur`的左子树已经被遍历过, 此时将`prev->right`设置为空, 然后打印`cur`的值, 然后跳转到右子树`cur = cur->right`.
+* 如果当前节点没有左子树:
+  * 打印当前节点的值, 直接进入右子树 (此时一般会回溯到树的上层).
+
+> 在Morris遍历中, 需要对每个节点都求一次前驱, 但是节点求前驱的时间复杂度是$O(n)$, 为什么Morris遍历的时间复杂度是$O(n)$而不是$O(n^2)$?
+
+对二叉树的所有节点求一遍前驱的时间复杂度其实就是$O(n)$, 因为每条边只会被遍历两次.
+
+Morris遍历生成中序遍历的代码如下:
+
+```cpp
+class Solution {
+public:
+    vector<int> inorderTraversal(TreeNode* root) {
+        vector<int> ans;
+        if (!root) return ans;
+
+        auto cur = root;
+        while (cur) {
+            
+            if (cur->left) {
+                // find prev
+                auto prev = cur->left;
+                while (prev->right && prev->right != cur) prev = prev->right;
+                
+                if (!prev->right) {
+                    prev->right = cur;
+                    cur = cur->left;
+                }
+                else {
+                    prev->right = NULL;
+                    ans.push_back(cur->val);
+                    cur = cur->right;
+                }
+            }
+            else {
+                ans.push_back(cur->val);
+                cur = cur->right;
+            }
+        }
+        return ans;
+    }
+};
+```
+
+使用Morris遍历解决此题的代码如下:
+
+```cpp
+class Solution {
+public:
+    void recoverTree(TreeNode* root) {
+        if (!root) return ;
+
+        auto cur = root;
+        TreeNode *p = NULL;
+        TreeNode *first = NULL;
+        TreeNode *second = NULL;
+
+        while (cur) {
+
+            if (cur->left) {
+                auto prev = cur->left;
+                while (prev->right && prev->right != cur) prev = prev->right;
+                if (!prev->right) {
+                    prev->right = cur;
+                    cur = cur->left;
+                }
+                else {
+                    prev->right = NULL;
+                    if (p && p->val > cur->val) {
+                        if (!first) first = p, second = cur;
+                        else second = cur;
+                    }
+                    p = cur;
+                    cur = cur->right;
+                }
+            }
+            else {
+                if (p && p->val > cur->val) {
+                    if (!first) first = p, second = cur;
+                    else second = cur;
+                }
+                p = cur;
+                cur = cur->right;
+            }
+        }
+        swap(first->val, second->val);
+    }
+};
+```
+
+
+
+
+
+## 有序数组变二叉搜索树
+
+> https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/
+
+时间复杂度是$O(n)$​.
+
+```cpp
+class Solution {
+public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return dfs(nums, 0, nums.size() - 1);
+    }
+
+    TreeNode *dfs(vector<int> &nums, int l, int r) {
+        if (l > r) return NULL;
+
+        int mid = l + (r - l) / 2;
+
+        TreeNode *root = new TreeNode(nums[mid]);
+
+        root->left = dfs(nums, l, mid - 1);
+        root->right = dfs(nums, mid + 1, r);
+        
+        return root;
+    }
+};
+```
+
+> 证明: 用该算法得到的二叉搜索树的所有高度(不是最大高度)之差的最大值不超过1
+
+* 左半部分的节点每次最多比右半部分少1, 如果高度差最大值是2, 那么必然左边会比右边多一层, 这根本不可能, 多1个节点贡献的高度差肯定吵不过1.
+
+
+
+
+
+## 有序链表变二叉搜索树
+
+> https://leetcode.cn/problems/convert-sorted-list-to-binary-search-tree/
+
+找有序链表的终点可以使用快慢指针.
+
+```cpp
+class Solution {
+public:
+    TreeNode* sortedListToBST(ListNode* head) {
+        
+        if (!head) return NULL;
+        return build(head, NULL);
+    }
+
+    TreeNode *build(ListNode *s, ListNode *t) {
+        
+        if (s == t) return NULL;
+
+        auto fast = s, slow = s;
+
+        while (fast != t && fast->next != t) {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+
+        TreeNode *root = new TreeNode(slow->val);
+        root->left = build(s, slow);
+        root->right = build(slow->next, t);
+
+        return root;
+    }
+};
+```
+
+时间复杂度是$T(n) = 2T(\frac{n}{2}) + O(n)$, 根据主定理, 最后的时间复杂度是$O(nlogn)$.
