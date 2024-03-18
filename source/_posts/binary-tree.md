@@ -17,17 +17,6 @@ mathjax: true
 ### 递归写法
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     vector<int> ans;
@@ -44,20 +33,35 @@ public:
 };
 ```
 
+同类题: 二叉搜索树的第k小元素: https://leetcode.cn/problems/kth-smallest-element-in-a-bst/
+
+```cpp
+class Solution {
+public:
+    int k, ans;
+    int kthSmallest(TreeNode* root, int _k) {
+        k = _k;
+        dfs(root);
+        return ans;
+    }
+
+    bool dfs(TreeNode *root) {
+        if (!root) return false;
+        if (dfs(root->left)) return true;
+        if (-- k == 0) {
+            ans = root->val;
+            return true;
+        }
+        return dfs(root->right);
+    }
+};
+```
+
+
+
 ### 迭代写法
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
 
@@ -81,6 +85,42 @@ public:
     }
 };
 ```
+
+同类题(二叉树中序遍历迭代器): https://leetcode.cn/problems/binary-search-tree-iterator/
+
+```cpp
+class BSTIterator {
+public:
+    stack<TreeNode *> stk;
+
+    BSTIterator(TreeNode* root) {
+        while (root) {
+            stk.push(root);
+            root = root->left;
+        }
+    }
+    
+    int next() {
+        auto root = stk.top();
+        stk.pop();
+        int val = root->val;
+        root = root->right;
+        while (root) {
+            stk.push(root);
+            root = root->left;
+        }
+        return val;
+    }
+    
+    bool hasNext() {
+        return stk.size();
+    }
+};
+```
+
+
+
+
 
 ## 前序遍历
 
@@ -287,6 +327,38 @@ public:
 };
 ```
 
+同类题(二叉树的右视图): https://leetcode.cn/problems/binary-tree-right-side-view/
+
+```cpp
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+
+        vector<int> ans;
+        // 注意层序遍历不要忘记判断空节点
+        if (!root) return ans;
+        queue<TreeNode *> q;
+
+        q.push(root);
+
+        while (q.size()) {
+            int len = q.size();
+
+            for (int i = 0; i < len; i ++) {
+                auto t = q.front();
+                q.pop();
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+                if (i == len - 1) ans.push_back(t->val);
+            }
+        }
+        return ans;
+    }
+};
+```
+
+
+
 
 
 ## 之字形层序遍历
@@ -478,6 +550,46 @@ public:
     }
 };
 ```
+
+
+
+## 二叉搜索树的搜索操作
+
+> https://leetcode.cn/problems/search-in-a-binary-search-tree/
+
+迭代写法:
+
+```cpp
+class Solution {
+public:
+    TreeNode* searchBST(TreeNode* root, int val) {
+        if (!root) return NULL;
+
+        while (root) {
+            if (val < root->val) root = root->left;
+            else if (val > root->val) root = root->right;
+            else return root;
+        }
+        return NULL;
+    }
+};
+```
+
+递归写法:
+
+```cpp
+class Solution {
+public:
+    TreeNode* searchBST(TreeNode* root, int val) {
+        if (!root) return NULL;
+        if (val == root->val) return root;
+        if (val < root->val) return searchBST(root->left, val);
+        return searchBST(root->right, val);
+    }
+};
+```
+
+
 
 
 
@@ -782,7 +894,9 @@ public:
 };
 ```
 
+同类题: 求根节点到叶节点的数字之和
 
+https://leetcode.cn/problems/sum-root-to-leaf-numbers/
 
 
 
@@ -1159,3 +1273,289 @@ public:
 ```
 
 时间复杂度是$T(n) = 2T(\frac{n}{2}) + O(n)$, 根据主定理, 最后的时间复杂度是$O(nlogn)$.
+
+
+
+## 二叉树展开为链表
+
+> https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/
+
+每一次只需要将当前节点`cur`的左节点`cur->left`到`cur`的前驱节点这一条路合并到右子树就可以了, 合并之后`cur`向右移动.
+
+效果如下所示:
+
+```
+1.  1
+   / \
+  2   5
+ / \   \
+3   4   6
+
+2.  1
+     \
+      2
+     / \
+    3   4
+         \
+          5
+           \
+            6
+
+3.  1
+     \
+      2
+       \
+        3
+         \
+          4
+           \
+            5
+             \
+              6
+```
+
+
+
+```cpp
+class Solution {
+public:
+    void flatten(TreeNode* root) {
+        auto cur = root;
+
+        while (cur) {
+            if (cur->left) {
+                auto prev = cur->left;
+                while (prev->right) prev = prev->right;
+                prev->right = cur->right;
+                cur->right = cur->left;
+                cur->left = 0;
+            }
+            cur = cur->right;
+        }
+    }
+};
+```
+
+
+
+## 填充每个节点的下一个右侧节点
+
+> https://leetcode.cn/problems/populating-next-right-pointers-in-each-node/
+
+最简单也是最容易想的方法: 层序遍历
+
+```cpp
+class Solution {
+public:
+    Node* connect(Node* root) {
+        
+        if (!root) return NULL;
+
+        queue<Node *> q;
+        
+        q.push(root);
+
+        while (q.size()) {
+            int len = q.size();
+            vector<Node *> level;
+            while (len --) {
+                auto t = q.front();
+                q.pop();
+                level.push_back(t);
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+            for (int i = 0; i < level.size(); i ++) {
+                if (i + 1 < level.size()) {
+                    level[i]->next = level[i + 1];
+                }
+                else level[i]->next = NULL;
+            }
+        }
+        return root;
+    }
+};
+```
+
+但是用层序遍历的空间复杂度是$O(n)$, 如果要求用常数空间, 可以借助bfs的思想
+
+```cpp
+class Solution {
+public:
+    Node* connect(Node* root) {
+        if (!root) return NULL;
+				
+      	// 注意这里判断p的时候应该用p->left不为空, 因为要操作下一层节点
+        for (auto p = root; p->left; p = p->left) {
+            for (auto q = p; q; q = q->next) {
+              // 核心点
+                q->left->next = q->right;
+                q->right->next = q->next ? q->next->left : NULL;
+            }
+        }
+        return root;
+    }
+};
+```
+
+其中核心点在于, 我遍历这一层时, 我操作下一层的`next`指针, 假设我遍历到节点`cur`:
+
+* `cur`左儿子的`next`应该指向`cur->right`.
+* `cur`右儿子的`next`应该指向`cur->next->left`.
+  * 注意, `cur`右儿子的`next`应该是我在遍历`cur`上层节点的时候设置好了, 这其实就是一个`bfs`迭代的过程.
+
+
+
+变式: 如果二叉树不是满二叉树
+
+https://leetcode.cn/problems/populating-next-right-pointers-in-each-node-ii/
+
+此时, 再遍历上一层时, 只需要用链表的形式把下一层节点串起来即可.
+
+```cpp
+class Solution {
+public:
+    Node* connect(Node* root) {
+        
+        if (!root) return NULL;
+
+        auto cur = root;
+
+        while (cur) {
+            // 每一层维护两个变量, 所以是常数空间
+            auto head = new Node(-1);
+            auto tail = head;
+
+            for (auto p = cur; p; p = p->next) {
+                if (p->left) tail = tail->next = p->left;
+                if (p->right) tail = tail->next = p->right;
+            }
+            
+            cur = head->next;
+            delete head;
+        }
+        return root;
+    }
+};
+```
+
+
+
+## 二叉搜索树的LCA
+
+> https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-search-tree/
+
+时间复杂度是$O(h)$, 其中$h$是二叉搜索树的高度.
+
+```cpp
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (p->val > q->val) swap(p, q);
+        if (p->val <= root->val && q->val >= root->val) return root;
+        if (q->val < root->val) return lowestCommonAncestor(root->left, p, q);
+        if (p->val > root->val) return lowestCommonAncestor(root->right, p, q);
+        return NULL;
+    }
+};
+```
+
+
+
+## 二叉树的LCA
+
+> https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/
+
+时间复杂度是$O(n)$.
+
+```cpp
+class Solution {
+public:
+    TreeNode * ans = NULL;
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        dfs(root, p, q);
+        return ans;
+    }
+
+    // 判断root所在子树中是否存在节点p, q
+    // 00: 没有pq, 01: 有p, 10: 有q, 11: 有pq
+    int dfs(TreeNode *root, TreeNode *p, TreeNode *q) {
+        if (!root) return 0;
+
+        int state = dfs(root->left, p, q);
+        if (root == p) state |= 1;
+        else if (root == q) state |= 2;
+        state |= dfs(root->right, p, q);
+      // 如果一个子树里同时有p, q, 并且第一次被遍历到, 就是LCA
+        if (state == 3 && !ans) ans = root;
+        return state;
+    }
+};
+```
+
+
+
+## 验证二叉树前序序列化
+
+> https://leetcode.cn/problems/verify-preorder-serialization-of-a-binary-tree/
+
+按照前序遍历的递归过程模拟吃掉元素, 如果吃掉元素过程中有问题就有问题.
+
+```cpp
+class Solution {
+public:
+
+    int k;
+    string s;
+    bool isValidSerialization(string preorder) {
+        s = preorder + ",";
+        if (!dfs()) return false;
+        // 判断是否有多余元素
+        return k == s.size();
+    }
+
+    bool dfs() {
+        // 如果要遍历, 但是字符串没了, 不合法
+        if (k == s.size()) return false;
+        // 如果是空, 证明上面节点所在子树遍历完了
+        if (s[k] =='#') {
+            k += 2;
+            return true;
+        }
+        // 过滤到下一个元素
+        while (s[k] != ',') k ++;
+        k ++;
+        // 模拟遍历左子树和右子树
+        return dfs() && dfs();
+    }
+};
+```
+
+
+
+## 左子叶之和
+
+> https://leetcode.cn/problems/sum-of-left-leaves/
+
+```cpp
+class Solution {
+public:
+    int ans = 0;
+    int sumOfLeftLeaves(TreeNode* root) {
+        if (!root) return 0;
+        dfs(root);
+        return ans;
+    }
+
+    void dfs(TreeNode *root) {
+        if (!root) return ;
+        
+        // 如果root有左儿子, 并且还是叶子节点, 再累加
+        if (root->left && !root->left->left && !root->left->right) ans += root->left->val;
+
+        dfs(root->left);
+        dfs(root->right);
+    }
+};
+```
+
