@@ -1,5 +1,5 @@
 ---
-title: 线性动态规划
+title: 线性动态规划系列
 categories: 算法
 ---
 

@@ -525,16 +525,6 @@ public:
 * 第二: 如果给定节点没有右子树, 那么它需要向上, 找到节点$p$, 使得$p.father.left = p$, 那么$p.father$就是下一个节点, 对应左根右的根这一部分.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode *father;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL), father(NULL) {}
- * };
- */
 class Solution {
 public:
     TreeNode* inorderSuccessor(TreeNode* p) {
@@ -585,6 +575,72 @@ public:
         if (val == root->val) return root;
         if (val < root->val) return searchBST(root->left, val);
         return searchBST(root->right, val);
+    }
+};
+```
+
+
+
+## 二叉搜索树的插入操作
+
+> https://leetcode.cn/problems/insert-into-a-binary-search-tree/
+
+递归写法:
+
+```cpp
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if (!root) return new TreeNode(val);
+        if (val < root->val) root->left = insertIntoBST(root->left, val);
+        else root->right = insertIntoBST(root->right, val);
+        return root;
+    }
+};
+```
+
+
+
+## 二叉搜索树的删除操作
+
+> https://leetcode.cn/problems/delete-node-in-a-bst/
+
+二叉搜索树的删除分为如下三种情况:
+
+* 如果要删除的节点是叶子节点, 那么直接把这个节点变成null就行.
+* 如果要删除的节点只有左子树/右子树, 那么直接把左子树/右子树提上来就行.
+* 如果要删除的节点左子树和右子树都有, 那么就找后继节点, 让后继节点覆盖当前节点, 然后再从右子树中递归删除后继节点.
+  * 注意, 由于后继节点没有左子树, 如果递归的话, 那么就是第一种/第二种情况.
+
+```cpp
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        del(root, key);
+        return root;
+    }
+
+    void del(TreeNode* &root, int key) {
+        if (!root) return ;
+
+        if (key < root->val) {
+            del(root->left, key);
+            return ;
+        }
+        if (key > root->val) {
+            del(root->right, key);
+            return ;
+        }
+
+        if (!root->left && !root->right) root = NULL;
+        else if (!root->left) root = root->left;
+        else if (!root->right) root = root->right;
+        else {
+            auto next = root->right;
+            while (next->left) next = next->left;
+            root->val = next->val;
+            del(root->right, next->val);
+        }
     }
 };
 ```
@@ -1505,31 +1561,139 @@ public:
 class Solution {
 public:
 
-    int k;
-    string s;
     bool isValidSerialization(string preorder) {
-        s = preorder + ",";
-        if (!dfs()) return false;
-        // 判断是否有多余元素
-        return k == s.size();
+        preorder += ",";
+        int u = 0;
+        if (!dfs(preorder, u)) return false;
+        // 如果我遍历完了, 但是字符串还有, 不合法
+        return u == preorder.size();
     }
-
-    bool dfs() {
-        // 如果要遍历, 但是字符串没了, 不合法
-        if (k == s.size()) return false;
-        // 如果是空, 证明上面节点所在子树遍历完了
-        if (s[k] =='#') {
-            k += 2;
+		
+  // 注意这里的u加了引用, 表示所有dfs共用u
+    bool dfs(string preorder, int &u) {
+        // 如果我还没遍历完, 但是字符串没了, 不合法
+        if (u == preorder.size()) return false;
+        // 子树遍历完了
+        if (preorder[u] == '#') {
+            u += 2;
             return true;
         }
         // 过滤到下一个元素
-        while (s[k] != ',') k ++;
-        k ++;
-        // 模拟遍历左子树和右子树
-        return dfs() && dfs();
+        while (preorder[u] != ',') u ++;
+        // 过滤,
+        u ++;
+        return dfs(preorder, u) && dfs(preorder, u);
     }
 };
 ```
+
+
+
+## 二叉树的序列化和反序列化
+
+> https://leetcode.cn/problems/serialize-and-deserialize-binary-tree/
+
+序列化可以采用前序遍历+记录空节点的方式.
+
+```cpp
+class Codec {
+public:
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        dfs_s(root, path);
+        return path;
+    }
+
+    void dfs_s(TreeNode *root, string &path) {
+        if (!root) {
+            path += "#,";
+            return ;
+        }
+        path += to_string(root->val) + ",";
+        dfs_s(root->left, path);
+        dfs_s(root->right, path);
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        int u = 0;
+        return dfs_d(data, u);
+    }
+
+    TreeNode *dfs_d(string data, int &u) {
+      if (u == data.size()) return NULL;
+        if (data[u] == '#') {
+            u += 2;
+            return NULL;
+        }
+        else {
+            int k = u;
+            while (data[u] != ',') u ++;
+            int val = stoi(data.substr(k, u - k));
+            u ++;
+            auto root = new TreeNode(val);
+            root->left = dfs_d(data, u);
+            root->right = dfs_d(data, u);
+            return root;
+        }
+    }
+};
+```
+
+
+
+## 二叉搜索树的序列化和反序列化
+
+> https://leetcode.cn/problems/serialize-and-deserialize-bst/
+
+如果是二叉搜索树, 那么就默认中序遍历已经给了, 因此, 可以直接拿前序遍历来做序列化.
+
+反序列化时, 可以根据二叉搜索树的定义来区分左右子树的边界.
+
+```cpp
+class Codec {
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        string path = "";
+        dfs_s(root, path);
+        return path;
+    }
+    void dfs_s(TreeNode *root, string &path) {
+        if (!root) return ;
+        path += to_string(root->val) + ' ';
+        dfs_s(root->left, path), dfs_s(root->right, path);
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        // 先将字符串转换为vector
+        vector<int> arr;
+        stringstream ssin(data);
+        int x = 0;
+        while (ssin >> x) arr.push_back(x);
+
+        int u = 0;
+        return dfs_d(arr, u, INT_MIN, INT_MAX);
+    }
+
+    TreeNode *dfs_d(vector<int> &arr, int &u, int minv, int maxv) {
+        // 遍历完
+        if (u == arr.size() || arr[u] < minv || arr[u] > maxv) return NULL;
+        auto root = new TreeNode(arr[u]);
+        u ++;
+        // 左子树中节点的值在[minv, root->val]之间, 如果超出范围, 表示遍历完了
+        root->left = dfs_d(arr, u, minv, root->val);
+        root->right = dfs_d(arr, u, root->val, maxv);
+        return root;
+    }
+};
+```
+
+
+
+
 
 
 
@@ -1558,4 +1722,39 @@ public:
     }
 };
 ```
+
+
+
+## 二叉树的最大路径和
+
+> https://leetcode.cn/problems/binary-tree-maximum-path-sum/
+
+枚举路径的时候, 我们可以先枚举这条路径左右端点的LCA, 假设LCA是u
+
+* 然后可以发现, 这个路径和是由三部分组成:
+  * 节点u本身的值.
+  * 节点u左子树往下的所有路径(注意这个路径不拐弯)的最大值.
+  * 节点u右子树往下所有路径的最大值.
+* 路径和可以由这三部分相加组成, 其中后两部分可以通过递归求出.
+
+```cpp
+class Solution {
+public:
+    int ans = INT_MIN;
+    int maxPathSum(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+    int dfs(TreeNode *root) {
+        if (!root) return 0;
+        int left = max(0, dfs(root->left));
+        int right = max(0, dfs(root->right));
+
+        ans = max(ans, root->val + left + right);
+        return root->val + max(left, right);
+    }
+};
+```
+
+
 
