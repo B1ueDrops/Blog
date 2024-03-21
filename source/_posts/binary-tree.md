@@ -197,6 +197,54 @@ public:
 };
 ```
 
+
+
+同类题(根据二叉树创建字符串): https://leetcode.cn/problems/construct-string-from-binary-tree/
+
+```cpp
+class Solution {
+public:
+    string ans = "";
+    string tree2str(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+
+    void dfs(TreeNode * root) {
+        if (!root) {
+            ans += "()";
+            return ;
+        }
+        ans += to_string(root->val);
+        if (!root->left && !root->right) return ;
+        else if (root->left && !root->right) {
+            ans += "(";
+            dfs(root->left);
+            ans += ")";
+        }
+        else if (!root->left && root->right) {
+            ans += "()";
+            ans += "(";
+            dfs(root->right);
+            ans += ")";
+        }
+        else {
+            ans += "(";
+            dfs(root->left);
+            ans += ")";
+            ans += "(";
+            dfs(root->right);
+            ans += ")";
+        }
+        
+    }
+};
+```
+
+
+
+
+
 ## 后序遍历
 
 > https://leetcode.cn/problems/binary-tree-postorder-traversal/
@@ -613,6 +661,17 @@ public:
   * 注意, 由于后继节点没有左子树, 如果递归的话, 那么就是第一种/第二种情况.
 
 ```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
 class Solution {
 public:
     TreeNode* deleteNode(TreeNode* root, int key) {
@@ -633,8 +692,8 @@ public:
         }
 
         if (!root->left && !root->right) root = NULL;
-        else if (!root->left) root = root->left;
-        else if (!root->right) root = root->right;
+        else if (!root->left) root = root->right;
+        else if (!root->right) root = root->left;
         else {
             auto next = root->right;
             while (next->left) next = next->left;
@@ -759,16 +818,11 @@ public:
 
 > https://www.acwing.com/problem/content/35/
 
+注意, 在这个题中, 空🌲不是任何🌲的子结构, 在这个图中, `subRoot`是`root`的子结构.
+
+<img alt="树的子结构的定义" src="./binary-tree/image-20240321195934006.png" style="zoom:50%;" />
+
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
- * };
- */
 class Solution {
 public:
     /* 判断r2子树是否是r1子树的子结构 */
@@ -789,6 +843,28 @@ public:
 };
 ```
 
+这里还有一道变式题, https://leetcode.cn/problems/subtree-of-another-tree/
+
+要求判断是不是子树, 在这种情况下`subRoot`肯定不是`Root`的子树.
+
+```cpp
+class Solution {
+public:
+    bool dfs(TreeNode *p, TreeNode *q) {
+        if (!p || !q) return !p && !q;
+        if (p->val != q->val) return false;
+        return dfs(p->left, q->left) && dfs(p->right, q->right);
+    }
+    bool isSubtree(TreeNode* root, TreeNode* subRoot) {
+        if (!root || !subRoot) return false;
+        if (dfs(root, subRoot)) return true;
+        return isSubtree(root->left, subRoot) || isSubtree(root->right, subRoot);
+    }
+};
+```
+
+
+
 
 
 ## 二叉树的镜像
@@ -800,15 +876,6 @@ public:
 将二叉树变成镜像的方法就是递归地把左右节点交换即可.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
- * };
- */
 class Solution {
 public:
     void mirror(TreeNode* root) {
@@ -918,6 +985,31 @@ public:
 
 
 
+## 合并二叉树
+
+> https://leetcode.cn/problems/merge-two-binary-trees/
+
+```cpp
+class Solution {
+public:
+    TreeNode* mergeTrees(TreeNode* root1, TreeNode* root2) {
+        if (!root1) return root2;
+        if (!root2) return root1;
+
+        root1->left = mergeTrees(root1->left, root2->left);
+        root1->right = mergeTrees(root1->right, root2->right);
+
+        root1->val += root2->val;
+        return root1;
+    }
+
+};
+```
+
+
+
+
+
 ## 二叉树的所有路径
 
 > https://leetcode.cn/problems/binary-tree-paths/
@@ -968,6 +1060,27 @@ public:
     int countNodes(TreeNode* root) {
         if (!root) return 0;
         return countNodes(root->left) + countNodes(root->right) + 1;
+    }
+};
+```
+
+同类题: 二叉树的坡度 https://leetcode.cn/problems/binary-tree-tilt/
+
+```cpp
+class Solution {
+public:
+    int ans = 0;
+    int findTilt(TreeNode* root) {
+        if (!root) return 0;
+        dfs(root);
+        return ans;
+    }
+
+    int dfs(TreeNode *root) {
+        if (!root) return 0;
+        int left = dfs(root->left), right = dfs(root->right);
+        ans += abs(left - right);
+        return left + right + root->val;
     }
 };
 ```
@@ -1756,5 +1869,295 @@ public:
 };
 ```
 
+同类题: 二叉树的直径: https://leetcode.cn/problems/diameter-of-binary-tree/
 
+```cpp
+class Solution {
+public:
+    int ans = 0;
+    int diameterOfBinaryTree(TreeNode* root) {
+        dfs(root);
+      // 直径是边数, 等于点数-1
+        return ans - 1;
+    }
+    int dfs(TreeNode * root) {
+        if (!root) return 0;
+        int left = dfs(root->left), right = dfs(root->right);
+        int res = left + right + 1;
+        ans = max(ans, res);
+        return max(left, right) + 1;
+    }
+};
+```
+
+
+
+## 找树左下角的值
+
+> https://leetcode.cn/problems/find-bottom-left-tree-value/
+
+用bfs记录一下即可.
+
+```cpp
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        del(root, key);
+        return root;
+    }
+
+    void del(TreeNode* &root, int key) {
+        if (!root) return ;
+
+        if (key < root->val) {
+            del(root->left, key);
+            return ;
+        }
+        if (key > root->val) {
+            del(root->right, key);
+            return ;
+        }
+
+        if (!root->left && !root->right) root = NULL;
+        else if (!root->left) root = root->right;
+        else if (!root->right) root = root->left;
+        else {
+            auto next = root->right;
+            while (next->left) next = next->left;
+            root->val = next->val;
+            del(root->right, next->val);
+        }
+    }
+};
+```
+
+同类题: https://leetcode.cn/problems/find-largest-value-in-each-tree-row/
+
+```cpp
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> ans;
+        if (!root) return ans;
+
+        queue<TreeNode *> q;
+        q.push(root);
+
+        while (q.size()) {
+            int len = q.size();
+            int maxv = INT_MIN;
+            while (len --) {
+                auto t = q.front();
+                q.pop();
+                maxv = max(maxv, t->val);
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+            ans.push_back(maxv);
+        }
+        return ans;
+    }
+};
+```
+
+同类题: https://leetcode.cn/problems/merge-two-binary-trees/
+
+二叉树层平均值.
+
+```cpp
+class Solution {
+public:
+    vector<double> ans;
+    vector<double> averageOfLevels(TreeNode* root) {
+        if (!root) return ans;
+
+        queue<TreeNode *> q;
+        q.push(root);
+
+        while (q.size()) {
+            int len = q.size();
+            double sum = 0;
+            for (int i = 0; i < len; i ++) {
+                auto t = q.front();
+                q.pop();
+                sum += t->val;
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+            ans.push_back(sum / len);
+        }
+        return ans;
+    }
+};
+```
+
+
+
+## 路径总和III
+
+> https://leetcode.cn/problems/path-sum-iii/
+
+这个题有一个一维版本: https://leetcode.cn/problems/subarray-sum-equals-k/
+
+解法使用前缀和+哈希表.
+
+```cpp
+class Solution {
+public:
+    long long ans = 0;
+    unordered_map<long long, int> hash;
+    int pathSum(TreeNode* root, int targetSum) {
+        hash[0] = 1;
+        dfs(root, targetSum, 0);
+        return ans;
+    }
+
+    void dfs(TreeNode *root, int targetSum, long long path) {
+        if (!root) return ;
+        path += root->val;
+        ans += hash[path - targetSum];
+        hash[path] ++;
+        dfs(root->left, targetSum, path), dfs(root->right, targetSum, path);
+        hash[path] --;
+    }
+};
+```
+
+
+
+## 二叉搜索树中的众数
+
+> https://leetcode.cn/problems/find-mode-in-binary-search-tree/
+
+* 首先, 二叉搜索树的中序遍历一定是有序的, 那么重复元素在中序遍历序列中一定是连续出现了.
+* 可以在中序遍历的过程中维护一些信息用来统计众数:
+  * `last`: 某一段连续的数, 这个数是什么.
+  * `curc`: 当前这个数出现的次数.
+  * `maxc`: 全局中, 出现次数最多的数, 它出现的次数到底是多少.
+
+```cpp
+class Solution {
+public:
+    int maxc = 0, curc = 0, last;
+    vector<int> ans;
+    vector<int> findMode(TreeNode* root) {
+        if (!root) return ans;
+        dfs(root);
+        return ans;
+    }
+
+    void dfs(TreeNode *root) {
+        if (!root) return ;
+
+        dfs(root->left);
+        if (!curc || root->val == last) {
+            curc ++;
+            last = root->val;
+        }
+        else {
+            curc = 1;
+            last = root->val;
+        }
+        // 每次更新都需要维护maxc
+        if (curc > maxc) {
+            maxc = curc;
+            ans = {last};
+        }
+        else if (curc == maxc) ans.push_back(last);
+        dfs(root->right);
+    }
+};
+```
+
+
+
+## 出现次数最多的子树元素和
+
+> https://leetcode.cn/problems/most-frequent-subtree-sum/
+
+在求子树和的过程中, 用哈希表维护子树和的信息即可.
+
+```cpp
+class Solution {
+public:
+    vector<int> ans;
+    int maxc = 0;
+    unordered_map<int, int> hash;
+    vector<int> findFrequentTreeSum(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+
+    int dfs(TreeNode *root) {
+        if (!root) return 0;
+
+        int sum = root->val + dfs(root->left) + dfs(root->right);
+        hash[sum] ++;
+        if (hash[sum] > maxc) {
+            maxc = hash[sum];
+            ans = {sum};
+        }
+        else if (hash[sum] == maxc) ans.push_back(sum);
+
+        return sum;
+    }
+};
+```
+
+
+
+## 二叉搜索树的最小绝对差
+
+> https://leetcode.cn/problems/minimum-absolute-difference-in-bst/
+
+二叉搜索树的中序遍历是有序的, 因此, 最小绝对差只能在相邻的元素中取到, 只需要在中序遍历中维护一下相关信息即可.
+
+```cpp
+class Solution {
+public:
+    int ans = INT_MAX;
+    bool is_first = true;
+    TreeNode * last;
+    int getMinimumDifference(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+
+    void dfs(TreeNode *root) {
+        if (!root) return ;
+        dfs(root->left);
+
+        if (is_first) is_first = false, last = root;
+        else {
+            ans = min(ans, root->val - last->val);
+        }
+        last = root;
+        dfs(root->right);
+    }
+};
+```
+
+一种同类题: 二叉搜索树转换为累加树, https://leetcode.cn/problems/convert-bst-to-greater-tree/
+
+```cpp
+class Solution {
+public:
+    int sum = 0;
+    TreeNode* convertBST(TreeNode* root) {
+        dfs(root);
+        return root;
+    }
+
+    void dfs(TreeNode *root) {
+        if (!root) return ;
+        dfs(root->right);
+
+        int x = root->val;
+        root->val += sum;
+        sum += x;
+
+        dfs(root->left);
+    }
+};
+```
 
