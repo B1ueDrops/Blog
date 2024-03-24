@@ -1,6 +1,7 @@
 ---
 title: 前缀和差分系列
 categories: 算法
+mathjax: true
 ---
 
 
