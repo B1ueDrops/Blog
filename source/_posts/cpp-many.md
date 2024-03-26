@@ -93,6 +93,10 @@ categories: 编程语言
 
    * 一个实用的例子: <font color=red>如果定义一个抽象类, 那么析构函数就是虚函数</font>.
 
+8. **`explicit`关键字的作用:**
+
+9. **构造函数`=default`和`=delete`的用法:**
+
 
 
 ## C++一些高级用法

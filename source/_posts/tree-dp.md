@@ -14,8 +14,8 @@ mathjax: true
 
 那么状态转移方程是:
 
-* $f[u][0] = happy[u] + \sum_j max(f[j][0], f[j][1])$, 其中$j$是$u$​的子节点.
-* $f[u][1] = \sum_j f[j][0]$
+* $f[u][0] = \sum_j max(f[j][0], f[j][1])$, 其中$j$是$u$​的子节点.
+* $f[u][1] = happy[u] + \sum_j f[j][0]$
 
 ```cpp
 #include <iostream>

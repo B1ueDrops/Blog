@@ -776,8 +776,7 @@ public:
         
         dfs(root->left, sum);
         dfs(root->right, sum);
-        
-        sum += root->val;
+
         path.pop_back();
         
         return ;
@@ -2157,6 +2156,268 @@ public:
         sum += x;
 
         dfs(root->left);
+    }
+};
+```
+
+
+
+## 在二叉树中增加一行
+
+> https://leetcode.cn/problems/add-one-row-to-tree/description/
+
+涉及二叉树行的问题, 其实都可以用层序遍历解决.
+
+```cpp
+class Solution {
+public:
+    TreeNode* addOneRow(TreeNode* root, int val, int depth) {
+        depth --;
+        if (!depth) {
+            auto cur = new TreeNode(val);
+            cur->left = root;
+            return cur;
+        }
+        queue<TreeNode *> q;
+        q.push(root);
+
+        while (q.size()) {
+            int len = q.size();
+            depth --;
+            for (int i = 0; i < len; i ++) {
+                auto t = q.front();
+                q.pop();
+                if (!depth) {
+                    auto cur1 = new TreeNode(val);
+                    auto cur2 = new TreeNode(val);
+                    cur1->left = t->left;
+                    t->left = cur1;
+                    cur2->right = t->right;
+                    t->right = cur2;
+                }
+                if (t->left) q.push(t->left);
+                if (t->right) q.push(t->right);
+            }
+            if (!depth) break;
+        }
+        return root;
+    }
+};
+```
+
+
+
+## 寻找重复的子树
+
+> https://leetcode.cn/problems/find-duplicate-subtrees/description/
+
+这个题涉及二叉树中哈希一颗子树的方案, 可以采用如下的方案:
+
+* 对于每个子树, 用一个三元组来表示, 三元组的构成是: `(root->val, 左子树id, 右子树id)`.
+* 左子树id和右子树id可以用一个全局的变量来分配.
+
+这个三元组可以变成一个字符串存储在哈希表中, 这个哈希表可以将字符串映射到一个唯一的`id`, 这个`id`可以映射到`id`出现的次数, 如果出现次数大于1, 证明出现了重复的子树.
+
+```cpp
+class Solution {
+public:
+    vector<TreeNode *> ans;
+    int cnt = 0;
+    unordered_map<string, int> ids;
+    unordered_map<int, int> hash;
+
+    vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+    /* Return id */
+    int dfs(TreeNode * root) {
+        // Use 0 to map NULL
+        if (!root) return 0;
+
+        int left = dfs(root->left), right = dfs(root->right);
+        string key = to_string(root->val) + ' ' + to_string(left) + ' ' + to_string(right);
+
+        if (ids.count(key) == 0) ids[key] = ++cnt;
+        int id = ids[key];
+        if (++ hash[id] == 2) ans.push_back(root);
+        return id;
+    }
+};
+```
+
+
+
+## 两数之和-二叉搜索树
+
+> https://leetcode.cn/problems/two-sum-iv-input-is-a-bst/
+
+直接采用哈希表做.
+
+```cpp
+class Solution {
+public:
+    unordered_set<int> hash;
+    bool findTarget(TreeNode* root, int k) {
+        return dfs(root, k);
+    }
+
+    bool dfs(TreeNode *root, int k) {
+        if (!root) return false;
+        if (dfs(root->left, k)) return true;
+        if (hash.count(k - root->val)) return true;
+        hash.insert(root->val);
+        return dfs(root->right, k);
+    }
+}
+```
+
+
+
+## 最大二叉树
+
+> https://leetcode.cn/problems/maximum-binary-tree/description/
+
+RMQ和二叉树结合的问题, 注意此时`f`数组中维护的不是最大值, 而是最大值的下标.
+
+```cpp
+class Solution {
+public:
+    vector<int> nums;
+    vector<vector<int>> f;
+    TreeNode* constructMaximumBinaryTree(vector<int>& _nums) {
+        nums = _nums;
+        int n = nums.size();
+        if (!n) return NULL;
+        int k = log(n) / log(2);
+        f = vector<vector<int>>(n + 1, vector<int>( k + 1 ));
+        for (int j = 0; j <= k; j ++) {
+            for (int i = 0; i + (1 << j) - 1 < n; i ++) {
+                if (!j) f[i][j] = i;
+                else {
+                    int l = f[i][j - 1], r = f[i + (1 << j - 1)][j - 1];
+                    if (nums[l] > nums[r]) f[i][j] = l;
+                    else f[i][j] = r;
+                }
+            }
+        }
+        return build(0, n - 1);
+    }
+    int query(int l, int r) {
+        // query
+        int k = log(r - l + 1) / log(2);
+        int a = f[l][k], b = f[r - (1 << k) + 1][k];
+        if (nums[a] > nums[b]) return a;
+        else return b;
+    }
+    TreeNode * build(int l, int r) {
+        if (l > r) return NULL;
+        int k = query(l, r);
+        auto root = new TreeNode(nums[k]);
+        root->left = build(l, k - 1);
+        root->right = build(k + 1, r);
+        return root;
+    }
+};
+```
+
+
+
+## 二叉树的最大宽度
+
+> https://leetcode.cn/problems/maximum-width-of-binary-tree/
+
+在二叉树中, 节点可以有编号, 这个编号类似于堆, 假设一个节点编号是`u`:
+
+* 左节点一般是`u * 2`, 右节点一般是`u * 2 + 1`.
+
+这个节点编号可以做很多事情, 这个题就是考察这个编号的用法.
+
+但是, 如果二叉树节点一多, 编号每次都乘2, 那么很快就会爆`int`.
+
+在这个题中, 只在意编号的相对关系, 因此可以让每层的编号强制从1开始.
+
+```cpp
+class Solution {
+public:
+    typedef long long LL;
+    LL ans = -1;
+    int widthOfBinaryTree(TreeNode* root) {
+        if (!root) return 0;
+        // int stands for id for TreeNode
+        queue<pair<TreeNode *, LL>> q;
+        q.push({ root, 1 });
+
+        while (q.size()) {
+            int len = q.size();
+            LL l = q.front().second, r;
+            for (int i = 0; i < len; i ++) {
+                auto t = q.front();
+                q.pop();
+                auto v = t.first;
+                r = t.second;
+                LL p = r - l + 1;
+                if (v->left) q.push({ v->left, p * 2 });
+                if (v->right) q.push({ v->right, p * 2 + 1 });
+            }
+            ans = max(ans, r - l + 1);
+        }
+        return ans;
+    }
+};
+```
+
+
+
+## 修建二叉搜索树
+
+> https://leetcode.cn/problems/trim-a-binary-search-tree/
+
+这个题有个规律, 如果一个节点要被删除了:
+
+* 如果节点小于low, 那么这个点连同左子树都要没, 直接把右子树提上来.
+* 大于high的情况同理.
+* 如果节点在区间范围, 只需要递归左右子树修剪即可.
+
+```cpp
+class Solution {
+public:
+    TreeNode* trimBST(TreeNode* root, int low, int high) {
+        if (!root) return NULL;
+        if (root->val < low) return trimBST(root->right, low, high);
+        if (root->val > high) return trimBST(root->left, low, high);
+        root->left = trimBST(root->left, low, high);
+        root->right = trimBST(root->right, low, high);
+        return root;
+    }
+};
+```
+
+
+
+## 二叉树中第二小的节点
+
+> https://leetcode.cn/problems/second-minimum-node-in-a-binary-tree/description/
+
+直接遍历即可, 注意维护最小值和次小值的逻辑(`<`和`<=`).
+
+```cpp
+class Solution {
+public:
+    typedef long long LL;
+    LL d1, d2;
+    int findSecondMinimumValue(TreeNode* root) {
+        d1 = d2 = 1e18;
+        dfs(root);
+        if (d2 == 1e18) d2 = -1;
+        return d2;
+    }
+    void dfs(TreeNode *root) {
+        if (!root) return ;
+        // 注意这里一定是<, 不是<=
+        if (root->val < d1) d2 = d1, d1 = root->val;
+        else if (root->val > d1 && root->val < d2) d2 = root->val;
+        dfs(root->left), dfs(root->right);
     }
 };
 ```
