@@ -5,7 +5,66 @@ categories: 编程语言
 
 
 
-## rust分模块编程
+## rust基础
+
+
+
+### rust的闭包
+
+格式:
+
+```
+|参数1, 参数2, ...| -> 返回值类型 {
+    // 函数体
+}
+```
+
+例子:
+
+```rust
+fn main() {
+  let func = |num: i32| -> i32 {
+    num + 1
+  };
+  println!("{}", func(2));
+}
+```
+
+没有参数/返回值的闭包可以当作线程函数, 写法是:
+
+```rust
+|| {
+  // 线程逻辑
+}
+```
+
+
+
+### rust所有权
+
+常见的有以下场景:
+
+1. 非基本类型赋值:
+
+   ```rust
+   let s1 = String::from("hello");
+   let s2 = s1;
+   // 此时s1所有权给了s2, s1不能被使用
+   // 如果真要共享, 使用引用 let s2 = &s1;
+   // 如果只需要s1的值, 可以用let s2 = s1.clone()
+   ```
+
+2. 非基本类型作为函数参数:
+
+   ```rust
+   let s1 = String::from("hello");
+   function(s1);
+   // 此处, s1会失效, 不能再次使用.
+   ```
+
+
+
+### rust分模块编程
 
 * rust中, `package`就相当于`project`的概念.
 
@@ -38,11 +97,15 @@ use A::funcA;
 
 
 
-## 异步编程
+## rust一些高级特性
 
 
 
-### async/await
+### 异步编程
+
+
+
+#### async/await
 
 * Rust中, 使用`async`定义的函数, 调用后会变成`Future`.
 * `Future`需要一个执行器(executor)来执行.
