@@ -9,6 +9,36 @@ categories: 编程语言
 
 
 
+### rust工具
+
+* rustup: 安装Rust, 以及切换Rust和标准库的版本.
+* cargo: Rust包管理器.
+
+
+
+### 可变性和引用
+
+* 最基础的一点, rust如果变量想要可变, 需要前面加上`mut`.
+* 假设一个变量叫`a`, 是可变的, 你想取它的引用, 那么需要这样写: `&mut a`, 而不是`&a`.
+
+
+
+### 元组结构体
+
+```rust
+struct Color(i32, i32, i32);
+
+let black = Color(0, 0, 0);
+// 获取第0, 1, 2个元素
+println!("{}", black.0);
+println!("{}", black.1);
+println!("{}", black.2);
+```
+
+
+
+
+
 ### rust的闭包
 
 格式:
@@ -40,7 +70,7 @@ fn main() {
 
 
 
-### rust所有权
+### rust所有权转移
 
 常见的有以下场景:
 
@@ -62,6 +92,12 @@ fn main() {
    // 此处, s1会失效, 不能再次使用.
    ```
 
+> 内部原理
+
+* 首先, 基本类型完全存储在栈上, rust会直接拷贝, 不会发生所有权转移.
+* 非基本类型数据存储在堆上, 引用存储在栈上, rust处于安全考虑, 会让原来的所有权失效.
+* 堆上数据深拷贝可以用`clone`方法.
+
 
 
 ### rust分模块编程
@@ -75,6 +111,8 @@ fn main() {
   * binary crate可以用`cargo new --bin`生成, library crate可以用`cargo new --lib`生成.
 
   * binary crate默认有`src/main.rs`, library crate默认有`src/lib.rs`.
+
+  * 一个`package`至少有一个crate, 可以有任意多个binary crate, 最多有一个library crate.
 
 * 对于rust的编译器来说, 它默认只会看到`src/main.rs`或者`src/lib.rs`, 这个东西叫做`crate root`.
 
@@ -97,7 +135,158 @@ use A::funcA;
 
 
 
+## rust面向对象
+
+1. 大致写法:
+
+```rust
+// 成员变量
+pub struct Student {
+  pub name: String,
+  age: i8
+}
+
+// 成员方法
+pub impl Student {
+  // 构造方法, 也是类方法
+  pub fn new(name: String, age: i8) -> Student {
+    Student {
+      name: name,
+      age: age
+    }
+  }
+  // public
+  // 如果需要改成员变量, 用&mut self
+  pub fn get_age(&self) -> i8 {
+    return self.age;
+  }
+  // private
+  fn haha(&self) {
+    
+  }
+}
+
+fn main() {
+  // 创建对象
+  let student = Student::new(String::from("haha"), 18);
+  student.get_age();
+}
+```
+
+
+
+
+
 ## rust一些高级特性
+
+
+
+### 智能指针
+
+
+
+#### Deref
+
+Deref是一个有关于解引用的trait.
+
+假设我有一个结构体:
+
+```rust
+struct MyBox<T>(T);
+
+impl<T> MyBox<T> {
+  fn new(x: T) -> MyBox<T> {
+    MyBox(x);
+  }
+}
+```
+
+现在, 你可以为这个结构体实现`Deref` 这个trait, 来让你能`*`一个结构体引用.
+
+```rust
+use std::ops::Deref;
+
+impl<T> Deref for MyBox<T> {
+  // &self是结构体引用类型, 在这个函数中, 你要通过这个结构体引用, find一个基本类型的引用, 然后返回
+  fn deref(&self) -> &T {
+    &self.0
+  }
+}
+```
+
+本质上, `deref`会把一个结构体引用, 转换成一个基本类型引用.
+
+实现``deref`后, 你再`*`一个结构体引用`x`, 就等价于`*(x.deref())`
+
+
+
+> 自动deref机制
+
+看这段代码:
+
+```rust
+fn display(s: &str) {
+    println!("{}",s);
+}
+
+fn main() {
+    let s = MyBox::new(String::from("hello world"));
+    display(&s)
+}
+```
+
+对于`&s`, 它会被连续`deref` , 直到转换成`&str`为止.
+
+
+
+#### Drop
+
+Drop是一个`trait`, 如果一个结构体实现了`Drop`, 那么它的生命周期结束之后, 就会自动调用`drop`方法实现收尾工作, rust就是因为这个才可以不实现`GC`.
+
+```rust
+impl Drop for XXX {
+  fn drop(&mut self) {
+  }
+}
+```
+
+但是, 在这段代码中, `drop`的参数是`&mut self`, 就表示一个结构体调用`drop`函数后, 它的所有权没有被收走.
+
+* 因此, 你不可以对一个结构体`x`显示地调用`x.drop()`函数.
+
+但是, 有些场景下, 你需要提前释放某些资源, 例如互斥锁等, 这个时候可以使用`std::prelude::drop`函数.
+
+这个函数签名是:
+
+```rust
+pub fn drop<T>(_x: T)
+```
+
+会直接把所有权拿走, 调用完这个函数, 如果在下面再使用原变量, 就会编译错误.
+
+
+
+
+
+#### Box\<T\>
+
+Box指针能让你把数据分配在堆上.
+
+```rust
+// a数据存在3上
+let a = 3;
+let a = Box::new(3);
+```
+
+
+
+> 关于数据分配在栈/堆上对性能影响的规律
+
+* 小数据: 在栈上分配/读取比堆快.
+* 中数据: 在栈上分配快, 读取不一定.
+* 大数据: 在堆上分配/读取.
+
+
 
 
 
@@ -117,7 +306,7 @@ use A::funcA;
 
 
 
-### 多个Future之间并发
+#### 多个Future之间并发
 
 对于下面的代码:
 
@@ -158,7 +347,7 @@ async fn async_main() {
 
 如果要执行的`Future`很多, 那么可以把`Future`放到一个数组中, 然后调用`futures::future::join_all`.
 
-### 简单的例子
+#### 一个简单的例子
 
 ```rust
 use std::time::Duration;

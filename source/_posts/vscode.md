@@ -1,5 +1,5 @@
 ---
-title: 使用vscode作为更好的preview IDE
+title: vscode插件配置
 categories: 工具/环境
 ---
 
@@ -30,4 +30,21 @@ categories: 工具/环境
 Task Manager可以让你预定义一些与项目有关的任务.
 
 首先在项目中新建`.vscode/tasks.json`.
+
+然后按这个模板:
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile Manim",
+            "type": "shell",
+            "command": "manim",
+            "args": [ "-pql", "MoonVisual.py", "MoonVisual" ],
+            "options": { "cwd": "${workspaceFolder}/src" }
+        },
+    ]
+}
+```
 
