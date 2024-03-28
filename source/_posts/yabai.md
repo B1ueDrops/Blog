@@ -28,7 +28,7 @@ categories: 工具/环境
 * `hash`: `shasum -a 256 $(which yabai)`的输出.
 * `yabai`: `which yabai`的输出.
 
-
+<font color=red>注意, yabai更新之后, hash的值会改变, 需要重新修改.</font>
 
 ## yabai的键位配置
 
@@ -48,11 +48,3 @@ categories: 工具/环境
 | 将窗口布局改为浮动           | `ctrl+cmd+alt+f`         |
 | 隐藏某个窗口                 | `cmd+h`                  |
 | 打开某个隐藏的窗口           | `cmd+tab`                |
-
-
-
-## iTerm2的一些设置
-
-* iTerm2可以设置关闭顶部的状态栏:
-
-![iTerm2隐藏状态栏](./yabai/yabai-hiden-title.png)
