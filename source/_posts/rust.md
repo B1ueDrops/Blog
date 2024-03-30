@@ -1,6 +1,7 @@
 ---
-title: rust用到哪里学哪里
+title: rust阅读学习
 categories: 编程语言
+mathjax: true
 ---
 
 
@@ -16,10 +17,42 @@ categories: 编程语言
 
 
 
-### 可变性和引用
+### cargo用法
+
+
+
+
+
+### 基本数据类型
+
+* `let z = 10`, 其中, 这个`z`的类型会推导成`i32`.
+* 强制类型转换用`as`: `let v: u16 = 38_u8 as u16;`
+* `x`位无符号整数最大值是$2^x - 1$, 最小值是0.
+* `x`位有符号整数最大值是$2^{x-1}-1$, 最小值是$-2^{x-1}$​.
+
+
+
+### 可变性, 引用, 所有权
 
 * 最基础的一点, rust如果变量想要可变, 需要前面加上`mut`.
+
 * 假设一个变量叫`a`, 是可变的, 你想取它的引用, 那么需要这样写: `&mut a`, 而不是`&a`.
+
+* 引用可以实现<font color=red>所有权的借用(borrow)</font>, 借用规则是:
+  * 同一个作用域内, 可以有多个不可变引用, 但是只能有一个可变引用.
+
+  * 不能对一个不可变的值进行可变借用, 例如下面代码是错误的:
+  
+    ```rust
+    fn main() {
+        let x = 5;
+        let y = &mut x;
+    }
+    ```
+  
+* 一个提醒: 如果你见到一个函数传参数不是传的引用, 那么就需要考虑**所有权转移**的问题.
+
+* 数组索引, 一般都要用引用取, 例如`let query = &args[1]`.
 
 
 
@@ -100,26 +133,18 @@ fn main() {
 
 
 
-### rust分模块编程
+### 分模块编程
 
-* rust中, `package`就相当于`project`的概念.
+rust中, 一个package可以分为多个binary crate和至多一个libary crate:
 
-* 一个`package`中, 可以包含多个`crate`, 一个`crate`是一个最小的编译单元.
+* crate root是`src/main.rs`和`src/lib.rs`.
+* rust编译器只能看到crate root.
 
-  * `crate`分为binary crate和library crate, 两者分别生成可执行文件/库文件.
-
-  * binary crate可以用`cargo new --bin`生成, library crate可以用`cargo new --lib`生成.
-
-  * binary crate默认有`src/main.rs`, library crate默认有`src/lib.rs`.
-
-  * 一个`package`至少有一个crate, 可以有任意多个binary crate, 最多有一个library crate.
-
-* 对于rust的编译器来说, 它默认只会看到`src/main.rs`或者`src/lib.rs`, 这个东西叫做`crate root`.
-
-* rust中, 一个`crate`由多个`module`组成, 多个`module`会组成一个树状关系, 一般在`crate root`中需要显式声明`mod`:
+一般来说, 你需要在crate root中声明依赖的模块, 然后再用`use`导入元素:
 
 ```rust
-// src/main.rs
+// src/main.rs或src/lib.rs
+// 声明crate(main.rs)所依赖的module
 mod A;
 mod B;
 mod C;
@@ -127,11 +152,158 @@ mod C;
 use A::funcA;
 ```
 
-* 分模块编程的思路:
-  * 首先, 一个rust文件相当于一个module, 这个module的名字就和文件名一样.
-    * 在其中的一些元素如果要供外部使用, 需要加上`pub`.
-  * 然后, 一个文件夹也相当于一个module, 这个文件夹内部要有一个`mod.rs`文件, 通过`pub mod ...`, 来让其中的子模块全部导入.
-  * 使用时, 可以通过`use`关键字一层层导入, 如果需要在一个子模块中, 引用外部子模块, 可以从`use crate::`开始导入.
+对于模块, 你只需要理解下面几点:
+
+* 一个`rs`文件是一个模块, 其中的元素你可以用`pub`导出.
+* 一个文件夹中, 你需要创建`mod.rs`, 然后在其中用`pub mod XX;`来将文件夹中的所有rust文件导出.
+* 在crate root中需要用`mod XX;`声明上级模块.
+* 如果在子模块中需要导入上级模块的东西, 可以用`use package名字::XXX`导入.
+
+
+
+
+
+### 异常处理
+
+Rust中的异常分为两类:
+
+* **可恢复异常**: 用`Result<T, E>`恢复.
+* **不可恢复异常: **用`panic!()`处理.
+
+
+
+#### 不可恢复异常
+
+* `panic!()`如果在main线程中, 会直接停止main线程, 但是在子线程中panic不会让main线程挂, 因此不要让main线程承担大多数任务.
+
+* `panic`有两种退出模式:
+
+  * 栈回溯(backtrace): 退出时打印调用栈, 可以用在开发环境.
+
+  * 终止(abort): 直接退出, 适合生产环境, 能减少编译出的二进制文件大小.
+
+    ```toml
+    [profile.release]
+    panic = 'abort'
+    ```
+
+
+
+#### 可恢复异常
+
+一般来说, 可能存在异常的函数返回值都是`Result<T, E>`:
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+这个类型之后可以用`unwrap()`或者`expect()`处理, 两者类似, 区别在于`expect()`可以接受一个字符串, panic后打印这个字符串信息:
+
+* `unwrap/expect`: 如果成功, 直接返回返回值, 如果失败, 直接`panic`.
+* 这是异常处理最快的方法.
+
+> 处理方法1: Match表达式
+
+```rust
+use std::fs::File
+
+fn main() {
+  let f = match File::open("hello.txt") {
+    	Ok(file) => file,
+    	Error(error) => {
+        panic!("Cannot read file");
+    }
+  };
+}
+```
+
+可以在`Error`后再用Match表达式处理:
+
+```rust
+use std::fs::File;
+use std::io::ErrorKind;
+
+fn main() {
+    let f = File::open("hello.txt");
+
+    let f = match f {
+        Ok(file) => file,
+        Err(error) => match error.kind() {
+            ErrorKind::NotFound => match File::create("hello.txt") {
+                Ok(fc) => fc,
+                Err(e) => panic!("Problem creating the file: {:?}", e),
+            },
+            other_error => panic!("Problem opening the file: {:?}", other_error),
+        },
+    };
+}
+```
+
+也可以直接不处理, 向上传播异常:
+
+* 原函数需要返回`Result<T, E>`
+* match表达式如果是`Error`, 需要`return Err(error)`.
+
+Rust提供了专门的宏`?`来简化传播异常的写法:
+
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut f = File::open("hello.txt")?;
+    // ...
+}
+```
+
+这个写法就等价于:
+
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut f = match File::open("hello.txt") {
+      	Ok(file) => file,
+      	Err(error) => Err(error)
+  	};
+    // ...
+}
+```
+
+> ?相比于match表达式, 还有另一种好处.
+
+* `?`传播的异常, 返回的本质上是`Box<dyn std::error:Error>`类型.
+* 在一个系统中, 你可以基于`Error`, 自定义异常.
+* 自定义的异常需要实现`From` trait中的`from`函数, 用来转换到更大的异常类型.
+* 这样, 在使用`?`时, rust就会根据你的签名, 自动给你转换到对应级别的异常.
+
+* `Option<T>`也支持`?`.
+
+如果在main函数中使用了`?`, 那么main函数的签名需要改动:
+
+```rust
+use std::error::Error;
+use std::fs::File;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let f = File::open("hello.txt")?;
+
+    Ok(())
+}
+```
+
+
+
+### 生命周期
+
+
+
 
 
 
@@ -147,7 +319,8 @@ pub struct Student {
 }
 
 // 成员方法
-pub impl Student {
+// impl可以不用pub, 但是成员方法要pub
+impl Student {
   // 构造方法, 也是类方法
   pub fn new(name: String, age: i8) -> Student {
     Student {
@@ -177,11 +350,13 @@ fn main() {
 
 
 
-## rust一些高级特性
+## rust高级特性
 
 
 
-### 智能指针
+
+
+### 常见的trait
 
 
 
@@ -237,6 +412,8 @@ fn main() {
 
 对于`&s`, 它会被连续`deref` , 直到转换成`&str`为止.
 
+在Rust中, 引用类型其实不用你手动`*`才能访问值, 例如你有一个结构体引用, 你不用`(*x).name`才能访问成员, 而是直接用`x.name`就可以, 背后的机制就是`deref trait`.
+
 
 
 #### Drop
@@ -266,25 +443,139 @@ pub fn drop<T>(_x: T)
 
 
 
+### 智能指针
+
 
 
 #### Box\<T\>
 
-Box指针能让你把数据分配在堆上.
+Box指针本质上还是引用类型, 只是这个引用会把你原本的数据放到堆上, 然后再给你返回一个引用.
 
 ```rust
 // a数据存在3上
-let a = 3;
 let a = Box::new(3);
+```
+
+如果你想打印`a`:
+
+```rust
+println!("{}", a);
+```
+
+这时可以打印, 并且不会报错的, 因为`a`会隐式调用`deref`进行解引用.
+
+但是如果你想拿这个值做运算:
+
+```rust
+let b = a + 1;
+```
+
+这就会报错, 正确写法是`let b = *a + 1`, 这个时候需要手动调用`deref`.
+
+<font color=red>注意: Box指针会导致所有权的转移</font>, `Box::new(xxx)`之后, `xxx`的所有权会转移到接收变量中.
+
+```rust
+fn main() {
+    let s = String::from("hello, world");
+    // s在这里被转移给a
+    let a = Box::new(s);
+    // 报错！此处继续尝试将 s 转移给 b
+    let b = Box::new(s);
+}
 ```
 
 
 
-> 关于数据分配在栈/堆上对性能影响的规律
+**Box指针有一个非常有效的应用场景:**
 
-* 小数据: 在栈上分配/读取比堆快.
-* 中数据: 在栈上分配快, 读取不一定.
-* 大数据: 在堆上分配/读取.
+* 在Rust中, 编译器要求类型的大小必须是固定的.
+* 但是有些类型是无法在编译时期知道大小的, 例如递归的类型定义.
+* 这时, 可以将递归的成员变量转换成`Box<T>`指针类型.
+
+例如, 如果你想用一个数组, 存储所有实现了某一个`trait`的对象(动态类型), 就需要用到`Box`指针, 例子如下:
+
+```rust
+trait Draw {
+    fn draw(&self);
+}
+// 下面Button和Select都实现了Draw这个trait
+struct Button {
+    id: u32
+}
+impl Draw for Button {
+    fn draw(&self) {
+        println!("Button {}", self.id);
+    }
+}
+struct Select {
+    id: u32
+}
+impl Draw for Select {
+    fn draw(&self) {
+        println!("Select {}", self.id)
+    }
+}
+
+fn main() {
+  	// 定义类型时需要加上dyn, 因为实现trait的对象都是一个动态类型
+    let elems: Vec<Box<dyn Draw>> = vec![ Box::new(Button {id:1}), Box::new(Select {id: 1}) ];
+    for e in elems {
+        e.draw();
+    }
+}
+```
+
+如果你要从Box指针数组中取出元素时, 你需要解两次引用, 例如下面这个例子:
+
+```rust
+fn main() {
+    let arr = vec![ Box::new(1), Box::new(2) ];
+    // 注意, 这里必须取引用, 否则会发生所有权转移
+    let (first, second) = (&arr[0], &arr[1]);
+    // 第一次将&Box<i32>转成Box<i32>, 第二次将Box<i32>转成i32
+    let sum = **first + **second;
+    
+}
+```
+
+
+
+#### Rc\<T\>
+
+Rc\<T\>可以在单线程环境下, 创建一个数据的多个不可变引用, 并且提供了如下功能:
+
+* 实现了`Deref`和`Drop`.
+* 提供了引用计数(reference counting), 一旦数据的引用计数是0, 就会自动释放.
+
+用法如下:
+
+```rust
+use std::rc::Rc;
+
+fn main() {
+  	// 用Rc::new创建一个数据的引用, 类型是Rc<String>
+    let a = Rc::new(String::from("hello world"));
+  	// 用Rc::clone创建数据的新的不可变引用, 这个clone是浅拷贝, 性能比较高
+    let b = Rc::clone(&a);
+		// 用Rc::strong_count输出变量的计数
+    assert_eq!(2, Rc::strong_count(&a));
+    assert_eq!(Rc::strong_count(&a), Rc::strong_count(&b));
+}
+```
+
+
+
+#### Arc\<T\>
+
+Arc\<T\>可以在多线程环境下, 实现多个线程拥有同一个数据的多个不可变引用, 和`Rc<T>`的API完全相同.
+
+* 和`Rc<T>`不同之处在于, `Arc<T>`采用原子指令维护了引用计数, 会有一定的性能损耗.
+
+
+
+### 并发编程
+
+#### Mutex
 
 
 
@@ -373,4 +664,83 @@ fn main() {
     block_on(async_main())
 }
 ```
+
+
+
+## rust开发实践
+
+* `dbg!()`: 快速打印变量/表达式, 方便调试.
+
+* 基础命令行参数读取:
+
+  ```rust
+  use std::env;
+  
+  fn main() {
+      let args:Vec<String> = env::args().collect();
+      for arg in args {
+          println!("{}", arg);
+      }
+  }
+  ```
+
+* 读文件:
+
+  ```rust
+  use std::fs;
+  
+  fn main() {
+    	// 读取到String中
+      let text = fs::read_to_string("D:\\text.txt").expect("文件读取失败的错误信息");
+      println!("{}", text);
+  }
+  ```
+
+* `if let`表达式简化代码: 
+
+  ```rust
+  // 简化异常处理
+  if let Err(e) = run(config) {
+      println!("Application error {}", e);
+      process::exit(1);
+  };
+  ```
+
+* 实战来说, 一些顶层函数一般放到`lib.rs`中, `main.rs`一般保留最小的需要支持的元素和流程.
+
+
+
+### TDD测试驱动开发
+
+rust TDD的一般流程是:
+
+* 在`src`同级目录下创建`test`.
+
+* 里面创建很多个rust文件, 随便起名.
+
+* 每个文件的格式如下:
+
+  ```rust
+  #[cfg(test)]
+  mod tests {
+  
+      use package名字::*;
+  
+      #[test]
+      fn two_result() {
+          let query = "duct";
+          let contents = "Rust:\nSafe duct\nniubi duct";
+          assert_eq!(vec!["Safe duct", "niubi duct"], search(query, contents))
+      }
+  }
+  ```
+
+  * `#[cfg(test)]`表示只有在`cargo test`时才运行测试.
+  * `#[test]`表示单元测试.
+
+* 错误信息采用`eprintln`输出到`stderr`.
+
+之后只要运行`cargo test`就会运行所有单元测试.
+
+<font color=red>上述函数中, 无法对私有函数进行测试</font>, 如果真要对私有函数进行测试, 需要把测试函数`#[test]`写私有函数定义的地方.
 

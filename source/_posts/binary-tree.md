@@ -133,17 +133,6 @@ public:
 ### 递归写法
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     vector<int> ans;
@@ -163,17 +152,6 @@ public:
 ### 迭代写法
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     vector<int> ans;
@@ -237,6 +215,25 @@ public:
             ans += ")";
         }
         
+    }
+};
+```
+
+同类题: 叶子相似的树, https://leetcode.cn/problems/leaf-similar-trees/description/
+
+```cpp
+class Solution {
+public:
+    void dfs(TreeNode *root, vector<int> &a) {
+        if (!root) return ;
+        if (!root->left && !root->right) a.push_back(root->val);
+        dfs(root->left, a), dfs(root->right, a);
+    }
+    bool leafSimilar(TreeNode* root1, TreeNode* root2) {
+        vector<int> a, b;
+        dfs(root1, a);
+        dfs(root2, b);
+        return a == b;
     }
 };
 ```
@@ -418,15 +415,6 @@ public:
 在层序遍历的基础上用一个变量控制一下是否反转`level`即可.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
- * };
- */
 class Solution {
 public:
     vector<vector<int>> printFromTopToBottom(TreeNode* root) {
@@ -478,20 +466,9 @@ public:
 * 左子树在中序遍历的下标范围是$[il, k - 1]$
 * 右子树在中序遍历的下标范围是$[k + 1, ir]$
 
-然后递归建树即可.
+然后递归建树即可, 时间复杂度是$O(n)$.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     unordered_map<int, int> hash;
@@ -525,17 +502,6 @@ public:
 分析思路和上一题相同.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     unordered_map<int, int> hash;
@@ -559,6 +525,39 @@ public:
         return dfs(inorder, postorder, 0, n - 1, 0, n - 1); 
     }
 };
+```
+
+
+
+## 前序后序恢复二叉树
+
+> https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-postorder-traversal/
+
+> 为什么根据前序遍历和后序遍历无法恢复二叉树?
+
+假设我有一个节点, 它的左子树/右子树不存在, 但是在前序/后序遍历中, 都无法反映这个子树不存在的信息, 因此如果你从前序/后序遍历中发现一个子树不存在, 它既可以是左子树不存在, 也可以是右子树不存在, 选一个就可以.
+
+```cpp
+class Solution {
+public:
+    unordered_map<int, int> hash;
+
+    TreeNode *dfs(vector<int> &preorder, vector<int> &postorder, int a, int b, int x, int y) {
+        if (a > b) return NULL;
+        TreeNode *root = new TreeNode(preorder[a]);
+        if (a == b) return root;
+        // 左根在后序遍历中的位置
+        int k = hash[preorder[a + 1]];
+        root->left = dfs(preorder, postorder, a + 1, a + 1 + (k - x + 1) - 1, x, k);
+        root->right = dfs(preorder, postorder, a + 1 + (k - x + 1), b, k + 1, y - 1);
+        return root;
+    }
+    TreeNode* constructFromPrePost(vector<int>& preorder, vector<int>& postorder) {
+        int n = postorder.size();
+        for (int i = 0; i < n; i ++) hash[postorder[i]] = i;
+        return dfs(preorder, postorder, 0, n - 1, 0, n - 1);
+    }
+}
 ```
 
 
@@ -661,17 +660,6 @@ public:
   * 注意, 由于后继节点没有左子树, 如果递归的话, 那么就是第一种/第二种情况.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     TreeNode* deleteNode(TreeNode* root, int key) {
@@ -1889,6 +1877,28 @@ public:
 };
 ```
 
+同类题: 最长同值路径, https://leetcode.cn/problems/longest-univalue-path/
+
+```cpp
+class Solution {
+public:
+    int ans = 0;
+    int longestUnivaluePath(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+
+    int dfs(TreeNode *root) {
+        if (!root) return 0;
+        int l = dfs(root->left), r = dfs(root->right);
+        if (!root->left || root->left->val != root->val) l = 0;
+        if (!root->right || root->right->val != root->val) r = 0;
+        ans = max(ans, l + r );
+        return max(l, r) + 1;
+    }
+};
+```
+
 
 
 ## 找树左下角的值
@@ -2418,6 +2428,155 @@ public:
         if (root->val < d1) d2 = d1, d1 = root->val;
         else if (root->val > d1 && root->val < d2) d2 = root->val;
         dfs(root->left), dfs(root->right);
+    }
+};
+```
+
+
+
+## 输出二叉树
+
+> https://leetcode.cn/problems/print-binary-tree/
+
+<font color=red>注意: 🌲的高度和深度的定义不同:</font>
+
+* 高度: 从根节点到叶子节点的**边**的数量.
+* 深度: 从根节点到叶子节点经过的**节点**数量.
+
+满二叉树第$n$层的节点个数是$2^{n}-1$​.
+
+这个题直接递归打印即可.
+
+```cpp
+class Solution {
+public:
+    vector<vector<string>> ans;
+		// 返回树的最大高度和最大宽度
+    vector<int> dfs(TreeNode *root) {
+        if (!root) return { 0, 0 };
+        auto l = dfs(root->left), r = dfs(root->right);
+        return { max(l[0], r[0]) + 1, max(l[1], r[1]) * 2 + 1 };
+    }
+    void print(TreeNode * root, int h, int l, int r) {
+        if (!root) return ;
+        int mid = l + (r - l) / 2;
+        ans[h][mid] = to_string(root->val);
+        print(root->left, h + 1, l, mid - 1);
+        print(root->right, h + 1, mid + 1, r);
+    }
+    vector<vector<string>> printTree(TreeNode* root) {
+        auto t = dfs(root);
+        int h = t[0], w = t[1];
+        ans = vector<vector<string>>(h, vector<string>(w));
+        print(root, 0, 0, w - 1);
+        return ans;
+    }
+};
+```
+
+
+
+## 二叉树剪枝
+
+> https://leetcode.cn/problems/binary-tree-pruning/
+
+dfs直接遍历一遍就可以.
+
+```cpp
+class Solution {
+public:
+    TreeNode* pruneTree(TreeNode* root) {
+        // root没有1, 那么就要删掉
+        if (!dfs(root)) root = NULL;
+        return root;
+    }
+    // 返回root所在子树是否包含1
+    bool dfs(TreeNode *root) {
+        if (!root) return false;
+        // 删除左右子树
+        if (!dfs(root->left)) root->left = NULL;
+        if (!dfs(root->right)) root->right = NULL;
+        return root->val || root->left || root->right;
+    }
+};
+```
+
+
+
+## 二叉树中所有距离为k的点
+
+> https://leetcode.cn/problems/all-nodes-distance-k-in-binary-tree/
+
+直接把二叉树变成一个无向图, 然后从target开始搜索即可.
+
+```cpp
+class Solution {
+public:
+    unordered_map<TreeNode *, vector<TreeNode*>> g;
+    vector<int> ans;
+
+    void dfs1(TreeNode *root) {
+        if (!root) return ;
+        if (root->left) {
+            g[root].push_back(root->left);
+            g[root->left].push_back(root);
+            dfs1(root->left);
+        }
+        if (root->right) {
+            g[root].push_back(root->right);
+            g[root->right].push_back(root);
+            dfs1(root->right);
+        }
+    }
+    
+    void dfs2(TreeNode *u, TreeNode *father, int k) {
+        if (!u) return ;
+        if (!k) ans.push_back(u->val);
+        for (auto son : g[u]) {
+            if (son != father) {
+                dfs2(son, u, k - 1);
+            }
+        }
+    }
+    vector<int> distanceK(TreeNode* root, TreeNode* target, int k) {
+        dfs1(root);
+        dfs2(target, NULL, k);
+        return ans;
+    }
+};
+```
+
+
+
+## 最深节点的最小子树
+
+> https://leetcode.cn/problems/smallest-subtree-with-all-the-deepest-nodes/
+
+
+
+递归需要考虑两个问题:
+
+* 我需要维护什么信息.
+* 知道左子树/右子树的信息, 如何求出根的信息.
+
+这个题中, 我需要维护一个节点所在子树, 最深的节点的深度, 以及这个点最小子树的树根, 假设叫h:
+
+* 如果`left.h == right.h`, 那么根节点就是答案.
+* 如果`left.h > right.h`, 那么最深的点在左子树.
+* 如果`left.h < right.h`, 那么最深的点在右子树.
+
+```cpp
+class Solution {
+public:
+    pair<TreeNode*, int> dfs(TreeNode *root) {
+        if (!root) return { NULL, 0 };
+        auto l = dfs(root->left), r = dfs(root->right);
+        if (l.second == r.second) return { root, l.second + 1 };
+        if (l.second > r.second) return { l.first, l.second + 1 };
+        return { r.first, r.second + 1 };
+    }
+    TreeNode* subtreeWithAllDeepest(TreeNode* root) {
+        return dfs(root).first;
     }
 };
 ```

@@ -125,3 +125,30 @@ public:
 
 
 
+## 数据流中的第k大数(堆)
+
+> https://leetcode.cn/problems/kth-largest-element-in-a-stream/
+
+第k大数直接用小根堆维护, 如果插入的树超过k个就直接弹出最小值, 维护后的堆顶元素就是最小值.
+
+```cpp
+class KthLargest {
+public:
+    priority_queue<int, vector<int>, greater<int>> heap;
+    int k;
+    KthLargest(int _k, vector<int>& nums) {
+        k = _k;
+        for (auto num: nums) {
+            heap.push(num);
+            if (heap.size() > k) heap.pop();
+        }
+    }
+    
+    int add(int val) {
+        heap.push(val);
+        if (heap.size() > k) heap.pop();
+        return heap.top();
+    }
+};
+```
+

@@ -48,3 +48,10 @@ categories: 工具/环境
 | 将窗口布局改为浮动           | `ctrl+cmd+alt+f`         |
 | 隐藏某个窗口                 | `cmd+h`                  |
 | 打开某个隐藏的窗口           | `cmd+tab`                |
+
+
+
+## sketchybar下载依赖
+
+* sketchybar-app-font: https://b1uedrops.github.io/static/files/sketchybar-app-font.ttf
+
