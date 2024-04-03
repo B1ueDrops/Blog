@@ -125,6 +125,94 @@ public:
 
 
 
+## 字母异位词分组(哈希表)
+
+> https://leetcode.cn/problems/group-anagrams/
+
+这个题的题意是: 
+
+* 如果一个单词能通过字符的重排, 变成另一个单词, 那么这两个单词就属于同一组.
+* 需要把属于同一组的所有单词放到同一个列表中返回.
+
+如果两个单词属于同一组, 那么它们字符排序后的结果一样.
+
+```cpp
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> hash;
+        for (auto str : strs) {
+            string nstr = str;
+            sort(nstr.begin(), nstr.end());
+            hash[nstr].push_back(str);
+        }
+        vector<vector<string>> ans;
+        for (auto &item: hash) ans.push_back(item.second);
+        return ans;
+    }
+};
+```
+
+
+
+## 无重复字符的最长子串(哈希表)
+
+> https://leetcode.cn/problems/longest-substring-without-repeating-characters/
+
+```cpp
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        if (!s.size()) return 0;
+
+        int res = 0;
+        unordered_map<int, int> hash;
+        for (int i = 0, j = 0; i < s.size(); i ++) {
+            hash[s[i]] ++;
+            while (j < i && hash[s[i]] > 1) hash[s[j ++]] --;
+            res = max(res, i - j + 1);
+        }
+        return res;
+    }
+};
+```
+
+
+
+
+
+## 最长连续序列(哈希表)
+
+> https://leetcode.cn/problems/longest-consecutive-sequence/
+
+* 首先, 把所有元素放到Hash Set中.
+* 然后, 枚举每一个元素`x`, 如果元素`x - 1`不在hash set中, 证明序列不再连续, 需要单开一个起点.
+* 然后, 从单开的起点`y = x`开始, 依次判断`y + 1`是否存在, 就能找到连续序列的终点.
+
+```cpp
+class Solution {
+public:
+    int longestConsecutive(vector<int>& nums) {
+        unordered_set<int> hash;
+        for (auto x : nums) hash.insert(x);
+
+        int res = 0;
+        for (auto x : nums) {
+            if (!hash.count(x - 1)) {
+                int y = x;
+                while (hash.count(y + 1)) y ++;
+                res = max(res, y - x + 1);
+            }
+        }
+        return res;
+    }
+};
+```
+
+
+
+
+
 ## 数据流中的第k大数(堆)
 
 > https://leetcode.cn/problems/kth-largest-element-in-a-stream/

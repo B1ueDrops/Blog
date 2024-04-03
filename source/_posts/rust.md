@@ -135,29 +135,7 @@ fn main() {
 
 ### 分模块编程
 
-rust中, 一个package可以分为多个binary crate和至多一个libary crate:
-
-* crate root是`src/main.rs`和`src/lib.rs`.
-* rust编译器只能看到crate root.
-
-一般来说, 你需要在crate root中声明依赖的模块, 然后再用`use`导入元素:
-
-```rust
-// src/main.rs或src/lib.rs
-// 声明crate(main.rs)所依赖的module
-mod A;
-mod B;
-mod C;
-
-use A::funcA;
-```
-
-对于模块, 你只需要理解下面几点:
-
-* 一个`rs`文件是一个模块, 其中的元素你可以用`pub`导出.
-* 一个文件夹中, 你需要创建`mod.rs`, 然后在其中用`pub mod XX;`来将文件夹中的所有rust文件导出.
-* 在crate root中需要用`mod XX;`声明上级模块.
-* 如果在子模块中需要导入上级模块的东西, 可以用`use package名字::XXX`导入.
+* 
 
 
 
