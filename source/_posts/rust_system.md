@@ -831,7 +831,83 @@ use A::funcA;
 
 #### 迭代器
 
+* Rust中迭代器是懒加载的, 只创建不使用迭代器不会产生任何性能损失.
 
+  ```rust
+  let v = vec![1, 2, 3];
+  // 将数组转化为迭代器
+  let v_iter = v.iter();
+  // 使用迭代器遍历
+  for item in v_iter {
+    //...
+  }
+  ```
+
+* 所有迭代器默认实现了`Iterator` trait
+
+  ```rust
+  pub trait Iterator {
+    type Item;
+    // next方法返回下一个元素, 并且会消耗掉, 没有元素后就会返回None
+    fn next(&mut self) -> Option<Self::Item>;
+  }
+  ```
+
+  * 还有一个trait叫`IntoIterator`, 如果一个类型实现了这个trait, 那么它就可以通过`iter()/into_iter()`变成迭代器.
+
+* 迭代器和所有权问题: 将数组转换为迭代器时, 有可能会把数组中元素的所有权给拿走, 具体分为以下三种情况:
+
+  * 不可变借用: `iter()`
+
+    ```rust
+    let values = vec![1, 2, 3];
+    for v in values.iter() {
+      // v的类型是&T
+    }
+    ```
+
+  * 可变借用: `iter_mut()`
+
+    ```rust
+    // 原数组必须可变
+    let mut values = vec![1, 2, 3];
+    for item in a.iter_mut() {
+      // item类型是&mut T, 可以修改原数组元素
+    }
+    ```
+
+  * 会夺走元素所有权: `into_iter()`
+
+    ```rust
+    let values = vec![1, 2, 3];
+    for item in a.into_iter() {
+      // item的类型是T
+    }
+    ```
+
+* **迭代器适配器/迭代器消费者:**
+
+  * 迭代器适配器非常强大, 可以把一个迭代器转换成你想要的迭代器, 然后配合迭代器消费者, 可以将一个数组转换成你想要的数组.
+
+  * `map + collect` : `map`方法可以传入一个闭包, 对原数组进行操作, 然后用迭代器消费者`collect()`转换成数组.
+
+    * 注意, 使用`collect()`必须进行类型标注, `_`表示让编译器进行标注.
+
+    ```rust
+    let v = vec![1, 2, 3];
+    // 把v中的元素加1, 放到新数组中, 对原数组所有权没有影响
+    let v1: Vec<_> = v.iter().map(|x| x + 1).collect();
+    ```
+
+  * `filter + collect`: `filter`方法可以传入一个返回bool的闭包, 如果返回值是true, 那么会在原数组中保留, 否则删除.
+
+    ```rust
+    let v = vec![1, 2, 3];
+    // 筛选原数组中的偶数, 注意v2中的元素是&i32类型
+    let v2: Vec<&i32> = v.iter().filter(|x| **x % 2 == 0).collect();
+    ```
+
+    
 
 
 
@@ -895,13 +971,427 @@ use A::funcA;
   println!("none_value is {}", value2.is_none());
   ```
 
-  
+
+
+
+#### 不可恢复异常
+
+* `panic!()`如果在main线程中, 会直接停止main线程, 但是在子线程中panic不会让main线程挂, 因此不要让main线程承担大多数任务.
+
+* `panic`有两种退出模式:
+
+  * 栈回溯(backtrace): 退出时打印调用栈, 可以用在开发环境.
+
+  * 终止(abort): 直接退出, 适合生产环境, 能减少编译出的二进制文件大小.
+
+    ```toml
+    [profile.release]
+    panic = 'abort'
+    ```
+
+
+
+#### 可恢复异常
+
+一般来说, 可能存在异常的函数返回值都是`Result<T, E>`:
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+这个类型之后可以用`unwrap()`或者`expect()`处理, 两者类似, 区别在于`expect()`可以接受一个字符串, panic后打印这个字符串信息:
+
+* `unwrap/expect`: 如果成功, 直接返回返回值, 如果失败, 直接`panic`.
+* 这是异常处理最快的方法.
+
+> 处理方法1: Match表达式
+
+```rust
+use std::fs::File
+
+fn main() {
+  let f = match File::open("hello.txt") {
+    	Ok(file) => file,
+    	Error(error) => {
+        panic!("Cannot read file");
+    }
+  };
+}
+```
+
+可以在`Error`后再用Match表达式处理:
+
+```rust
+use std::fs::File;
+use std::io::ErrorKind;
+
+fn main() {
+    let f = File::open("hello.txt");
+
+    let f = match f {
+        Ok(file) => file,
+        Err(error) => match error.kind() {
+            ErrorKind::NotFound => match File::create("hello.txt") {
+                Ok(fc) => fc,
+                Err(e) => panic!("Problem creating the file: {:?}", e),
+            },
+            other_error => panic!("Problem opening the file: {:?}", other_error),
+        },
+    };
+}
+```
+
+也可以直接不处理, 向上传播异常:
+
+* 原函数需要返回`Result<T, E>`
+* match表达式如果是`Error`, 需要`return Err(error)`.
+
+Rust提供了专门的宏`?`来简化传播异常的写法:
+
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut f = File::open("hello.txt")?;
+    // ...
+}
+```
+
+这个写法就等价于:
+
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut f = match File::open("hello.txt") {
+      	Ok(file) => file,
+      	Err(error) => Err(error)
+  	};
+    // ...
+}
+```
+
+> ?相比于match表达式, 还有另一种好处.
+
+* `?`传播的异常, 返回的本质上是`Box<dyn std::error:Error>`类型.
+* 在一个系统中, 你可以基于`Error`, 自定义异常.
+* 自定义的异常需要实现`From` trait中的`from`函数, 用来转换到更大的异常类型.
+* 这样, 在使用`?`时, rust就会根据你的签名, 自动给你转换到对应级别的异常.
+
+* `Option<T>`也支持`?`.
+
+如果在main函数中使用了`?`, 那么main函数的签名需要改动:
+
+```rust
+use std::error::Error;
+use std::fs::File;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let f = File::open("hello.txt")?;
+
+    Ok(())
+}
+```
 
 
 
 ### 单元测试
 
+rust TDD (test driven development)的一般流程是:
 
+* 在`src`同级目录下创建`test`.
+
+* 里面创建很多个rust文件, 随便起名.
+
+* 每个文件的格式如下:
+
+  ```rust
+  #[cfg(test)]
+  mod tests {
+  
+      use package名字::*;
+  
+      #[test]
+      fn two_result() {
+          let query = "duct";
+          let contents = "Rust:\nSafe duct\nniubi duct";
+          assert_eq!(vec!["Safe duct", "niubi duct"], search(query, contents))
+      }
+  }
+  ```
+
+  * `#[cfg(test)]`表示只有在`cargo test`时才运行测试.
+  * `#[test]`表示单元测试.
+
+* 错误信息采用`eprintln`输出到`stderr`.
+
+之后只要运行`cargo test`就会运行所有单元测试.
+
+<font color=red>上述函数中, 无法对私有函数进行测试</font>, 如果真要对私有函数进行测试, 需要把测试函数`#[test]`写私有函数定义的地方.
 
 ## 高级特性
 
+### 常见的trait
+
+
+
+#### Deref
+
+Deref是一个有关于解引用的trait.
+
+假设我有一个结构体:
+
+```rust
+struct MyBox<T>(T);
+
+impl<T> MyBox<T> {
+  fn new(x: T) -> MyBox<T> {
+    MyBox(x);
+  }
+}
+```
+
+现在, 你可以为这个结构体实现`Deref` 这个trait, 来让你能`*`一个结构体引用.
+
+```rust
+use std::ops::Deref;
+
+impl<T> Deref for MyBox<T> {
+  // &self是结构体引用类型, 在这个函数中, 你要通过这个结构体引用, find一个基本类型的引用, 然后返回
+  fn deref(&self) -> &T {
+    &self.0
+  }
+}
+```
+
+本质上, `deref`会把一个结构体引用, 转换成一个基本类型引用.
+
+实现``deref`后, 你再`*`一个结构体引用`x`, 就等价于`*(x.deref())`
+
+
+
+> 自动deref机制
+
+看这段代码:
+
+```rust
+fn display(s: &str) {
+    println!("{}",s);
+}
+
+fn main() {
+    let s = MyBox::new(String::from("hello world"));
+    display(&s)
+}
+```
+
+对于`&s`, 它会被连续`deref` , 直到转换成`&str`为止.
+
+在Rust中, 引用类型其实不用你手动`*`才能访问值, 例如你有一个结构体引用, 你不用`(*x).name`才能访问成员, 而是直接用`x.name`就可以, 背后的机制就是`deref trait`.
+
+
+
+#### Drop
+
+Drop是一个`trait`, 如果一个结构体实现了`Drop`, 那么它的生命周期结束之后, 就会自动调用`drop`方法实现收尾工作, rust就是因为这个才可以不实现`GC`.
+
+```rust
+impl Drop for XXX {
+  fn drop(&mut self) {
+  }
+}
+```
+
+但是, 在这段代码中, `drop`的参数是`&mut self`, 就表示一个结构体调用`drop`函数后, 它的所有权没有被收走.
+
+* 因此, 你不可以对一个结构体`x`显示地调用`x.drop()`函数.
+
+但是, 有些场景下, 你需要提前释放某些资源, 例如互斥锁等, 这个时候可以使用`std::prelude::drop`函数.
+
+这个函数签名是:
+
+```rust
+pub fn drop<T>(_x: T)
+```
+
+会直接把所有权拿走, 调用完这个函数, 如果在下面再使用原变量, 就会编译错误.
+
+
+
+### 智能指针
+
+
+
+#### Box\<T\>
+
+Box指针本质上还是引用类型, 只是这个引用会把你原本的数据放到堆上, 然后再给你返回一个引用.
+
+```rust
+// a数据存在3上
+let a = Box::new(3);
+```
+
+如果你想打印`a`:
+
+```rust
+println!("{}", a);
+```
+
+这时可以打印, 并且不会报错的, 因为`a`会隐式调用`deref`进行解引用.
+
+但是如果你想拿这个值做运算:
+
+```rust
+let b = a + 1;
+```
+
+这就会报错, 正确写法是`let b = *a + 1`, 这个时候需要手动调用`deref`.
+
+<font color=red>注意: Box指针会导致所有权的转移</font>, `Box::new(xxx)`之后, `xxx`的所有权会转移到接收变量中.
+
+```rust
+fn main() {
+    let s = String::from("hello, world");
+    // s在这里被转移给a
+    let a = Box::new(s);
+    // 报错！此处继续尝试将 s 转移给 b
+    let b = Box::new(s);
+}
+```
+
+**Box指针有一个非常有效的应用场景:**
+
+* 在Rust中, 编译器要求类型的大小必须是固定的.
+* 但是有些类型是无法在编译时期知道大小的, 例如递归的类型定义.
+* 这时, 可以将递归的成员变量转换成`Box<T>`指针类型.
+
+例如, 如果你想用一个数组, 存储所有实现了某一个`trait`的对象(动态类型), 就需要用到`Box`指针, 例子如下:
+
+```rust
+trait Draw {
+    fn draw(&self);
+}
+// 下面Button和Select都实现了Draw这个trait
+struct Button {
+    id: u32
+}
+impl Draw for Button {
+    fn draw(&self) {
+        println!("Button {}", self.id);
+    }
+}
+struct Select {
+    id: u32
+}
+impl Draw for Select {
+    fn draw(&self) {
+        println!("Select {}", self.id)
+    }
+}
+
+fn main() {
+  	// 定义类型时需要加上dyn, 因为实现trait的对象都是一个动态类型
+    let elems: Vec<Box<dyn Draw>> = vec![ Box::new(Button {id:1}), Box::new(Select {id: 1}) ];
+    for e in elems {
+        e.draw();
+    }
+}
+```
+
+如果你要从Box指针数组中取出元素时, 你需要解两次引用, 例如下面这个例子:
+
+```rust
+fn main() {
+    let arr = vec![ Box::new(1), Box::new(2) ];
+    // 注意, 这里必须取引用, 否则会发生所有权转移
+    let (first, second) = (&arr[0], &arr[1]);
+    // 第一次将&Box<i32>转成Box<i32>, 第二次将Box<i32>转成i32
+    let sum = **first + **second;
+    
+}
+```
+
+
+
+#### Rc\<T\>
+
+Rc\<T\>可以在单线程环境下, 创建一个数据的多个**不可变引用**, 并且提供了如下功能:
+
+* 实现了`Deref`和`Drop`.
+* 提供了引用计数(reference counting), 一旦数据的引用计数是0, 就会自动释放.
+
+用法如下:
+
+```rust
+use std::rc::Rc;
+
+fn main() {
+  	// 用Rc::new创建一个数据的引用, 类型是Rc<String>
+    let a = Rc::new(String::from("hello world"));
+  
+  	// 用Rc::clone创建数据的新的不可变引用, 这个clone是浅拷贝, 性能比较高
+    let b = Rc::clone(&a);
+  	let c = Rc::clone(&a);
+  
+		// 用Rc::strong_count输出变量的计数
+    assert_eq!(3, Rc::strong_count(&a));
+    assert_eq!(Rc::strong_count(&a), Rc::strong_count(&b));
+}
+```
+
+
+
+#### Arc\<T\>
+
+Arc\<T\>可以在多线程环境下, 实现多个线程拥有同一个数据的多个不可变引用, 和`Rc<T>`的API完全相同.
+
+* 和`Rc<T>`不同之处在于, `Arc<T>`采用原子指令维护了引用计数, 会有一定的性能损耗.
+
+
+
+#### RefCell\<T\>
+
+* RefCell\<T\>提供了变量的内部可变性, 也就是**原变量不可变的前提下, 你还可以创建可变引用**.
+
+  ```rust
+  // val的类型是RefCell<i32>
+  let val = RefCell::new(10);
+  
+  // 可变引用修改
+  *val.borrow_mut() += 1;
+  
+  println!("{}", *val.borrow());
+  ```
+
+* 但是, `RefCell<T>`仍然要遵守rust的借用规则, 例如不能让可变引用和不可变引用共存.
+
+  ```rust
+  // 报错, 同时有了可变借用和不可变借用
+  let a = RefCell::new(10);
+  let b = a.borrow();
+  let c = a.borrow_mut();
+  println!("{}, {}", b, c);
+  ```
+
+* 一个例子: 假设你要为自己的类型实现trait, 但是trait中方法签名是`&self`, 但是你就想在这个方法中修改成员变量, 这个时候需要将成员变量定义成`RefCell<T>`类型.
+
+* `Rc + Refcell`: Rc可以实现一个数据有多个不可变引用, 结合`Refcell`可以通过不可变引用修改数据.
+
+  ```rust
+  let a = Rc::new(RefCell::new(10));
+  
+  let a1 = Rc::clone(&a);
+  let a2 = Rc::clone(&a);
+  
+  *a1.borrow_mut() += 1;
+  *a2.borrow_mut() += 2;
+  
+  println!("{}", a.borrow()); //13
+  ```
