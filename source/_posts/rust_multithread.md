@@ -224,3 +224,74 @@ fn main() {
     handle2.join().unwrap();
 }
 ```
+
+
+
+
+
+## LeetCode多线程题
+
+### 按序打印
+
+```rust
+use std::thread::spawn;
+use std::sync::{ Arc, Mutex, Condvar };
+
+fn main() {
+
+    let mutex = Arc::new(Mutex::new(0));
+
+    let mutex1 = Arc::clone(&mutex);
+    let mutex2 = Arc::clone(&mutex);
+    let mutex3 = Arc::clone(&mutex);
+
+    let cv12 = Arc::new(Condvar::new());
+    let cv12_clone = Arc::clone(&cv12);
+    let cv23 = Arc::new(Condvar::new());
+    let cv23_clone = Arc::clone(&cv23);
+    let cv31 = Arc::new(Condvar::new());
+    let cv31_clone = Arc::clone(&cv31);
+
+    let print_first = spawn(move || {
+        loop {
+            let mut id = mutex1.lock().unwrap();
+            if *id != 0 {
+                id = cv31_clone.wait(id).unwrap();
+            }
+            println!("first");
+            *id = 1;
+            cv12.notify_one();
+        }
+    });
+
+    let print_second = spawn(move || {
+        loop {
+            let mut id = mutex2.lock().unwrap();
+            if *id != 1 {
+                id = cv12_clone.wait(id).unwrap();
+            }
+            println!("second");
+            *id = 2;
+            cv23.notify_one();
+        }
+    });
+
+    let print_third = spawn(move || {
+        loop {
+            let mut id = mutex3.lock().unwrap();
+            if *id != 2 {
+                id = cv23_clone.wait(id).unwrap();
+            }
+            println!("third");
+            *id = 0;
+            cv31.notify_one();
+        }
+    });
+
+    print_first.join().unwrap();
+    print_second.join().unwrap();
+    print_third.join().unwrap();
+}
+
+```
+

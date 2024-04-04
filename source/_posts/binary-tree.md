@@ -1494,6 +1494,32 @@ public:
 
 
 
+类似的题 (递增顺序搜索树):https://leetcode.cn/problems/increasing-order-search-tree/
+
+```cpp
+class Solution {
+public:
+    TreeNode *cur;
+    void dfs(TreeNode * root) {
+        if (!root) return ;
+        dfs(root->left);
+        
+        cur = cur->right = root;
+        root->left = NULL;
+
+        dfs(root->right);
+    }
+    TreeNode* increasingBST(TreeNode* root) {
+        auto dummy = new TreeNode(-1);
+        cur = dummy;
+        dfs(root);
+        return dummy->right;
+    }
+};
+```
+
+
+
 ## 填充每个节点的下一个右侧节点
 
 > https://leetcode.cn/problems/populating-next-right-pointers-in-each-node/
@@ -2577,6 +2603,50 @@ public:
     }
     TreeNode* subtreeWithAllDeepest(TreeNode* root) {
         return dfs(root).first;
+    }
+};
+```
+
+
+
+## 所有可能的真二叉树
+
+> https://leetcode.cn/problems/all-possible-full-binary-trees/
+
+首先, 对于这种二叉树, 节点的个数必须是奇数, 因为边数肯定是偶数.
+
+然后, 对于可能的解, 可以分为如下几类:
+
+* 左子树1个节点, 右子树n - 2个.
+* 左子树3个节点, 右子树n - 4个.
+* ...
+* 左子树n - 2个, 右子树1个.
+
+每次递归左右子树后, 按照乘法原理, 从左右子树中任选一种方案都是合法方案.
+
+```cpp
+class Solution {
+public:
+    vector<TreeNode*> allPossibleFBT(int n) {
+        if (n % 2 == 0) return {};
+        
+        vector<TreeNode *> ans;
+        if (n == 1) {
+            ans.push_back(new TreeNode(0));
+            return ans;
+        }
+
+        for (int i = 1; i < n - 1; i += 2) {
+            auto left = allPossibleFBT(i);
+            auto right = allPossibleFBT(n - 1 - i);
+
+            auto root = new TreeNode(0);
+
+            for (auto l : left)
+                for (auto r: right)
+                    ans.push_back(new TreeNode(0, l, r));
+        }
+        return ans;
     }
 };
 ```
