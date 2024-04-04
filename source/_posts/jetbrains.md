@@ -14,7 +14,7 @@ categories: 工具/环境
   * Nerdtree
   * Ideavim
 
-### ideavim
+## ideavim
 
 基本配置和neovim一致.
 
