@@ -1,5 +1,5 @@
 ---
-title: Rust系统总结
+title: Rust基础系统总结
 categories: 编程语言
 mathjax: true
 ---
@@ -603,6 +603,7 @@ use A::funcA;
 * 一个文件夹中, 你需要创建`mod.rs`, 然后在其中用`pub mod XX;`来将文件夹中的所有rust文件导出.
 * 在crate root中需要用`mod XX;`声明上级模块.
 * 如果在子模块中需要导入上级模块的东西, 可以用`use package名字::XXX`导入.
+* `super`关键字指的是父模块.
 
 
 
@@ -1124,6 +1125,9 @@ rust TDD (test driven development)的一般流程是:
           let contents = "Rust:\nSafe duct\nniubi duct";
           assert_eq!(vec!["Safe duct", "niubi duct"], search(query, contents))
       }
+    	
+    	#[test]
+    // 新的测试
   }
   ```
 
@@ -1141,6 +1145,34 @@ rust TDD (test driven development)的一般流程是:
 ### 常见的trait
 
 
+
+#### From
+
+From trait定义了一种类型如何转换成另一种类型:
+
+```rust
+use std::convert::From;
+
+#[derive(Debug)]
+struct Number {
+    value: i32,
+}
+
+impl From<i32> for Number {
+    fn from(item: i32) -> Self {
+        Number { value: item }
+    }
+}
+
+fn main() {
+  // 用from方法转换
+    let num = Number::from(30);
+    println!("My number is {:?}", num);
+}
+
+```
+
+* 有时候`from`也会当做构造方法.
 
 #### Deref
 
@@ -1395,3 +1427,34 @@ Arc\<T\>可以在多线程环境下, 实现多个线程拥有同一个数据的�
   
   println!("{}", a.borrow()); //13
   ```
+
+
+
+### 宏
+
+在Rust中, 宏可以分为两类:
+
+* 声明宏.
+* 过程宏.
+
+
+
+#### derive
+
+* derive一般用在结构体/枚举中, 用来给结构体/枚举快速实现某些trait.
+
+  * 语法:
+
+    ```rust
+    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+    struct MyStruct {
+    
+    }
+    ```
+
+  * 常见的trait:
+
+    * `Debug`: 可以使用`println!("{:?}", my_struct)`打印结构体.
+    * `Clone`: 可以使用`my_struct.clone()`.
+    * `PartialEq`: 结构体具有部分相等性.
+    * `Eq`: 结构体具有完全相等性.
