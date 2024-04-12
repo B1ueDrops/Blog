@@ -137,8 +137,10 @@ fn main() {
 * Mutex可以实现多线程的内部可变性, 相当于`RefCell`的多线程版本, mutex无需声明为`mut`.
 * 由于多个线程要共享`Mutex`的所有权, 因此一般和`Arc<T>`一起使用.
 * `Mutex<T>`变量如果调用`lock().unwrap()`, 会返回一个`MutexGuard<T>`智能指针
+  * 为什么`lock()`还会有`unwrap()`: 因为持有锁的线程可能会`panic`, 这时候其他线程获取锁就会发生`Error`.
   * `MutexGuard`实现了`Deref` trait, 直接`*`一个`MutexGuard<T>`变量可以拿到其中可变的值, 这个值需要定义为`mut`.
   * `MutexGuard`还实现了`Drop` trait, 作用域结束会自动释放锁, 如果需要手动释放可以`drop(&MutexGuard)`.
+  
 * 如果获取`Mutex`失败, 那么线程会被**阻塞**, 可以使用`try_lock()`, 这样线程获取锁失败后, 会返回错误, 然后继续执行.
 
 ```rust
@@ -148,6 +150,7 @@ use std::sync::{ Arc, Mutex };
 fn main() {
 
     // 多线程共享数据
+  	// Mutex::new会导致所有权转移
     let counter = Arc::new(Mutex::new(0));
     let mut handles = Vec::new();
 
@@ -227,7 +230,12 @@ fn main() {
 
 
 
+## Send和Sync
 
+* Send和Sync是与多线程共享有关的两个trait.
+  * 实现Sync的类型, 可以通过引用在线程间安全共享.
+  * 实现Send的类型, 可以在线程间安全传递所有权.
+* 例如, `Mutex<T>`中的`T`不能通过引用在线程间共享 (Mutex保证线程读写都是互斥), 那么就肯定没有实现`Sync`.
 
 ## LeetCode多线程题
 

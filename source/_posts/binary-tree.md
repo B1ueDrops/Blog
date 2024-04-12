@@ -57,6 +57,21 @@ public:
 };
 ```
 
+简单的递归应用 (二叉搜索树的范围和): https://leetcode.cn/problems/range-sum-of-bst/
+
+```cpp
+class Solution {
+public:
+    int rangeSumBST(TreeNode* root, int low, int high) {
+        if (!root) return 0;
+        int sum = rangeSumBST(root->left, low, high);
+        sum += rangeSumBST(root->right, low, high);
+        if (root->val >= low && root->val <= high) sum += root->val;
+        return sum;
+    }
+};
+```
+
 
 
 ### 迭代写法
@@ -970,6 +985,21 @@ public:
 };
 ```
 
+同类题(翻转等价二叉树): https://leetcode.cn/problems/flip-equivalent-binary-trees/
+
+* 这个题的时间复杂度是$O(n)$, 原因在于每个点都是不一样的, 也就是说等价的方式只有一种.
+
+```cpp 
+class Solution {
+public:
+    bool flipEquiv(TreeNode* root1, TreeNode* root2) {
+        if (!root1 || !root2) return !root1 && !root2;
+        if (root1->val != root2->val) return false;
+        return (flipEquiv(root1->left, root2->left) && flipEquiv(root1->right, root2->right)) || (flipEquiv(root1->left, root2->right) && flipEquiv(root1->right, root2->left));
+    }
+};
+```
+
 
 
 ## 合并二叉树
@@ -1355,8 +1385,6 @@ public:
 
 
 
-
-
 ## 有序数组变二叉搜索树
 
 > https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/
@@ -1388,8 +1416,6 @@ public:
 > 证明: 用该算法得到的二叉搜索树的所有高度(不是最大高度)之差的最大值不超过1
 
 * 左半部分的节点每次最多比右半部分少1, 如果高度差最大值是2, 那么必然左边会比右边多一层, 这根本不可能, 多1个节点贡献的高度差肯定吵不过1.
-
-
 
 
 
@@ -2647,6 +2673,81 @@ public:
                     ans.push_back(new TreeNode(0, l, r));
         }
         return ans;
+    }
+};
+```
+
+
+
+## 完全二叉树插入器
+
+这个题考查的是完全二叉树的堆存储方式.
+
+```cpp
+class CBTInserter {
+public:
+    TreeNode* R;
+    // 堆的存储方式
+    vector<TreeNode *> h;
+    CBTInserter(TreeNode* root) {
+      // 完全二叉树堆存储, 下标从1开始
+        h.resize(1);
+        R = root;
+        // 宽搜, 放到堆里
+        queue<TreeNode *> q;
+        q.push(root);
+        while (q.size()) {
+            auto t = q.front();
+            q.pop();
+            h.push_back(t);
+            if (t->left) q.push(t->left);
+            if (t->right) q.push(t->right);
+        }
+    }
+    
+    int insert(int val) {
+        auto t = new TreeNode(val);
+        h.push_back(t);
+        int k = h.size() - 1;
+        int p = k / 2;
+        if (p * 2 == k) h[p]->left = t;
+        else h[p]->right = t;
+        return h[p]->val;
+    }
+    
+    TreeNode* get_root() {
+        return R;
+    }
+};
+```
+
+
+
+## 判断是否是完全二叉树
+
+> https://leetcode.cn/problems/check-completeness-of-a-binary-tree/
+
+同样考察完全二叉树的堆式存储.
+
+```cpp
+class Solution {
+public:
+    // n用来记录遍历了多少点, p用来记录下标的最大值
+    int n = 0, p = 0;
+
+    bool dfs(TreeNode *root, int k) {
+        if (!root) return true;
+        // 节点数目最多100, 如果超过了就直接返回false, 避免x2溢出
+        if (k > 100) return false;
+        n ++;
+        p = max(p, k);
+        return dfs(root->left, k * 2) && dfs(root->right, k * 2 + 1);
+    }
+
+    bool isCompleteTree(TreeNode* root) {
+        if (!dfs(root, 1)) return false;
+        // 如果遍历的点正好等于p, 那么就是完全二叉树
+        return n == p;
     }
 };
 ```

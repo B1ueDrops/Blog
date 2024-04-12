@@ -9,5 +9,9 @@ categories: 编程语言
 
 
 
-## Python音频处理
+## Python GUI
+
+> 这里的GUI选用的是tkinker
+
+
 

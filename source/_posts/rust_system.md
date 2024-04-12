@@ -72,22 +72,13 @@ mathjax: true
   // to_owned方法可以给引用调, 用来拷贝引用指向的对象, 并且返回值是拷贝后的对象, 而不是引用
   for item in &a {
       println!("{}", item.to_owned());
-    	b.push(iten.to_owned());
+    	b.push(item.to_owned());
   }
   ```
   
   
 
 ## 变量
-
-
-
-### 栈/堆
-
-* 基本类型的值存储在线程的栈上, 因为基本类型大小固定, 并且栈的存储/访问速度一般快.
-  * 基本类型有: 整数, 浮点, 字符, 以及仅包含它们的元组.
-
-* 非基本类型存储在堆上, 因为非基本类型大小有可能在编译时期不固定, 在栈中会存储数据在堆中地址.
 
 
 
@@ -824,7 +815,7 @@ use A::funcA;
     * 一个闭包可以同时实现多个特征.
     * 所有闭包默认实现`FnOnce`, 保证一个闭包至少可以被调用一次.
     * 如果闭包内没有对捕获变量进行改变, 那么实现了`Fn`特征.
-    * 如果闭包没有把捕获变量的所有权返回, 那么实现了`FnMut`特征.
+    * 如果闭包把捕获变量的所有权改变了, 那么实现了`FnMut`特征.
 
 * **`move`关键字:** 定义在参数列表`||`之前, 表示闭包会强制把捕获变量的所有权拿走, 适用于**闭包生命周期大于捕获变量生命周期**.
 
@@ -1143,6 +1134,35 @@ rust TDD (test driven development)的一般流程是:
 ## 高级特性
 
 ### 常见的trait
+
+
+
+#### Clone
+
+Clone接口的定义是:
+
+```rust
+pub trait Clone: Sized {
+  fn clone(&self) -> Self;
+}
+```
+
+* 调用`clone`方法返回原对象的深拷贝.
+
+Clone trait可以和`derive`一起使用:
+
+```rust
+#[derive(Clone)]
+pub struct Student {
+  
+}
+```
+
+
+
+#### Copy
+
+文档: https://doc.rust-lang.org/std/marker/trait.Copy.html
 
 
 
