@@ -127,3 +127,101 @@ impl Solution {
 }
 ```
 
+
+
+## 移动零
+
+```rust
+impl Solution {
+    pub fn move_zeroes(nums: &mut Vec<i32>) {
+        let mut k = 0;
+        for i in 0..nums.len() {
+            if nums[i] != 0 {
+                nums[k] = nums[i];
+                k = k + 1;
+            }
+        }
+        while k < nums.len() {
+            nums[k] = 0;
+            k = k + 1;
+        }
+    }
+}
+```
+
+
+
+## 盛水最多的容器
+
+```rust
+use std::cmp::{ min, max };
+
+impl Solution {
+    pub fn max_area(height: Vec<i32>) -> i32 {
+
+        let mut res = 0;
+        let mut i = 0 as usize;
+        let mut j = height.len() - 1;
+
+        while i < j {
+            res = max(res, min(height[i], height[j]) * (j - i) as i32);
+            if height[i] < height[j] {
+                i = i + 1;
+            }
+            else {
+                j = j - 1;
+            }
+        }
+        res
+    }
+}
+```
+
+
+
+## 三数之和
+
+```rust
+impl Solution {
+    pub fn three_sum(nums: Vec<i32>) -> Vec<Vec<i32>> {
+
+        let n = nums.len();
+        let mut res: Vec<Vec<i32>> = vec![];
+        let mut nums = nums;
+        nums.sort();
+
+        for i in 0..nums.len() {
+            if i != 0 && nums[i] == nums[i - 1] {
+                continue;
+            }
+            let mut j = i + 1;
+            let mut k = n - 1;
+
+            while j < k {
+                let t = nums[i] + nums[j] + nums[k];
+                if t > 0 {
+                    k = k - 1;
+                    continue;
+                }
+                else if t < 0 {
+                    j = j + 1;
+                    continue;
+                }
+                else {
+                    res.push(vec![nums[i], nums[j], nums[k]]);
+                }
+                j = j + 1;
+                k = k - 1;
+                while j < k && nums[j] == nums[j - 1] {
+                    j = j + 1;
+                }
+                while j < k && nums[k] == nums[k + 1] {
+                    k = k - 1;
+                }
+            }
+        }
+        res
+    }
+}
+```
+
