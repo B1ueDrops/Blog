@@ -9,7 +9,10 @@ categories: 编程语言
 
 ## 裸指针
 
+Rust中, 裸指针分为一下两种类型:
 
+* `*const T`: 不能通过裸指针修改原数据.
+* `*mut T`: 可以通过裸指针修改原数据.
 
 ## Pin/Unpin
 
@@ -93,6 +96,10 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 ## 命名规范
 
 https://rust-lang.github.io/api-guidelines/naming.html
+
+
+
+## Cargo
 
 
 
@@ -223,4 +230,15 @@ https://rust-lang.github.io/api-guidelines/naming.html
   * 因此, 如果`?`出现在一个函数中, 函数需要返回`Result<T, Box<dyn std::error::Error>>`.
 
   * 如果在`main`函数中使用`?`, 那么`main`函数签名要改成: `fn main() -> Result<(), Box<dyn Error>>`
+
+
+
+## tokio
+
+* 引入包:
+
+```toml
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+```
 
