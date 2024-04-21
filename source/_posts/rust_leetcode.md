@@ -1,5 +1,5 @@
 ---
-title: 用Rust实现Leetcode Hot100
+title: 用Rust实现Leetcode算法题
 categories: 编程语言
 ---
 
@@ -221,6 +221,40 @@ impl Solution {
             }
         }
         res
+    }
+}
+```
+
+
+
+## 两数相加
+
+```rust
+impl Solution {
+    pub fn add_two_numbers(l1: Option<Box<ListNode>>, l2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+
+        let mut head = Some(Box::new(ListNode::new(-1)));
+        let mut cur = &mut head;
+        let mut t = 0;
+        let mut cur1 = &l1;
+        let mut cur2 = &l2;
+
+        while cur1.is_some() || cur2.is_some() || t != 0 {
+            if cur1.is_some() {
+                t = t + cur1.as_ref().unwrap().val;
+                cur1 = &cur1.as_ref().unwrap().next;
+            }
+            if cur2.is_some() {
+                t = t + cur2.as_ref().unwrap().val;
+                cur2 = &cur2.as_ref().unwrap().next;
+            }
+            let next_node = ListNode::new(t % 10);
+            t = t / 10;
+            cur.as_mut().unwrap().next = Some(Box::new(next_node));
+            cur = &mut cur.as_mut().unwrap().next;
+        }
+
+        head.unwrap().next
     }
 }
 ```

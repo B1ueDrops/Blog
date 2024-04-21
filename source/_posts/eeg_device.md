@@ -1,6 +1,6 @@
 ---
-title: 脑电仪器的原理
-categories: 科研
+title: 脑电的原理
+categories: 脑机接口
 ---
 
 
@@ -22,6 +22,16 @@ categories: 科研
 
 
 
-## 干湿电极
+## 脑电干湿电极
 
 [你知道该如何选择脑电采集电极吗?](https://zhuanlan.zhihu.com/p/540101050)
+
+
+
+## EEG五种频段
+
+![五种脑电波的介绍](./eeg_device/image-20240420191030209.png)
+
+* EEG中, 运动想象对Alpha波和Beta波的影响最大, 当人在脑中想象肢体运动的时候, Alpha波和Beta波出现明显的振幅衰减.
+* 如果是运动想象(motor imagery), 一般想象左手, 右手或者脚的运动, 左手MI变化来自于C3, 右手来自于C4, 脚来自于Cz.
+
