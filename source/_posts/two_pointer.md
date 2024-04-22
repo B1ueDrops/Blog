@@ -101,3 +101,35 @@ public:
 
 
 
+
+
+## 最长回文子串
+
+> https://leetcode.cn/problems/longest-palindromic-substring/description/
+
+* 这个题的数据范围在1000, 可以用$O(n^2)$的算法.
+* 回文串分为两种类型, 一类是奇数长度的, 一类是偶数长度的.
+  * 假设现在遍历到了`i`位置字符, 那么奇数长度就要从`i - 1, i + 1`向外扩展.
+  * 偶数长度就要从`[i, i + 1]`向外扩展.
+
+```cpp
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        string res;
+
+        for (int i = 0; i < s.size(); i ++) {
+
+            int l = i - 1, r = i + 1;
+            while (l >= 0 && r < s.size() && s[l] == s[r]) l --, r ++;
+            if (r - l - 1 > res.size()) res = s.substr(l + 1, r - l - 1);
+            
+            l = i, r = i + 1;
+            while (l >= 0 && r < s.size() && s[l] == s[r]) l --, r ++;
+            if (r - l - 1 > res.size()) res = s.substr(l + 1, r - l - 1);
+        }
+        return res;
+    }
+};
+```
+

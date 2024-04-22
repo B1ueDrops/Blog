@@ -185,12 +185,18 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
-### 字符串
+## 字符串
 
 * 格式化字符串:
 
   ```rust
   let a = String::from(format!("haha {}", b));
+  ```
+
+* 从字符串中获取字符:
+
+  ```rust
+  a.chars().nth(index); // 返回Option, 自己处理
   ```
 
 
@@ -217,6 +223,13 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   ```
 
 * `a.len()`返回的类型是`usize`.
+
+* 用下标遍历:
+
+  ```rust
+  ```
+
+  
 
 ## HashMap
 
@@ -432,5 +445,4 @@ tokio = { version = "1", features = ["full"] }
     ```
 
 * 字符串转整数: `let target = source.trim().parse().expect("");`
-
 
