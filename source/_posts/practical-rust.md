@@ -12,7 +12,7 @@ mathjax: true
 
 > Rust的优势?
 
-* Rust的所有权机制能让这个语言不使用GC, 并且这种机制不会产生任何的运行时开销.
+* **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制), 并不会引入额外的运行时开销.
 
 ## 常量
 
@@ -33,6 +33,16 @@ mathjax: true
 * crate是Rust中最小的编译单元, 分为两种类型:
   * `binary crate`: 编译生成二进制文件.
   * `library crate`: 为其他程序提供服务.
+* crate是一颗由`mod`组成的树状结构:
+  * 树的根是一个叫做`crate`的模块, 在概念上, 叫做crate root, 它由定义在`src/main.rs`和`src/lib.rs`中的元素组成.
+  * 如果要在mod和mod之间建立父子关系, 需要在父模块中使用`mod XXX;`来声明模块.
+  * Rust中, 一个文件夹如果里面有`mod.rs`, 那么会被看成是和文件夹同名的mod, mod中的元素就是在`mod.rs`中的元素.
+  * Rust中, 一个文件默认也被看成一个和文件同名的mod.
+  
+* 如果要在某一个mod中引入其他mod中的元素, 可以使用`use`:
+  * 如果使用绝对路径, 需要从`crate::`开始引入.
+  * 如果使用相对路径, `super::`表示父亲mod.
+  
 
 
 
@@ -43,17 +53,38 @@ mathjax: true
   * Stack用来存储编译时已知大小的数据.
 
   * 访问Stack一般比访问Heap快, 因为Heap还需要定位指针, 而Stack一直维护栈顶, 访问内存次数较少.
-
 * **借用规则:**
 
   * 同一作用域内, 对于同一个数据, 只能存在一个可变引用.
   * 同一作用域内, 对于同一个数据, 可变引用和不可变引用不能同时存在.
-
-* **Race condition**发生的条件:
-
+  * **一个场景: **假设你有一个函数, 使用了变量`a`的不可变引用, 得到一个结果, 如果你后来改变了`a`, 那么得到的这个结果就可能会失效 (例如给定字符串计算长度, 你改了字符串, 这个长度结果肯定就不对), Rust不允许这种情况发生, 后面不能改(也就是不能使用不可变引用来修改).
+* **Race condition**发生的条件: Rust的借用规则可以从根本上避免出现race condition
   * 两个/多个指针同时访问一块内存数据.
   * 至少有一个指针尝试写入数据.
   * 没有机制来同步指针对内存数据的访问.
+
+
+
+## trait
+
+### 常见的trait
+
+* `PartialEq`:
+
+  * PartialEq采用了离散数学中对Equivalence Relation的定义.
+
+    * 如果一个关系是Equivalence Relation, 那么需要满足自反性(reflexivity, `a = a`), 对称性(symmetry, `a = b -> b = a`)以及传递性(transivity `a = b && b = c -> a = c`).
+
+    * 如果一个关系不满足自反性, 那么这个关系就是Partial Equivalence Relation, 例如浮点数中的`NaN`.
+
+      ```rust
+      let x = f64::NAN;
+      assert!(x != x);
+      ```
+
+      
+
+
 
 ## I/O操作
 
@@ -70,7 +101,7 @@ Rust中, 裸指针(raw pointer)分为一下两种类型:
 
 在Rust中, 一个变量的内存地址是可能会被移动的. 这种移动会引发一些问题, 考虑以下几个场景:
 
-* 场景1: **自引用结构体**
+* 场景1: **裸指针自引用结构体**
   * 考虑如下这个自引用结构体:
   
     ```rust
@@ -173,6 +204,10 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 ## crate
 
 * Rust中, 默认导入了`std::prelude`, 里面包含了常用的函数, 包括`println!`.
+* Rust的引入规范:
+  * 引入函数时, 引入到父级模块, 然后用`父级模块::函数名`调用, 用于区分是哪个作用域中的函数.
+  * 引入struct, enum这种时, 引入到自身, 因为引入到父级模块的话就太难写了.
+
 
 ## 数据类型
 
@@ -193,18 +228,97 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   let a = String::from(format!("haha {}", b));
   ```
 
-* 从字符串中获取字符:
+* 从`String`类型字符串中获取字符:
 
   ```rust
   a.chars().nth(index); // 返回Option, 自己处理
   ```
 
+* 如果一个函数用字符串当作参数, 类型尽量定义成`&str`, 让API更加通用.
 
+* 遍历字符串中的字符:
+
+  ```rust
+  // a可以是String或者&str
+  for ch in a.chars() {
+    
+  }
+  ```
+
+
+* 字符串逆序:
+
+  ```rust
+  let a = a.chars().rev().collect::<String>();
+  ```
+
+* 字符串转整数:
+
+  ```rust
+  let s1 = String::from("42");
+  let n1: u64 = s1.parse()?;
+  ```
+
+* 在使用`match`做字符串匹配时, 需要在匹配后面加上`_`的处理, 例如:
+
+  ```rust
+      let inst_struct = match inst.as_str() {
+          "0110111" => {
+              Inst {
+                  hex: inst,
+                  name: String::from("lui"),
+                  rd: 0_u8,
+                  rs1: 0_u8,
+                  rs2: 0_u8,
+              }
+          },
+        // 如果所有的都没匹配到
+          _ => {
+              panic!("Not implemented");
+          }
+      };
+  ```
+
+* 字符串转整数: `let target: 类型标注 = source.trim().parse().expect("");`
+
+
+
+## 函数
+
+* Rust函数也可以有多个返回值, 返回值用tuple包裹即可.
+
+## 结构体/枚举
+
+* 给结构体/枚举加上`Debug`宏:
+
+  ```rust
+  #[derive(Debug)]
+  ```
+
+  * 在调试时, 可以使用`{:?}`或者`{:#?}`进行输出, `{:#?}`的输出更优美一些.
+  
+* 给结构体实现`Default `trait, 可以在使用时获取一个默认值:
+
+  ```rust
+  impl Default for Student {
+    fn default() -> Self {
+      // 构造默认值
+    }
+  }
+  ```
+
+  * 可以使用`Student::default()`返回一个`Student`类型的默认值.
+
+* 如果一个结构体需要比较操作:
+
+  * 如果结构体成员都可以进行比较, 用`#[derive(Eq)]`
+  * 如果出现了不满足自反性的成员, 用`#[derive(PartialEq)]`.
+  * 比较结构体本质上是对每一个成员进行比较.
 
 
 ## Vector
 
-* 不可变方式遍历vector:
+* 不可变引用遍历:
 
   ```rust
   let a = vec![1, 2, 3];
@@ -214,21 +328,35 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   }
   ```
 
-* 带下标的遍历:
+* 不可变引用遍历 (带下标):
 
   ```rust
+  // item是&T类型
   for (i, item) in a.iter().enumerate() {
     
   }
   ```
 
-* `a.len()`返回的类型是`usize`.
+* 不使用引用遍历:
+
+  ```rust
+  for &item in a.iter() {
+    // item是T类型
+  }
+  ```
+
+* `a.len()`返回的类型是`usize`
 
 * 用下标遍历:
 
   ```rust
+  for i in 0..a.len() {
+    
+  }
   ```
-
+  
+  * 注意下标是`usize`类型, 如果要用下标做什么运算, 一定考虑**溢出**.
+  
   
 
 ## HashMap
@@ -264,16 +392,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 ## I/O操作
 
-* 从`stdin`读取字符串:
-
-  ```rust
-  use std::io;
-  let mut a = String::new();
-  // read_line会返回io::Result<Ok, Err>
-  io::stdin().read_line(&mut a).expect("");
-  ```
-
-  
+* 
 
 ## 可变, 引用, 所有权
 
@@ -347,6 +466,31 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
+
+## 单元测试
+
+* 快速单元测试的框架, 在你写的函数里面用:
+
+  ```rust
+  #[cfg(test)]
+  mod tests {
+    
+    use super::*;
+    
+    // 测试函数, 可以写多个
+    #[test]
+    fn test_XXX1() {
+      assert_eq!(...);
+    }
+    
+    #[test]
+    fn test_XXX2() {
+      assert_eq!(...);
+    }
+  }
+  ```
+
+  
 
 ## 多线程
 
@@ -444,5 +588,36 @@ tokio = { version = "1", features = ["full"] }
     let secret_number = rand::thread_rng().gen_range(a, b);
     ```
 
-* 字符串转整数: `let target = source.trim().parse().expect("");`
+* TCP Server:
+
+  ```rust
+  use std::io::{Read, Write};
+  use std::net::TcpListener;
+  
+  fn main() {
+  
+      // 监听
+      let listener = TcpListener::bind("127.0.0.1:3000").unwrap();
+  
+      for stream in listener.incoming() {
+          let mut stream = stream.unwrap();
+          let mut buffer = [0; 1024];
+          // 读取到buffer
+          stream.read(&mut buffer).unwrap();
+          // 给客户端返回buffer
+          stream.write(&mut buffer).unwrap();
+      }
+  }
+  ```
+
+  * 从标准输入读取`String`:
+
+    ```rust
+    use std::io;
+    
+    let mut a = String::new();
+    io::stdin().read_line(&mut a).expect("");
+    ```
+
+    
 
