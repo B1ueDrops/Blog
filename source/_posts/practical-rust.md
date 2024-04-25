@@ -296,7 +296,13 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   ```
 
   * 在调试时, 可以使用`{:?}`或者`{:#?}`进行输出, `{:#?}`的输出更优美一些.
-  
+
+
+
+## trait
+
+
+
 * 给结构体实现`Default `trait, 可以在使用时获取一个默认值:
 
   ```rust
@@ -314,6 +320,34 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   * 如果结构体成员都可以进行比较, 用`#[derive(Eq)]`
   * 如果出现了不满足自反性的成员, 用`#[derive(PartialEq)]`.
   * 比较结构体本质上是对每一个成员进行比较.
+  * 一般**枚举**应该都需要比较, 定义枚举时需要考虑.
+
+* 给结构体/枚举实现`From`  trait可以通过`into()`和类型标注转换为对应的结构体类型, 例如:
+
+  ```rust
+  #[derive(Debug, PartialEq)]
+  pub enum Method {
+      Get,
+      Post,
+      Uninitialized,
+  }
+  // &str到Method类型的转换
+  impl From<&str> for Method {
+      fn from(s: &str) -> Self {
+          match s {
+              "GET" => Method::Get,
+              "POST" => Method::Post,
+              _ => Method::Uninitialized,
+          }
+      }
+  }
+  
+  // 可以用如下方法进行类型转换
+  // "GET".into()
+  // Method::from("GET")
+  ```
+
+  
 
 
 ## Vector
@@ -392,7 +426,15 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 ## I/O操作
 
-* 
+* 从标准输入读取`String`:
+
+  ```rust
+  use std::io;
+  
+  let mut a = String::new();
+  io::stdin().read_line(&mut a).expect("");
+  ```
+
 
 ## 可变, 引用, 所有权
 
@@ -418,6 +460,12 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * 注意, 你在用`for .. in`遍历数组时, 会调用`into_iter()`, 这个方法会拿走原始变量的所有权, 因此需要考虑原始变量是否实现了`Copy trait`.
 
 * 如果你看到一个变量是`&mut`类型, 那么**你一定要记得, 这个类型没有实现`Copy trait`**, 需要注意所有权.
+
+
+
+## 宏
+
+* **好习惯**: 使用`assert!()对函数传入的参数进行检查.`
 
 ## Option
 
@@ -450,7 +498,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   }
   ```
   
-  * `if let`会拿走`Some(x)`中`x`的所有权, 叫做partially move.
+  * `if let`会拿走`Some(x)`中`x`的所有权, 叫做partially move, 同样, `match`也会拿走, 模式匹配时可以考虑解构`&Option`.
   
 * 注意, 使用`a.unwrap()`会拿走`a`的所有权(如果没有实现Copy trait), 可以考虑实现`clone()`.
 
@@ -610,14 +658,4 @@ tokio = { version = "1", features = ["full"] }
   }
   ```
 
-  * 从标准输入读取`String`:
-
-    ```rust
-    use std::io;
-    
-    let mut a = String::new();
-    io::stdin().read_line(&mut a).expect("");
-    ```
-
-    
 
