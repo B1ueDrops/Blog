@@ -14,14 +14,14 @@ mathjax: true
 
 * **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制), 并不会引入额外的运行时开销.
 
-## 常量
+## Constant
 
 * 常量和**不可变的变量**有很大的不同.
 
   * 常量需要使用`const`关键字, 并且**必须标注类型**.
 
     ```rust
-    const MAX_NUM: i32 = 1000_i32;
+    <pub> const MAX_NUM: i32 = 1000_i32;
     ```
 
   * 常量可以定义在任意作用域, 包括全局作用域.
@@ -35,7 +35,7 @@ mathjax: true
   * `library crate`: 为其他程序提供服务.
 * crate是一颗由`mod`组成的树状结构:
   * 树的根是一个叫做`crate`的模块, 在概念上, 叫做crate root, 它由定义在`src/main.rs`和`src/lib.rs`中的元素组成.
-  * 如果要在mod和mod之间建立父子关系, 需要在父模块中使用`mod XXX;`来声明模块.
+  * 如果要在mod和mod之间建立父子关系, 需要在父模块中使用`mod XXX;`来声明子模块.
   * Rust中, 一个文件夹如果里面有`mod.rs`, 那么会被看成是和文件夹同名的mod, mod中的元素就是在`mod.rs`中的元素.
   * Rust中, 一个文件默认也被看成一个和文件同名的mod.
   
@@ -67,26 +67,65 @@ mathjax: true
 
 ## trait
 
-### 常见的trait
+### PartialEq
 
-* `PartialEq`:
+* PartialEq采用了离散数学中对Equivalence Relation的定义.
 
-  * PartialEq采用了离散数学中对Equivalence Relation的定义.
+  * 如果一个关系是Equivalence Relation, 那么需要满足自反性(reflexivity, `a = a`), 对称性(symmetry, `a = b -> b = a`)以及传递性(transivity `a = b && b = c -> a = c`).
 
-    * 如果一个关系是Equivalence Relation, 那么需要满足自反性(reflexivity, `a = a`), 对称性(symmetry, `a = b -> b = a`)以及传递性(transivity `a = b && b = c -> a = c`).
+  * 如果一个关系不满足自反性, 那么这个关系就是Partial Equivalence Relation, 例如浮点数中的`NaN`.
 
-    * 如果一个关系不满足自反性, 那么这个关系就是Partial Equivalence Relation, 例如浮点数中的`NaN`.
-
-      ```rust
-      let x = f64::NAN;
-      assert!(x != x);
-      ```
-
-      
+    ```rust
+    let x = f64::NAN;
+    assert!(x != x);
+    ```
 
 
 
-## I/O操作
+### Iterator & IntoIterator
+
+* 一个类型, 如果实现了`Iterator` trait, 那么它就是一个迭代器类型.
+
+* `Iterator` trait的内容如下:
+
+  ```rust
+  pub trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+  }
+  ```
+
+* 一个集合如果实现了`IntoIterator` trait, 那么它就能够通过`into_iter(), iter(), iter_mut()`方法变成迭代器:
+
+  * `into_iter()`会拿走集合变量的所有权, 调用`next()`返回的类型是`Some(T)`.
+  * `iter()`使用集合的不可变引用, 调用`next()`返回`Some(&T)`.
+  * `iter_mut()`使用集合的可变引用, 调用`next()`返回`Some(&mut T)`, 可以通过它修改集合中的元素.
+
+* **注意: **`next()`方法会改变迭代器的状态, 如果一个迭代器变量需要用到`next()`方法, 就需要`mut`.
+
+  ```rust
+  let a = vec![1, 2, 3];
+  let b = a.iter();
+  // 代码会报错, 需要将b定义成mut
+  b.next().unwrap();
+  ```
+
+
+
+
+#### Iterator Adapter
+
+* 迭代器适配器(Iterator Adapter)
+
+
+
+#### Consuming Adapter
+
+
+
+
+
+
 
 
 
@@ -186,7 +225,8 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 ## 命名规范
 
-* https://rust-lang.github.io/api-guidelines/naming.html
+* 各种元素的命名方式: https://rust-lang.github.io/api-guidelines/naming.html
+
 * 数字字面值之间加入`_`可以增加可读性.
 * 如果出现了多个`else if`, 考虑用`match`重构.
 
@@ -195,7 +235,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 ## Cargo
 
 * 默认的`cargo build`是用**debug级别**进行编译, 可以用`cargo build --release`进行release级别的编译.
-  * 如果要跑benchmark, 一定要用`release`级别.
+  * 如果要跑benchmark, 一定要用`release`级别, 因为debug级别会增加很多影响性能的东西.
 * 更新依赖: `cargo update`.
 * cargo下载的包在`CARGO_HOME`下.
   * 默认下载到`~/.cargo`.
@@ -410,18 +450,19 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * 根据键获取值:
 
   ```rust
-  // 传入引用, 返回Option<T>
+  // 传入&T, 返回Option<U>
   hashmap.get(&key);
   ```
 
 * 根据原有的值更新值:
 
   ```rust
+  // value是&mut T类型
   let value = hashmap.entry(key).or_insert(0);
   // 更新
   *value += 1;
   ```
-
+  
   
 
 ## I/O操作
@@ -550,7 +591,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
   * 然后, 如果一个函数/方法中, 要接收`Arc<Mutex<T>>`类型的变量, 可以直接转移所有权, 不用写成引用.
 
-  * 接收时:
+* 获取Mutex时, 把Mutex包裹的变量定义成`mut` (一般包裹的变量都需要修改).
 
     ```rust
     // 定义成mut, 然后后面进行修改
@@ -657,5 +698,4 @@ tokio = { version = "1", features = ["full"] }
       }
   }
   ```
-
 

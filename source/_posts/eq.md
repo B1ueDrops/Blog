@@ -1,6 +1,6 @@
 ---
-title: 情商
-categories: 其他
+title: 培养高情商的一些策略
+categories: 社会技能
 ---
 
 ## 提高情商注意什么?
