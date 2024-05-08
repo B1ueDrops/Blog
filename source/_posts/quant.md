@@ -25,6 +25,15 @@ mathjax: true
 
 
 
+
+
+## 股票的相关术语
+
+* 开盘价: 指每天成交中最先的一笔股票成交的价格.
+* 收盘价: 每天成交中最后一笔股票成交的价格.
+* 最高价/最低价: 当天的成交价格中最高/最低的价格.
+* 日交易额: 这一天中股票交易的总金额.
+
 ## 基金的相关主体
 
 * **基金管理公司 (Fund Management Co.): **负责管理基金, 帮助投资者投资获取收益.
@@ -96,14 +105,14 @@ mathjax: true
 
 #### 金融风险测度
 
-假设$R$代表有关portfolio的一系列事件, $\sigma(R)$表示衡量$R$风险大小的指标, 那么一个好的风险衡量函数应该满足如下几个性质:
+假设$P$代表有关portfolio的价格分布的某个组成部分, $\sigma(P)$表示衡量$P$风险大小的指标, 那么一个好的风险衡量函数应该满足如下几个性质:
 
-* **单调性(Monotonicity): **$R_1 \geqslant R_2 \rightarrow \sigma(R_1) \leqslant \sigma(R_2)$.
+* **单调性(Monotonicity): **$P_1 \geqslant P_2 \rightarrow \sigma(P_1) \leqslant \sigma(P_2)$.
   * 如果一个portfolio有很好的前景, 那么风险自然就小.
-* **一次齐次性(Positive Homogeneity): ** $\forall \beta > 0, \sigma(\beta R) = \beta \sigma(R)$.
+* **一次齐次性(Positive Homogeneity): ** $\forall \beta > 0, \sigma(\beta P) = \beta \sigma(P)$.
   * 风险的size应该和portfolio的size成正比.
-* **次可加性(Subadditivity): **$\sigma(R_1 + R_2) \leqslant \sigma(R_1) + \sigma(R_2)$.
-* **平移不变性(Translation invariance): **$\sigma(R + c) = \sigma(R) - c$
+* **次可加性(Subadditivity): **$\sigma(P_1 + P_2) \leqslant \sigma(P_1) + \sigma(P_2)$.
+* **平移不变性(Translation invariance): **$\sigma(P + c) = \sigma(P) - c$
   * 你能用$c$成本的钱抵消风险.
 
 如果一个函数$\sigma$能保证以上的性质, 那么这个指标$\sigma$就是Coherent risk measure.
@@ -120,11 +129,25 @@ mathjax: true
 Down-side risk有如下几种:
 
 * **最大回撤(Max drawdown)**: 
-  * $\sigma = max(P_t - min(P_i, i \geqslant t))$​
+  * $\sigma = max(P_t - min(P_i, i \geqslant t))$​​
+  * Max drawdown并不是Coherent risk measure, 不满足Translation invariance.
 * **VaR (Value at Risk)**
-  * 假设portfolio的价格是随机变量$P$, 这个$P$服从某个分布, 那么我给定某个置信水平$\alpha$, 给定某段时间$T$, VaR就是在这个时间内, 有$\alpha$的可能, 亏损不会超过VaR.
+  * 假设portfolio的价格是随机变量$P$, 这个$P$服从某个分布, 那么我给定某个置信水平$\alpha$, 给定某段时间$T$, $VaR(\alpha)$数值上就是在这个时间段$T$内, 有$\alpha$的可能, 亏损的下界值.
+  * $VaR(\alpha)$和$P$分布的$\alpha$分位数很类似.
+  * $VaR(\alpha)$也不是Coherent risk measure, 不满足Subadditivity.
 
 Two-side volatility有如下几种:
 
 * **标准差**:
-  * $\sigma = \sqrt{\frac{1}{n}\sum_{t=1}^n(x_t - \bar{x})^2}$
+  * $\sigma = \sqrt{\frac{1}{n}\sum_{t=1}^n(x_t - \bar{x})^2}$​
+  * 标准差是Coherent risk measure.
+
+
+
+### 夏普比率
+
+* 夏普比率(Sharpe Ratio)衡量的是: portfolio单位风险的收益是多少.
+* 公式: $Sharpe\_ratio = \frac{R_p - R_f}{\sigma_{R_p}}$
+  * $R_p$表示portfolio的年化收益率.
+  * $R_f$表示portfolio的无风险收益率, 一般用的是风险相对低的国债利率
+  * $\sigma_{R_p}$表示portfolio年化收益率的标准差, 用来衡量风险.

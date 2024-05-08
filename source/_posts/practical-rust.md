@@ -660,10 +660,18 @@ tokio = { version = "1", features = ["full"] }
 * **异步锁: `tokio::sync::Mutex`**:
   * 如果在`.await`之间获取了`std::sync::Mutex`, 那么调用`.await`后, 任务会被阻塞, 但是锁没有被释放, 这时候如果另一个任务尝试获取锁, 就会产生死锁.
   * 使用tokio的异步锁可以在`.await`作用域内获取锁, 但是会有性能开销.
-* **`tokio::sync::mpsc`和`std::sync::mspc`的区别:**
-  * 标准库中, 如果队列满了, 生产者线程会被阻塞, 但是`tokio`不会.
-
-
+* **tokio实现异步客户端的思路: **
+  * 首先, `spawn`一个manager异步任务, 这个任务负责管理所有客户端, 相当于客户端的proxy.
+  * 然后, 在众多客户端和manager之间建立一个`tokio::sync::mpsc`.
+    * 众多`tx`由众多客户端拿到, 客户端用`tx`给manager发送打包好的命令.
+    * `rx`由manager拿到, 负责接收客户端发送来的命令.
+  
+  * 然后, 在客户端内部, 建立一个`tokio::sync::oneshot` (单生产者, 单消费者, 一次发送一个任务)
+    * `oneshot_tx`会被客户端打包到命令中, 发送给manager, manager收到之后会通过`oneshot_tx`把服务器发送来的东西返回给客户端.
+    * `oneshot_rx`给客户端用来接收manager返回过来的命令.
+  
+  * manager通过connection资源与服务器交互.
+  
 
 ## Snippets
 
@@ -671,11 +679,11 @@ tokio = { version = "1", features = ["full"] }
 
   * 使用`rand crate`.
 
-  * ```rust
-    use rand::Rng;
+  ```rust
+  use rand::Rng;
     
-    let secret_number = rand::thread_rng().gen_range(a, b);
-    ```
+  let secret_number = rand::thread_rng().gen_range(a, b);
+  ```
 
 * TCP Server:
 
@@ -698,4 +706,27 @@ tokio = { version = "1", features = ["full"] }
       }
   }
   ```
-
+  
+  * TCP Client:
+  
+    ```rust
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::str;
+    
+    fn main() {
+    
+      let mut stream = TcpListener::connect("127.0.0.1:3000").unwrap();
+      // 发送消息
+      stream.write("Hello".as_bytes()).unwrap();
+      
+    	// 接收消息
+      let mut buffer = [0; 5];
+      stream.read(&mut buffer).unwrap();
+      
+      println!("Response from server:{:?}", str::from_utf8(&buffer).unwrap());
+      
+    }
+    ```
+    
+    
