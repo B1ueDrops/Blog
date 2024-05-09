@@ -65,6 +65,13 @@ mathjax: true
 
 
 
+## I/O
+
+* I/O的一些函数主要在`std::io`中.
+* 其中, 最重要的两个traits是`Read`和`Write`:
+  * 实现了`Read` traits的叫`reader`, 可以通过`read`方法将数据读到buffer中, 返回成功读取的字节数.
+  * 实现了`Write` traits的叫`writer`, 可以通过`write`方法将buffer中的内容写入到`writer`中, 返回成功写入的字节数.
+
 ## trait
 
 ### PartialEq
@@ -213,10 +220,6 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
-## Tokio
-
-### Tokio I/O
-
 
 
 # 实战
@@ -240,6 +243,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * cargo下载的包在`CARGO_HOME`下.
   * 默认下载到`~/.cargo`.
 * ✨检查代码编译是否正确用`cargo check`, 比`cargo build`快很多.
+* cargo添加完dependency后, 下载包用: `cargo build`
 
 ## crate
 
@@ -247,6 +251,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * Rust的引入规范:
   * 引入函数时, 引入到父级模块, 然后用`父级模块::函数名`调用, 用于区分是哪个作用域中的函数.
   * 引入struct, enum这种时, 引入到自身, 因为引入到父级模块的话就太难写了.
+* 如果有多个可执行文件, 可以放到`src/bin`中, 运行某个可执行文件就用: `cargo run --bin <可执行文件名字>`
 
 
 ## 数据类型
@@ -260,7 +265,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
-## 字符串
+## 字符串/切片
 
 * 格式化字符串:
 
@@ -320,6 +325,29 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   ```
 
 * 字符串转整数: `let target: 类型标注 = source.trim().parse().expect("");`
+
+* **字符串切片:** `&str`
+
+
+  * 切片用来创造数组/字符串某一部分的**不可变引用**.
+
+  * 创建方法是: `&s[startIndex..endIndex]`, 选取的区间是`[startIndex, endIndex - 1]`.
+
+
+    * 从0开始: `&s[ ..endIndex]`
+    * 直到结尾: `&s[0 ..]`
+    * 选取全部: `&s[ .. ]`
+
+  * **注意: **字符串底层是`u8`数组, 切片索引需要保证在每一个字符的边界位置, 例如如下代码会报错:
+
+    ```rust
+    let s = "中国人";
+    // 中文在UTF-8中占3个字节, [0..2]正好在'中'的里面
+    let a = &s[0..2];
+    ```
+
+    
+
 
 
 
@@ -465,7 +493,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   
   
 
-## I/O操作
+## I/O
 
 * 从标准输入读取`String`:
 
@@ -476,6 +504,79 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
   io::stdin().read_line(&mut a).expect("");
   ```
 
+* Rust中, 默认的`./`是在你cargo项目的根路径.
+
+* `b"hello"`是`&[u8]`类型.
+
+* 使用I/O操作时, 一般会发生Error, 返回值一般是: `io::Result<T>`.
+
+  * 这个是在`std::io`里定义的一个type alias, 全称还是`Result<T, Error>`.
+
+* 读取一个文件的每一行:
+
+  ```rust
+  use std::fs::File;
+  use std::io::BufReader;
+  use std::io::{self, BufRead, Read, Write};
+  
+  fn main() -> io::Result<()> {
+  
+      let f = File::open("./foo.txt")?;
+      let mut reader = BufReader::new(f);
+  
+      for line in reader.lines() {
+          println!("{}", line.unwrap());
+      }
+  
+      Ok(())
+  }
+  ```
+
+* TCP Server:
+
+  ```rust
+  use std::io::{Read, Write};
+  use std::net::TcpListener;
+  
+  fn main() {
+  
+      // 监听
+      let listener = TcpListener::bind("127.0.0.1:3000").unwrap();
+  
+      for stream in listener.incoming() {
+          let mut stream = stream.unwrap();
+          let mut buffer = [0; 1024];
+          // 读取到buffer
+          stream.read(&mut buffer).unwrap();
+          // 给客户端返回buffer
+          stream.write(&mut buffer).unwrap();
+      }
+  }
+  ```
+
+  * TCP Client:
+
+    ```rust
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::str;
+    
+    fn main() {
+    
+      let mut stream = TcpListener::connect("127.0.0.1:3000").unwrap();
+      // 发送消息
+      stream.write("Hello".as_bytes()).unwrap();
+      
+    	// 接收消息
+      let mut buffer = [0; 5];
+      stream.read(&mut buffer).unwrap();
+      
+      println!("Response from server:{:?}", str::from_utf8(&buffer).unwrap());
+      
+    }
+    ```
+
+    
 
 ## 可变, 引用, 所有权
 
@@ -607,7 +708,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 ## 异常处理
 
-### 基本方法
+
 
 * 最快方法: `unwrap()`, 失败后`panic`.
 
@@ -637,9 +738,12 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
     };
     ```
 
-  * 因此, 如果`?`出现在一个函数中, 函数需要返回`Result<T, Box<dyn std::error::Error>>`.
+  * 因此, 如果`?`出现在一个函数中, 函数的返回值类型是`Result<T, Box<dyn std::error::Error>>`.
 
-  * 如果在`main`函数中使用`?`, 那么`main`函数签名要改成: `fn main() -> Result<(), Box<dyn Error>>`
+  * 如果在`main`函数中使用`?`, 那么`main`函数签名要改成: `fn main() -> Result<(), Box<dyn std::error::Error>>`
+  
+    * `main`函数最后应该返回`Ok(())`
+  
 
 
 
@@ -673,9 +777,9 @@ tokio = { version = "1", features = ["full"] }
   * manager通过connection资源与服务器交互.
   
 
-## Snippets
+## Snippets/Library
 
-* 生成`[a, b)`的随机数:
+* 生成`[a, b)`的随机整数:
 
   * 使用`rand crate`.
 
@@ -684,49 +788,3 @@ tokio = { version = "1", features = ["full"] }
     
   let secret_number = rand::thread_rng().gen_range(a, b);
   ```
-
-* TCP Server:
-
-  ```rust
-  use std::io::{Read, Write};
-  use std::net::TcpListener;
-  
-  fn main() {
-  
-      // 监听
-      let listener = TcpListener::bind("127.0.0.1:3000").unwrap();
-  
-      for stream in listener.incoming() {
-          let mut stream = stream.unwrap();
-          let mut buffer = [0; 1024];
-          // 读取到buffer
-          stream.read(&mut buffer).unwrap();
-          // 给客户端返回buffer
-          stream.write(&mut buffer).unwrap();
-      }
-  }
-  ```
-  
-  * TCP Client:
-  
-    ```rust
-    use std::io::{Read, Write};
-    use std::net::TcpStream;
-    use std::str;
-    
-    fn main() {
-    
-      let mut stream = TcpListener::connect("127.0.0.1:3000").unwrap();
-      // 发送消息
-      stream.write("Hello".as_bytes()).unwrap();
-      
-    	// 接收消息
-      let mut buffer = [0; 5];
-      stream.read(&mut buffer).unwrap();
-      
-      println!("Response from server:{:?}", str::from_utf8(&buffer).unwrap());
-      
-    }
-    ```
-    
-    

@@ -2752,3 +2752,32 @@ public:
 };
 ```
 
+
+
+## 二叉树的堂兄弟节点
+
+> https://leetcode.cn/problems/cousins-in-binary-tree/
+
+在搜索的时候记录一下父亲节点和深度信息即可.
+
+```cpp
+class Solution {
+public:
+    vector<int> dfs(TreeNode *root, int x, int fa, int depth) {
+        if (!root) return { 0, 0 };
+        if (root->val == x) return { fa, depth };
+
+        auto l = dfs(root->left, x, root->val, depth + 1);
+        auto r = dfs(root->right, x, root->val, depth + 1);
+				// 这里, l和r只会有一边有值, 另一边会返回{0, 0}, trick
+        return { l[0] + r[0], l[1] + r[1] };
+    }
+    bool isCousins(TreeNode* root, int x, int y) {
+        auto a = dfs(root, x, -1, 0);
+        auto b = dfs(root, y, -1, 0);
+
+        return a[0] != b[0] && a[1] == b[1];
+    }
+};
+```
+
