@@ -67,9 +67,9 @@ mathjax: true
 
 ## I/O
 
-* I/O的一些函数主要在`std::io`中.
-* 其中, 最重要的两个traits是`Read`和`Write`:
-  * 实现了`Read` traits的叫`reader`, 可以通过`read`方法将数据读到buffer中, 返回成功读取的字节数.
+* I/O的元素主要在`std::io`中.
+* 其中, 最重要的两个traits是`Read`和`Write`, 分别在`std::io::{Read, Write}`中.
+  * 实现了`Read` traits的叫`reader`, 可以调用`read`方法将数据读到buffer中, 返回成功读取的字节数.
   * 实现了`Write` traits的叫`writer`, 可以通过`write`方法将buffer中的内容写入到`writer`中, 返回成功写入的字节数.
 
 ## trait
@@ -130,7 +130,12 @@ mathjax: true
 
 
 
+## tokio
 
+### tokio I/O
+
+* tokio I/O的包主要在: `tokio::io`中, 和`std::io`的用法基本一致, 区别在于tokio中的I/O操作是异步的.
+* 其中, 最重要的两个traits是`AsyncReadExt`和`AsyncWriteExt`, 实现了这两个trait可以使用异步的`read`和`write`.
 
 
 
@@ -510,7 +515,7 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 * 使用I/O操作时, 一般会发生Error, 返回值一般是: `io::Result<T>`.
 
-  * 这个是在`std::io`里定义的一个type alias, 全称还是`Result<T, Error>`.
+  * 这个是在`std::io`里定义的一个别名, 全称还是`Result<T, Error>`.
 
 * 读取一个文件的每一行:
 
@@ -756,6 +761,10 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 tokio = { version = "1", features = ["full"] }
 ```
 
+
+
+### 异步锁
+
 * 默认情况下, `tokio`的任务调度器是**多线程**, 这样, 你就需要考虑一个问题:
   * 使用`.await`时, 任务可能会被阻塞, tokio可能会把任务调度到另一个线程中执行.
   * 这样, 与`.await`在同一个作用域的所有变量, 都会被封装成一个状态, 在线程间传递, 如果在线程间传递, 那么这些变量就需要实现`Send` trait.
@@ -764,17 +773,79 @@ tokio = { version = "1", features = ["full"] }
 * **异步锁: `tokio::sync::Mutex`**:
   * 如果在`.await`之间获取了`std::sync::Mutex`, 那么调用`.await`后, 任务会被阻塞, 但是锁没有被释放, 这时候如果另一个任务尝试获取锁, 就会产生死锁.
   * 使用tokio的异步锁可以在`.await`作用域内获取锁, 但是会有性能开销.
+
+
+
+### 异步客户端
+
 * **tokio实现异步客户端的思路: **
   * 首先, `spawn`一个manager异步任务, 这个任务负责管理所有客户端, 相当于客户端的proxy.
   * 然后, 在众多客户端和manager之间建立一个`tokio::sync::mpsc`.
     * 众多`tx`由众多客户端拿到, 客户端用`tx`给manager发送打包好的命令.
     * `rx`由manager拿到, 负责接收客户端发送来的命令.
-  
+
   * 然后, 在客户端内部, 建立一个`tokio::sync::oneshot` (单生产者, 单消费者, 一次发送一个任务)
     * `oneshot_tx`会被客户端打包到命令中, 发送给manager, manager收到之后会通过`oneshot_tx`把服务器发送来的东西返回给客户端.
     * `oneshot_rx`给客户端用来接收manager返回过来的命令.
-  
+
   * manager通过connection资源与服务器交互.
+
+
+
+
+### tokio I/O
+
+* 异步echo服务端:
+
+  ```rust
+  use tokio::io;
+  use tokio::net::TcpListener;
+  
+  #[tokio::main]
+  async fn main() -> io::Result<()> {
+  
+      let listener = TcpListener::bind("127.0.0.1:6142").await?;
+  
+      loop {
+          let (mut socket, _) = listener.accept().await?;
+          tokio::spawn(async move {
+              let (mut rd, mut wr) = socket.split();
+              // 异步将reader的内容copy到writer中, copy以后writer就直接发送了
+              if io::copy(&mut rd, &mut wr).await.is_err() {
+                  eprintln!("failed to copy");
+              }
+          });
+      }
+      Ok(())
+  }
+  ```
+
+* 异步echo客户端:
+
+  ```rust
+  use tokio::net::TcpStream;
+  use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+  
+  #[tokio::main]
+  async fn main() -> io::Result<()> {
+  
+      let socket = TcpStream::connect("127.0.0.1:6142").await?;
+    	// 分离reader和writer, 适合同时实现了AsyncRead和AsyncWrite的对象
+      let (mut rd, mut wr) = socket.split();
+  
+      tokio::spawn(async move {
+          wr.write_all(b"hello\r\n") .await?;
+          wr.write_all(b"hello\r\n").await?;
+          Ok::<_, io::Error>(())
+      });
+  
+      let mut buf = vec![0; 128];
+      let n = rd.read(&mut buf).await?;
+      println!("GOT {:?}", &buf[..n]);
+      Ok(())
+  }
+  ```
+
   
 
 ## Snippets/Library

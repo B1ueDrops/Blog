@@ -1,5 +1,5 @@
 ---
-title: 数据库-PostgreSQL环境配置与SQL语句
+title: PostgreSQL数据库教程
 categories: 软件工程
 ---
 

@@ -270,17 +270,6 @@ public:
 
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     vector<int> ans;
@@ -302,17 +291,6 @@ public:
  先按照根右左的顺序遍历, 然后反向即可.
 
 ```cpp
-/**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     TreeNode *left;
- *     TreeNode *right;
- *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
- *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
- *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
- * };
- */
 class Solution {
 public:
     vector<int> ans;
@@ -840,6 +818,7 @@ public:
         /* 如果是有一个是NULL, 那么就不是子结构 */
         if (!pRoot1 || !pRoot2) return false;
         if (dfs(pRoot1, pRoot2)) return true;
+      	// 注意这里是hasSubtree而不是dfs
         return hasSubtree(pRoot1->left, pRoot2) || hasSubtree(pRoot1->right, pRoot2);
     }
 };
@@ -2777,6 +2756,75 @@ public:
         auto b = dfs(root, y, -1, 0);
 
         return a[0] != b[0] && a[1] == b[1];
+    }
+};
+```
+
+
+
+## 翻转二叉树以匹配先序遍历
+
+> https://leetcode.cn/problems/flip-binary-tree-to-match-preorder-traversal/description/
+
+```cpp
+class Solution {
+public:
+    vector<int> ans;
+
+    bool dfs(TreeNode *root, vector<int> &voyage, int &k) {
+        if (!root) return true;
+        // 如果根节点的值不等于voyage当前元素, 直接返回
+        if (root->val != voyage[k]) return false;
+        // 跳过根节点
+        k ++;
+        // 如果左子树根节点不等于当前前序遍历第一个元素, 则需要反转
+        if (root->left && root->left->val != voyage[k]) {
+            ans.push_back(root->val);
+            // 先遍历右子树, 然后遍历左子树, 代表反转
+            return dfs(root->right, voyage, k) && dfs(root->left, voyage, k);
+        }
+        // 如果不需要反转
+        return dfs(root->left, voyage, k) && dfs(root->right, voyage, k);
+    }
+
+    vector<int> flipMatchVoyage(TreeNode* root, vector<int>& voyage) {
+        int k = 0;
+        if (dfs(root, voyage, k)) return ans;
+        return {-1};
+    }
+};
+```
+
+
+
+## 在二叉树中分配硬币
+
+> https://leetcode.cn/problems/distribute-coins-in-binary-tree/
+
+考虑一颗子树, 和它上面的一条边.
+
+如果在这颗子树中:
+
+* 节点总数`x`比金币总数`y`多, 那么就会有`x - y`个硬币从这条边经过.
+* 同理, 如果金币数多, 那么就有`y - x `个硬币经过.
+
+因此, 只需要遍历所有的边, 计算每一条边的贡献即可
+
+```cpp
+class Solution {
+public:
+
+    vector<int> dfs(TreeNode *root) {
+        // 节点数, 边数, 操作数
+        if (!root) return { 0, 0, 0 };
+        auto l = dfs(root->left), r = dfs(root->right);
+
+        int x = l[0] + r[0] + 1;
+        int y = l[1] + r[1] + root->val;
+        return { x, y, abs(x - y) + l[2] + r[2] };
+    }
+    int distributeCoins(TreeNode* root) {
+        return dfs(root)[2];
     }
 };
 ```
