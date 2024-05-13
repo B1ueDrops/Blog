@@ -1,6 +1,6 @@
 ---
 title: Rust多线程编程模型
-categories: 并发编程
+categories: 编程语言
 mathjax: true
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: 树形动态规划系列
+title: 树形DP
 categories: 算法
 mathjax: true
 ---

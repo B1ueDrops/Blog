@@ -361,3 +361,95 @@ Software Prefetching一般针对D-Cache, 在程序的编译阶段, 编译器会�
 
 * 多余的指令会被存储在Instruction Buffer中, Decoder会从Instruction Buffer中取出指令, 这样就能保证流水线充足.
 * Instruction Buffer是一个多端口的FIFO.
+
+
+
+## 验证Cache功效的一段代码
+
+这里有两个函数`vecdot1`和`vecdot2`, 都是用来计算浮点数向量的点乘.
+
+* `vecdot1`是按照矩阵的格式存储的, 计算的时候`a`的每一列和`b`的每一列相乘, 每次访问内存, 访问的地址都不连续.
+* `vecdot2`计算`a`的每一行和`b`的每一行相乘.
+
+```c
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define ROW 10000
+#define COL 10000
+
+void vecdot1() {
+    
+    double (*a)[COL] = malloc(ROW * sizeof(double[COL]));
+    double (*b)[COL] = malloc(ROW * sizeof(double[COL]));
+    double (*c)[COL] = malloc(ROW * sizeof(double[COL]));
+
+    // Init a and b
+    srand(time(NULL));
+    for (int i = 0; i < ROW; i ++) {
+        for (int j = 0; j < COL; j ++) {
+            a[i][j] = (double)rand() / RAND_MAX;
+            b[i][j] = (double)rand() / RAND_MAX;
+        }
+    }
+
+    clock_t start = clock();
+    for (int j = 0; j < COL; j ++) {
+        for (int i = 0; i < ROW; i ++) {
+            c[i][j] = a[i][j] * b[i][j];
+        }
+    }
+    clock_t end = clock();
+
+    printf("Vecdot1 time: %lf secs\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+    free(a);
+    free(b);
+    free(c);
+}
+
+void vecdot2() {
+    
+    double (*a)[COL] = malloc(ROW * sizeof(double[COL]));
+    double (*b)[COL] = malloc(ROW * sizeof(double[COL]));
+    double (*c)[COL] = malloc(ROW * sizeof(double[COL]));
+
+    // Init a and b
+    srand(time(NULL));
+    for (int i = 0; i < ROW; i ++) {
+        for (int j = 0; j < COL; j ++) {
+            a[i][j] = (double)rand() / RAND_MAX;
+            b[i][j] = (double)rand() / RAND_MAX;
+        }
+    }
+
+    clock_t start = clock();
+    for (int i = 0; i < ROW; i ++) {
+        for (int j = 0; j < COL; j ++) {
+            c[i][j] = a[i][j] * b[i][j];
+        }
+    }
+    clock_t end = clock();
+
+    printf("Vecdot2 time: %lf secs\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+    free(a);
+    free(b);
+    free(c);
+}
+int main() {
+
+    vecdot1();
+    vecdot2();
+    return 0;
+}
+```
+
+输出的结果是:
+
+```
+Vecdot1 time: 1.456165 secs
+Vecdot2 time: 0.233061 secs
+```
+

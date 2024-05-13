@@ -18,6 +18,8 @@ categories: 软件工程
 单例模式有两种实现方式: 懒汉与饿汉.
 
 * 懒汉: 也就是懒加载, 当使用对象时才进行创建.
+  * 懒汉可以节约资源, 但是要处理多线程的同步问题.
+
 
 ```java
 public class Singleton {
@@ -26,6 +28,7 @@ public class Singleton {
   // 禁用构造方法
   private Singleton() {}
   // 获取实例
+  // synchronized可以保证同一时刻只有一个线程执行getInstance()
   public static synchronized Singleton getInstance() {
     if (instance == null) {
       instance = new Singleton();
@@ -35,6 +38,8 @@ public class Singleton {
 ```
 
 * 饿汉: 在类加载时就会创建实例对象.
+  * 饿汉会浪费资源, 但是不要处理多线程同步
+
 
 ```java
 public class Singleton {
@@ -48,6 +53,10 @@ public class Singleton {
 ```
 
 
+
+> 懒汉模式的问题
+
+https://blog.csdn.net/qq_40885085/article/details/103363774
 
 ## 原型模式
 

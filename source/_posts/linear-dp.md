@@ -1,5 +1,5 @@
 ---
-title: 线性动态规划系列
+title: 线性DP
 categories: 算法
 mathjax: true
 ---

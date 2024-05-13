@@ -103,6 +103,8 @@ int main() {
 ## 两数之和(哈希表)
 
 > https://leetcode.cn/problems/two-sum/description/
+>
+> https://www.acwing.com/problem/content/802/
 
 ```cpp
 class Solution {
@@ -163,10 +165,9 @@ public:
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-        if (!s.size()) return 0;
-
         int res = 0;
         unordered_map<int, int> hash;
+      
         for (int i = 0, j = 0; i < s.size(); i ++) {
             hash[s[i]] ++;
             while (j < i && hash[s[i]] > 1) hash[s[j ++]] --;
@@ -184,6 +185,8 @@ public:
 ## 最长连续序列(哈希表)
 
 > https://leetcode.cn/problems/longest-consecutive-sequence/
+>
+> https://www.acwing.com/problem/content/description/801/
 
 * 首先, 把所有元素放到Hash Set中.
 * 然后, 枚举每一个元素`x`, 如果元素`x - 1`不在hash set中, 证明序列不再连续, 需要单开一个起点.

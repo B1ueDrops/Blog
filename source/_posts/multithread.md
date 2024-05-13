@@ -1,6 +1,6 @@
 ---
 title: 多进程/多线程编程模型
-categories: 并发编程
+categories: UNIX编程
 ---
 
 

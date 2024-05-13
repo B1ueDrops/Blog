@@ -1,5 +1,5 @@
 ---
-title: 算法题-二分系列
+title: 二分系列
 categories: 算法
 mathjax: true
 ---

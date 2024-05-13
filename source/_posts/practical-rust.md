@@ -1,20 +1,18 @@
 ---
-title: Rust原理与实战记录
+title: Rust使用日记
 categories: 编程语言
 mathjax: true
 ---
 
 
 
-# 原理
-
-## Rust
+## Rust介绍
 
 > Rust的优势?
 
 * **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制), 并不会引入额外的运行时开销.
 
-## Constant
+## 常量
 
 * 常量和**不可变的变量**有很大的不同.
 
@@ -28,7 +26,7 @@ mathjax: true
 
   * 常量必须绑定到**常量表达式**, 必须在编译时期就要算出来.
 
-## crate
+## package, crate, module
 
 * crate是Rust中最小的编译单元, 分为两种类型:
   * `binary crate`: 编译生成二进制文件.
@@ -53,17 +51,273 @@ mathjax: true
   * Stack用来存储编译时已知大小的数据.
 
   * 访问Stack一般比访问Heap快, 因为Heap还需要定位指针, 而Stack一直维护栈顶, 访问内存次数较少.
+  
 * **借用规则:**
 
   * 同一作用域内, 对于同一个数据, 只能存在一个可变引用.
   * 同一作用域内, 对于同一个数据, 可变引用和不可变引用不能同时存在.
   * **一个场景: **假设你有一个函数, 使用了变量`a`的不可变引用, 得到一个结果, 如果你后来改变了`a`, 那么得到的这个结果就可能会失效 (例如给定字符串计算长度, 你改了字符串, 这个长度结果肯定就不对), Rust不允许这种情况发生, 后面不能改(也就是不能使用不可变引用来修改).
+    * 也就是说, 通过不可变引用, **还能保证一个变量`x`和对应的函数`f(x)`随时可以保持关系**.
+  
 * **Race condition**发生的条件: Rust的借用规则可以从根本上避免出现race condition
   * 两个/多个指针同时访问一块内存数据.
   * 至少有一个指针尝试写入数据.
   * 没有机制来同步指针对内存数据的访问.
+  
+* 根据Rust的所有权机制, 自引用结构体很难构造, 例如:
+  
+  ```rust
+  #[derive(Debug)]
+  pub struct SelfRef<'a> {
+      mystr: String,
+      mystr_ref: &'a str,
+  }
+  
+  fn main() {
+      let hello = "Hello".to_string();
+      let self_ref = SelfRef {
+          mystr_ref: &hello,
+          mystr: hello
+      };
+      println!("{:?}", self_ref);
+  }
+  ```
+  
+  * 这个代码编译错误, `hello`的所有权会移动到`self_ref.mystr`上, 这个时候, `&hello`这个不可变借用就会失效.
 
 
+
+## 结构体和方法
+
+* 定义`struct`: 需要为所有Field指明名称和类型:
+
+  ```rust
+  struct User {
+    name: String,
+    sign_in_count: u64,
+    active: bool
+  }
+  ```
+
+  * 结尾没有`;`.
+
+* 实例化:
+
+  ```rust
+  let user = User {
+    active: true,
+    sign_in_count: 554,
+    name: String::from("haha")
+  };
+  ```
+
+  * 创建实例时, 必须同时为所有的字段都赋值.
+
+* 访问/修改`struct`用`.`, 例如`user.name`.
+
+* 一旦一个`struct`变量是`mut`, 那么它的所有字段都是`mut`.
+
+* 当字段的名字和字段 对应值的变量名是一样的时候, 就可以简写:
+
+  ```rust
+  let active = true;
+  let user = User {
+    active,
+    sign_in_count: 554,
+    name: String::from("haha")
+  }
+  ```
+
+* `struct`更新语法: 当你想基于某一个已有的结构体创建一个新结构体时, 可以用`..`
+
+  ```rust
+  let user = User {
+    active: true,
+    sign_in_count: 554,
+    name: String::from("haha")
+  };
+  // 没有更新语法
+  let user2 = User {
+    active: false,
+    sign_in_count: user.sign_in_count,
+    name: user.name
+  }
+  // 更新语法..
+  let user2 = User {
+    active: false,
+    ..user
+  }
+  ```
+
+* `tuple struct`: `struct`有名字, 但是字段没有名字:
+
+  ```rust
+  struct Color(i32, i32, i32);
+  
+  let black = Color(0, 0, 0);
+  // 访问元素
+  black.0
+  black.1
+  black.2
+  ```
+
+* 方法和函数不同, 方法一般定义在`impl`内部, 并且参数一般含有`self/&self/&mut self`.
+  * `self`会夺去结构体变量的所有权.
+
+```rust
+struct Rectangle {
+  width: u32,
+  height: u32
+}
+
+impl Rectangle {
+  fn area(&self) -> u32 {
+    self.width * self.height
+  }
+}
+```
+
+* 可以在`impl`块中, 不包含`self`, 这叫做**关联函数**, 不是方法, 例如`String::from()`.
+
+  * 使用时, 用`::`调用.
+
+  * 一般用于构造器:
+
+    ```rust
+    impl Rectangle {
+      fn square(size: u32) -> {
+        Rectangle {
+          width: size,
+          height: size
+        }
+      }
+    }
+    
+    let a = Rectangle::square(2);
+    ```
+
+    
+
+## 枚举
+
+* 定义枚举, 例如IP地址分为IPv4和IPv6:
+
+  ```rust
+  enum IpAddrKind {
+    V4,
+    V6
+  }
+  ```
+
+  * 使用: `let four = IpAddrKind::V4`.
+
+* Rust中, 允许将任意类型的数据附加到枚举的元素中:
+
+  ```rust
+  enum IpAddrKind {
+    V4(String),
+    V6(String)
+  }
+  ```
+
+  * 每个元素可以存储不同类型的值:
+
+    ```rust
+    enum IpAddrKind {
+      V4(u8, u8, u8, u8),
+      V6(String)
+    }
+    
+    let home = IpAddrKind::V4(127, 0, 0, 1);
+    ```
+
+* 为枚举定义方法: 和`struct`一样, 也用`impl`关键字
+
+  ```rust
+  impl IpAddrKind {
+    
+  }
+  ```
+
+* Option枚举:
+
+  * 在Rust中没有Null.
+
+  * 定义在`std::prelude`中.
+
+    ```rust
+    enum Option<T> {
+      Some(T),
+      None
+    }
+    ```
+
+  * 如果一个值可能存在, 也可能不存在(为`None`), 那么就应该是`Option`类型.
+
+  * 如果你要声明一个变量是`None`, 那么需要显式声明类型:
+
+    ```rust
+    let absent_number: Option<i32> = None;
+    ```
+
+
+
+
+## 模式匹配
+
+* `match`表达式允许一个值和一系列模式进行匹配, 并且执行匹配成功的代码.
+
+  * 模式可以是变量名, 字面值, 或者通配符.
+
+  ```rust
+  enum Coin {
+    A,
+    B,
+    C,
+    D,
+  }
+  
+  fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+      Coin::A => 1,
+      Coin::B => 2,
+      // 加了花括号, 后面不用,
+      Coin::C => {
+      }
+      Coin::D => 4,
+    }
+  }
+  ```
+
+* `match`匹配的分支可以绑定到被匹配 对象的部分值.
+
+  * 可以从enum中拿到值:
+
+    ```rust
+    enum Coin {
+      A,
+      B,
+      C,
+      D(u8),
+    }
+    
+    fn value_in_cents(coin: Coin) -> u8 {
+      match coin {
+        Coin::A => 1,
+        Coin::B => 2,
+        // 加了花括号, 后面不用,
+        Coin::C => {
+          3
+        }
+        Coin::D(value) => {
+         		println!(value); 
+          	value
+        }
+      }
+    }
+    ```
+
+    
 
 ## I/O
 
@@ -264,9 +518,21 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * 整数的类型转换一定要保证**小转大**.
   * $n$位无符号数范围: $[0, 2^n - 1]$
   * $n$位有符号数范围: $[-(2^{n}-1), 2^{n-1}-1]$​
+  
 * 字符转成ASCII码: `let c = 'a' as u8;`
+
 * 除了`byte`, 其他整数类型都可以使用类型后缀, 例如`57_u8, 128_i32`.
+
 * debug模式下会在编译时刻检查整数溢出, 但是release模式不会.
+
+* 打印变量的地址, 首先把它转成裸指针:
+
+  ```rust
+  let ptr = &<变量名> as *const <变量类型>
+  ```
+
+  * 打印裸指针用`{:p}`.
+
 
 
 
@@ -607,6 +873,8 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 * 注意, 你在用`for .. in`遍历数组时, 会调用`into_iter()`, 这个方法会拿走原始变量的所有权, 因此需要考虑原始变量是否实现了`Copy trait`.
 
 * 如果你看到一个变量是`&mut`类型, 那么**你一定要记得, 这个类型没有实现`Copy trait`**, 需要注意所有权.
+
+* 所有权移动时, 一般会涉及变量地址的改变.
 
 
 

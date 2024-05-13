@@ -2829,3 +2829,39 @@ public:
 };
 ```
 
+
+
+## 从叶节点开始的最小字符串
+
+> https://leetcode.cn/problems/smallest-string-starting-from-leaf/
+
+直接爆搜 每一个字符串即可, 时间复杂度是$O(n^2)$, 数据范围是8500, 勉强能过.
+
+```cpp
+class Solution {
+public:
+    string ans, path;
+
+    void dfs(TreeNode * root) {
+        if (!root) return ;
+        path += root->val + 'a';
+
+        if (!root->left && !root->right) {
+            reverse(path.begin(), path.end());
+            if (ans.empty() || ans > path) ans = path;
+            // 恢复现场
+            reverse(path.begin(), path.end());
+        }
+        else {
+            dfs(root->left);
+            dfs(root->right);
+        }
+        path.pop_back();
+    }
+    string smallestFromLeaf(TreeNode* root) {
+        dfs(root);
+        return ans;
+    }
+};
+```
+

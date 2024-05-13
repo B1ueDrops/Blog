@@ -6,6 +6,25 @@ mathjax: true
 
 
 
+## 字符串的split函数
+
+```cpp
+vector<string> split(string str, char t) {
+    str += t;
+    vector<string> items;
+    for (int i = 0; i < str.size(); i ++) {
+        int j = i;
+        string item;
+        while (str[j] != t) item += str[j ++];
+        i = j;
+        items.push_back(item);
+    }
+    return items;
+}
+```
+
+
+
 ## 移动零
 
 > https://leetcode.cn/problems/move-zeroes/
@@ -158,5 +177,42 @@ public:
          }
     }
 };
+```
+
+
+
+## 判断子序列
+
+> https://www.acwing.com/problem/content/description/2818/
+
+遍历较长的字符串, 然后如果长字符串中有一个和子序列字符串相等, 就+1, 看最后加到的数值是否是子序列字符串的长度.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 100010;
+
+int n, m;
+int a[N], b[N];
+
+int main() {
+
+    cin >> n >> m;
+
+    for (int i = 0; i < n; i++) cin >> a[i];
+    for (int i = 0; i < m; i ++) cin >> b[i];
+
+    int j = 0;
+    for (int i = 0; i < m; i ++) {
+        // 不要忘记 j < n
+        if (j < n && a[j] == b[i]) j ++;
+    }
+    if (j == n) puts("Yes");
+    else puts("No");
+
+    return 0;
+}
 ```
 

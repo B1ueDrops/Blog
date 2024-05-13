@@ -1,6 +1,6 @@
 ---
 title: Rust的异步编程
-categories: 并发编程
+categories: 编程语言
 ---
 
 
