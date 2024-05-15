@@ -1,6 +1,7 @@
 ---
 title: 递归系列
 categories: 算法
+mathjax: true
 ---
 
 

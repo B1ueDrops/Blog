@@ -126,3 +126,49 @@ int main() {
 }
 ```
 
+
+
+## 孤儿进程
+
+> 孤儿进程是怎么产生的?
+
+* 父进程创建了子进程, 子进程会和父进程同时运行.
+* 如果父进程先于子进程结束, 那么子进程就没有父亲, 就会成为孤儿进程(Orphan Process).
+* 在Linux中, 如果出现了孤儿进程, 会把孤儿进程的父进程重新设置:
+  * 如果有终端, 那么父进程就是终端.
+  * 如果没有终端, 那么父进程就是`init`进程(`pid = 1`).
+
+
+
+> 为什么要给孤儿进程重新设置父进程?
+
+* 子进程退出时, 用户区的内存可以自己释放, 但是内核区的PCB没有办法自己释放, 必须由父进程释放.
+
+创建孤儿进程代码:
+
+```cpp
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        puts("I'm father");
+    }
+    else {
+        // 子进程睡眠, 让父进程运行
+        sleep(1);
+        printf("Child PID: %d, Father PID: %d\n", getpid(), getppid());
+    }
+}
+```
+
+输出结果:
+
+```
+I'm father
+Child PID: 78608, Father PID: 1
+```
+

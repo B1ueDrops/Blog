@@ -555,3 +555,51 @@ public:
 };
 ```
 
+
+
+## Z字形变换
+
+> https://leetcode.cn/problems/zigzag-conversion/description/
+
+这个题本质上是一个找规律题, 观察如下N字形变换, 其中$n = 4$:
+
+```
+0      6       12
+1    5 7    11 13
+2  4   8  10   14
+3      9       15
+```
+
+* 对于第一行($i = 0$)来说, 这个序列是一个等差数列, 首项是0, 公差是$2n - 2$.
+* 对于最后一行 ($i = n - 1$)来说, 这个序列也是一个等差数列, 首项是$n - 1$, 公差是$2n - 2$.
+* 对于中间的若干行 ($0 < i < n - 1$)来说, 由两部分组成:
+  * 第一部分是首项是$i$, 公差是$2n - 2$的等差数列.
+  * 第二部分是首项是$2n - 2 - i$, 公差是$2n - 2$的等差数列.
+
+* 其中$n = 1$的情况要特殊判断, 因为如果$n = 1$, 那么公差就变成0了, 按照循环输出的话, 就会变成死循环.
+
+```cpp
+class Solution {
+public:
+    string convert(string s, int n) {
+        string res;
+        if (n == 1) return s;
+				
+      	// i是枚举行数
+        for (int i = 0; i < n; i ++) {
+            if (i == 0 || i == n - 1) {
+                for (int j = i; j < s.size(); j += 2 * n - 2) res += s[j];
+            }
+            else {
+                for (int j = i, k = 2 * n - 2 - i; j < s.size() || k < s.size(); j += 2 * n - 2, k += 2 * n - 2) {
+                    if (j < s.size()) res += s[j];
+                    if (k < s.size()) res += s[k];
+                }
+            }
+        }
+
+        return res;
+    }
+};
+```
+

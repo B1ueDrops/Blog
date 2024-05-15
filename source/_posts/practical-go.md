@@ -21,6 +21,14 @@ export PATH=$PATH:$GOROOT/bin
 
 
 
+## 命名规范
+
+* package: 小写单词, 不用下划线.
+* 文件名: 小写单词, 下划线.
+* 变量: 驼峰.
+* 函数: 驼峰.
+* 结构体: 驼峰.
+
 ## 实数
 
 * Go语言中有两种浮点数:
@@ -172,15 +180,111 @@ export PATH=$PATH:$GOROOT/bin
 
   
 
+## 类型转换
+
+* 直接连接字符串和数值会报错:
+
+  ```go
+  count := "haha" + 10 + "haha"
+  ```
+
+* 整数和浮点数也不能直接运算:
+
+  ```go
+  a := 1
+  b := 2.0
+  c := a * b //报错
+  ```
+
+* 类型转换: 
+
+  ```go
+  a := 1
+  b := float64(a)
+  ```
+
+* 从浮点类型转换为整数类型, 小数点后面的部分会被截断.
+
+* 无符号和有符号之间, 不同大小的整数类型之间都需要转换!
+
+* 类型转换需要谨慎, 避免环绕行为.
+
+  * 可以通过`math`包中的`min/max`判断是否超过最大/最小值.
+
+* 如果想把`rune`或者`byte`转换为`string`, 语法是一样的:
+
+  ```go
+  var a byte = 12
+  var b rune = 199
+  
+  c := string(a)
+  d := string(b)
+  ```
+
+  * 但是, 必须要证`rune/byte`的数值在合法范围内.
+  * 注意, 这个转换是把unicode code point转换成字符串, 例如`97`转换成`'a'`.
+  
+* 整数转字符串: `strconv.Itoa(10)`, 可以把10转为`"10"`.
+
+* 字符串转整数:
+
+  ```go
+  data, err := strconv.Atoi("10")
+  if err != nil {
+    
+  }
+  ```
 
 
-## 命名规范
 
-* package: 小写单词, 不用下划线.
-* 文件名: 小写单词, 下划线.
-* 变量: 驼峰.
-* 函数: 驼峰.
-* 结构体: 驼峰.
+## 函数
+
+* 函数声明: `func`
+
+  ```go
+  func Func_name(a int32, b int64) string {
+    
+  }
+  ```
+
+* 大写字母开头的函数/变量/其他标识符都会被默认导出, 小写字母开头就不行.
+
+* 函数可以有多个返回值:
+
+  ```go
+  func Func_name(a int32, b int64) (string, error) {
+    
+  }
+  ```
+
+* 匿名函数:
+
+  ```go
+  func() {
+    fmt.Println("只用一次的匿名函数")
+  }()
+  ```
+
+  
+
+## 方法
+
+* 方法不一定要和`struct`绑定, 可以和你自己声明的任何类型绑定:
+
+  ```go
+  // 通过type声明的新类型
+  type TypeA int32
+  
+  // 为TypeA绑定方法
+  func (a TypeA) getNum() i32 {
+    
+  }
+  
+  var a TypeA = 2
+  a.getNum()
+  ```
+
+  
 
 ## package
 

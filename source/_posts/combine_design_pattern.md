@@ -66,7 +66,79 @@ interface Subject {
 
 ## 适配器模式
 
+* 适用场景: 我现在有一个类, 我要把这个类的接口通过一层适配器转换成目标接口的格式:
+
+实现方式1: 类适配器 
+
+* 目标接口:
+
+```java
+interface Target {
+  public void request();
+}
+```
+
+* 我现在有的类:
+
+  ```java
+  class Adaptee {
+    
+    public void myRequest() {
+      // ...
+    }
+  }
+  ```
+
+* 加一个Adaptor类:
+
+  ```java
+  class Adapter extends Adaptee implements Target {
+    
+    // 实现接口方法
+    public void request() {
+      // 用myRequest()
+    }
+  }
+  ```
+
+* main函数:
+
+  ```java
+  public static void main(String[] args) {
+    Target target = new Adapter();
+    target.request();
+  }
+  ```
 
 
-## 桥接模式
+
+实现方式二: 对象适配器
+
+* Adapter类:
+
+  ```java
+  class Adapter implements Target {
+    
+    private Adaptee adaptee;
+    
+    public Adapter(Adaptee adaptee) {
+      this.adaptee = adaptee;
+    }
+    
+    public void request() {
+      // 做适配
+      this.adaptee.myRequest();
+    }
+  }
+  ```
+
+* main函数:
+
+  ```java
+  public static void main(String[] args) {
+    Adaptee adaptee = new Adaptee();
+    Target target = new Adapter(adaptee);
+    target.request();
+  }
+  ```
 
