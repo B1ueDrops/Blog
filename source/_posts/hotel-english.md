@@ -1,5 +1,5 @@
 ---
-title: 酒店相关英语
+title: 酒店英语
 categories: English
 ---
 

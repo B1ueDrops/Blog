@@ -1,5 +1,5 @@
 ---
-title: 饭店相关英语
+title: 饭店英语
 categories: English
 ---
 
