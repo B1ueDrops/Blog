@@ -142,3 +142,123 @@ interface Target {
   }
   ```
 
+
+
+## 桥接模式
+
+* 适用场景: 某些对象具有多种特征维度的变化, 例如m种颜色和n种大小, 那么就会有mxn种的子类.
+
+实现方式:
+
+* 抽象特征接口:
+
+```java
+interface Feature {
+  //...
+}
+```
+
+* 具体特征:
+
+  ```java
+  class ConcreteFeature implements Feature {
+    
+  }
+  ```
+
+* 抽象对象:
+
+  ```java
+  abstract class Subject {
+    protected Feature feature;
+    
+    public Subject() {
+      this.feature = feature;
+    }
+    public void setFeature(Feature feature) {
+      this.feature = feature;
+    }
+    // ...
+  }
+  ```
+
+* 具体对象:
+
+  ```java
+  class ConcreteSubject extends Subject {
+    
+    // ...
+  }
+  ```
+
+* main函数:
+
+  ```java
+  public static void main(String[] args) {
+    
+    Feature feature = new ConcreteFeature();
+    Subject subject = new ConcreteSubject(feature);
+  }
+  ```
+
+本质上来说, 就是把最主要的Feature用继承解决, 其他的Feature都用组合解决.
+
+
+
+## 装饰模式
+
+* 适用场景: 在保持原来对象的结构不变的情况下, 动态增加新的功能.
+
+实现方式:
+
+* 抽象对象:
+
+  ```java
+  interface Subject {
+    public void operation();
+  }
+  ```
+
+* 具体对象:
+
+  ```java
+  class ConcreteSubject implements Subject {
+    public void operation() {
+      //...
+    }
+  }
+  ```
+
+* 装饰器类:
+
+  ```java
+  class SubjectDecorator implements Subject {
+    
+    private Subject subject;
+    
+    public SubjectDecorator(Subject subject) {
+      this.subject = subject;
+    }
+    
+    public void operation() {
+      this.subject.operation();
+    }
+  }
+  ```
+
+* 具体要装饰什么, 直接继承装饰器类:
+
+  ```java
+  class ConcreteDecorator extends SubjectDecorator {
+    
+    public ConcreteDecorator(Subject subject) {
+      super(subject);
+    }
+    
+    public void operation() {
+      // super.operation和我自己加什么功能组合
+    }
+  }
+  ```
+
+  

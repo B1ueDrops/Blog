@@ -29,6 +29,8 @@ export PATH=$PATH:$GOROOT/bin
 * 函数: 驼峰.
 * 结构体: 驼峰.
 
+
+
 ## 实数
 
 * Go语言中有两种浮点数:
@@ -284,7 +286,364 @@ export PATH=$PATH:$GOROOT/bin
   a.getNum()
   ```
 
+
+
+
+## 数组
+
+* 数组是一种固定长度的数据类型:
+
+  ```go
+  var planets [8]string
+  ```
+
+  * 二维数组: `var planets [8][8]string`
+
+* 数组长度可以用`len()`确定:
+
+  ```go
+  len(planets)
+  ```
+
+  * 数组的长度也是数组的一部分.
+
+* 如果没有初始化数组中的值, 那么数组中的值默认是零值.
+
+* Go语言编译时会检查数组越界, 如果越界就会报错.
+
+  * 如果编译时没发现, 那么运行时出现就会`panic`.
+
+* Go语言定义并初始化数组:
+
+  ```go
+  dwarfs := [8]string {
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H"
+  }
+  ```
+
+  * 可以使用`...`代替数组长度, Go编译器会帮你算出数组长度:
+
+    ```go
+    dwarfs := [...]string {
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    }
+    ```
+
+* 遍历数组:
+
+  * 使用`for`循环:
+
+    ```go
+    for i := 0; i < len(dwarfs); i ++ {
+      
+    }
+    ```
+
+  * 使用`range`:
+
+    ```go
+    for i, item := range dwarfs {
+      
+    }
+    ```
+
+* 数组复制:
+
+  * Go语言中, 将一个数组赋值/作为函数参数, 会发生深拷贝.
+
+
+
+## 切片
+
+* `slice`是数组某一部分的副本.
+
+  * `a[0:4]`就是一个切片.
+
+* `slice`的默认索引:
+
+  * 忽略起始索引, 从开始切分, `a[:4]`
+  * 忽略结束索引, 切分到结束, `a[1:]`
+
+* 切分数组的语法也可以引用于字符串.
+
+  * 切分字符串时, 索引代表的是字节数, 而不是`rune`.
+
+* 定义并初始化切片:
+
+  ```go
+  dwarfs := []string {
+    "haha",
+    "haha",
+    "haha"
+  }
+  ```
+
+  * 想要获得和数组相同元素的`slice`, 可以用`[:]`切分.
+
+* Go语言中, 很多函数倾向于使用slice, 而不是数组作为参数.
+
+* slice在进行赋值/函数参数传递时, 会发生浅拷贝.
+
+* `append`函数:
+
+  * `append`函数是内置函数, 可以将元素添加到slice中.
+
+    ```go
+    dwarfs := []string { "A", "B" }
+    dwarfs = append(dwarfs, "C")
+    // 也可以添加多个元素
+    dwarfs = append(dwarfs, "D", "E")
+    ```
+
+* `length`和`capacity`的区别:
+
+  * `length`: `slice`中有多少个元素, 用`len()`.
+  * `capacity`: `slice`对应的底层数组有多少个元素, 用`cap()`.
+
+* `slice`预分配:
+
+  * `slice`本质上是一个动态数组, 如果`append`过多, 会发生过多的内存拷贝, 影响性能.
+
+  * 可以使用`make`函数进行预分配:
+
+    ```go
+    // 初始length是0, capacity是10
+    dwarfs = make([]string, 0, 10)
+    ```
+
+* 声明可变参数的函数:
+
+  * 需要在函数最后一个参数的前面加上`...`:
+
+    ```go
+    // worlds本质上是[]string类型
+    func terraform(prefix string, worlds ...string) []string {
+      for i := range worlds {
+        worlds[i]
+      }
+    }
+    ```
+
+
+
+
+## map
+
+* 声明map, 必须指明key和value的类型:
+
+  ```go
+  map[string]int
+  ```
+
+* 根据已有的值直接创建`map`:
+
+  ```go
+  temperature := map[string]int {
+    "Earth": 15,
+    "Mars": -15,
+  }
+  ```
+
+* 插入一个键值对:
+
+  ```go
+  temperature["Venus"] = 20
+  ```
+
+* 当访问一个不存在的值时, map会返回类型对应的零值:
+
+  ```go
+  // value的值是0
+  value := temperature["Moon"]
+  ```
+
+* 逗号和OK写法: 用来判断key在键值对存不存在:
+
+  ```go
+  if moon, ok := temperature["Moon"]; ok {
+    // 如果键值对存在
+  } else {
+    // 如果键值对不存在
+  }
+  ```
+
+* map在赋值/当作函数参数时, 只会发生浅拷贝:
+
+  ```go
+  a = map[string]int {
+    "haha": 1,
+    "heihei": 2,
+  }
+  // b和a指向同一个map
+  b := a
+  ```
+
+* 删除键值对:
+
+  ```go
+  delete(tempearture, "Moon")
+  ```
+
+* `make`也可以对map进行预分配: 第二个参数是预分配的空间
+
+  ```go
+  temperature = make(map[string]float64, 10)
+  ```
+
+* 遍历map:
+
+  ```go
+  for key, value := range temperature {
+    
+  }
+  ```
+
   
+
+## struct
+
+* 声明结构体:
+
+  ```go
+  type Student struct {
+    name string
+    age int64
+  }
+  ```
+
+  * 结构体字段之间不用`,`隔开.
+
+* 打印结构体用`%+v`.
+
+* 用复合字面值创建struct:
+
+  ```go
+  student := Student {
+    name: "haha",
+    age: 18,
+  }
+  ```
+
+* struct的复制:
+
+  * struct赋值/当作函数参数时, 会发生深拷贝.
+
+* 将struct转换为json:
+
+  * 首先需要在结构体定义时, 规定每个字段转化为json的时候是什么名字:
+
+    ```go
+    type Student struct {
+      name string `json:"Name"`
+      age int `json:"Age"`
+    }
+    ```
+  
+  * 需要`import "encoding/json"`
+  
+    ```go
+    // 转换成功可以得到[]byte
+    bytes, err := json.Marshal(student)
+    fmt.Printf("%+v", string(bytes))
+    ```
+  
+* 将方法绑定到struct:
+
+  * 构造函数: Go语言中没有特殊规定构造函数, 构造函数就是普通函数, 构造函数一般就叫`New()`
+
+    ```go
+    type Location struct {
+      lat float64
+    long float64
+    }
+  
+    func NewLocation(lat float64, long float64) Location {
+      return Location { lat.decimal(), long.decimal() }
+    }
+    ```
+  
+  
+
+## 接口
+
+* 接口定义了一个类型必须实现的一种方法.
+
+* 按约定, 接口必须以`er`为结尾.
+
+  ```go
+  type talker interface {
+    talk() string
+  }
+  
+  func (stu Student) talk() string {
+    // Student实现了talker接口
+  }
+  ```
+
+* 接口类型的含义: 例如`t talker`, 表示所有实现了`talker`接口的变量
+
+
+
+## 指针
+
+* 通过`&`可以获得变量的指针, 解引用用`*`.
+
+  * 类型叫做`*int`, 表示`int`类型的指针.
+
+* Go语言不允许对地址进行运算.
+
+* 如果两个指针指向相同的内存地址, 那么他们就是相等的.
+
+* struct和指针:
+
+  ```go
+  timmy = &person {
+    name: "Timmy",
+    age: 10,
+  }
+  // 这个时候, 不用加上解引用&
+  // 等价于(*timmy).superpower
+  fmt.Println(timmy.superpower)
+  ```
+
+  * slice和map也可以用`&`, 但是不能自动解引用.
+
+* 函数/方法和指针:
+
+  * Go语言中函数和方法都是值传递, 函数总是操作副本(除了map), 如果要操作原变量要传指针.
+
+  ```go
+  func birthday(p *Person) {
+    p.age++
+  }
+  ```
+
+  * Go语言中的变量在使用`.`时, 会自动调用`&`获取地址:
+
+  ```go
+  func (stu *Student) setName(name string) {
+    stu.name = name
+  }
+  
+  stu.setName()
+  // 不用(&stu).setName()
+  ```
+
+  * 如果一个struct的方法用到的是指针作为接收者, 那么这种类型的所有方法都应该用指针作为接收者.
 
 ## package
 
@@ -296,37 +655,3 @@ export PATH=$PATH:$GOROOT/bin
   * `package`文件夹的路径就是相对于Go项目根目录的路径.
 
 
-
-## 结构体
-
-* 打印结构体用`%#v`.
-
-## 哈希表
-
-* 创建哈希表:
-
-  ```go
-  hashmap := make(map[string]int)
-  ```
-
-* 判断`key`是否存在: `ok`是一个bool值, true表示key存在
-
-  ```go
-  _, ok := hashmap[key]
-  ```
-
-  
-
-
-
-## 随机数
-
-* 生成`[0, n)`的随机整数:
-
-  ```go
-  import "math/rand"
-  
-  num := rand.Intn(n)
-  ```
-
-  

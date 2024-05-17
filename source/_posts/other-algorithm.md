@@ -6,6 +6,141 @@ mathjax: true
 
 
 
+
+
+## 保序离散化
+
+保序离散化适合如下情况:
+
+* 题目中的数值的范围过大, 例如在$[-10^9, 10^9]$这种, 但是出现次数比较少.
+
+保序离散化是指将这些过大的数值映射到从0开始递增的自然数的过程.
+
+模板代码:
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+/* 定义离散化数组 */
+vector<int> alls;
+
+/* 找到x对应的离散化后的数值 */
+/* <= x的最大值 */
+int find(int x)
+{
+  int l = 0, r = alls.size() - 1;
+  while (l < r)
+  {
+    int mid = l + (r - l) / 2 + 1;
+    if (alls[mid] > x) r = mid - 1;
+    else l = mid;
+  }
+  /* 如果要映射到从0开始的, 就return r, 如果从1开始就return r+1 */
+  return r;
+}
+
+int main()
+{
+  /* other code */
+  
+  /* 将需要离散化的数值全部放入alls中 */
+  /* 排序 */
+  sort(alls.begin(), alls.end());
+  /* 去重 */
+  alls.erase(unique(alls.begin(), alls.end()), alls.end());
+  
+  
+  return 0;
+}
+```
+
+
+
+## 区间和
+
+> https://www.acwing.com/problem/content/804/
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+//注意这里的倍数需要根据题目确定
+const int N = 100010 * 3;
+
+typedef pair<int, int> PII;
+
+int n, m;
+
+vector<int> alls;
+vector<PII> add;
+vector<PII> query;
+int a[N];
+
+int find(int x)
+{
+    int l = 0, r = alls.size() - 1;
+    while (l < r)
+    {
+        int mid = l + (r - l) / 2 + 1;
+        if (alls[mid] > x) r = mid - 1;
+        else l = mid;
+    }
+  /* 注意这个题是前缀和, 要从1开始映射 */
+    return r + 1;
+}
+
+int main()
+{
+    cin >> n >> m;
+    
+    for (int i = 0; i < n; i ++)
+    {
+        int x, c;
+        cin >> x >> c;
+        add.push_back({x, c});
+        alls.push_back(x);
+    }
+    
+    for (int i = 0; i < m; i ++)
+    {
+        int l, r;
+        cin >> l >> r;
+        query.push_back({l, r});
+        alls.push_back(l);
+        alls.push_back(r);
+    }
+    
+    sort(alls.begin(), alls.end());
+    alls.erase(unique(alls.begin(), alls.end()), alls.end());
+    
+    for (auto item: add)
+    {
+        int x = item.first, c = item.second;
+        a[find(x)] += c;
+    }
+    
+    for (int i = 1; i <= alls.size(); i ++) a[i] += a[i - 1];
+
+    
+    for (auto item: query)
+    {
+        int l = item.first, r = item.second;
+      /* 注意这里不是a[find(l-1)] */
+        cout << (a[find(r)] - a[find(l) - 1]) << endl;
+    }
+    
+    return 0;
+}
+```
+
+
+
+
+
 ## 整数转罗马数字
 
 > https://leetcode.cn/problems/integer-to-roman/
@@ -599,6 +734,103 @@ public:
         }
 
         return res;
+    }
+};
+```
+
+
+
+## 整数反转
+
+> https://leetcode.cn/problems/reverse-integer/description/
+
+* 注意C++中的负数取模运算:
+  * 结果是负数.
+  * 绝对值等于这个负数的绝对值取模.
+
+```cpp
+class Solution {
+public:
+    int reverse(int x) {
+        int r = 0;
+
+        while (x) {
+          // 10 * r + x % 10 > INT_MAX
+          // 不用乘法, 因为溢出
+            if (r > 0 && r > (INT_MAX - x % 10) / 10) return 0;
+            if (r < 0 && r < (INT_MIN - x % 10) / 10) return 0;
+
+            r = 10 * r + x % 10;
+            x /= 10;
+        }
+        return r;
+    }
+};
+```
+
+
+
+## 字符串转整数
+
+> https://leetcode.cn/problems/string-to-integer-atoi/
+
+```cpp
+class Solution {
+public:
+    int myAtoi(string s) {
+        int n = s.size();
+				
+      // 过滤空格
+        int k = 0;
+        while (k < n && s[k] == ' ') k ++;
+        if (k == n) return 0;
+			// 判断符号
+        bool minus = false;
+        if (s[k] == '-') minus = true;
+        if (s[k] == '-' || s[k] == '+') k ++;
+
+        int res = 0;
+        while (k < n && s[k] >= '0' && s[k] <= '9') {
+            int x = s[k] - '0';
+            if (minus) x = -x;
+            if (!minus && res > (INT_MAX - x) / 10) return INT_MAX;
+            if (minus && res < (INT_MIN - x) / 10) return INT_MIN;
+ 
+            res = 10 * res + x;
+            k ++;
+        }
+        return res;
+    }
+};
+```
+
+
+
+## 回文数
+
+> https://leetcode.cn/problems/palindrome-number/
+
+这个题如果求这个数的逆序, 很可能会超过`INT_MAX`, 因此先求后一半的逆序, 然后反过来比较前面.
+
+```cpp
+class Solution {
+public:
+    bool isPalindrome(int x) {
+
+        // 负数/最后一位是0(除了0)都不是
+        if (x < 0 || x && x % 10 == 0) return false;
+        
+        // 算后一半的逆序, 判断和前一半是否相等
+        int s = 0;
+
+        while (s <= x) {
+            s = 10 * s + x % 10;
+            // 长度是奇数/偶数
+            if (s == x || s == x / 10) return true;
+            x /= 10;
+        }
+        return false;
+
     }
 };
 ```

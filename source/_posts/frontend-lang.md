@@ -230,7 +230,18 @@ create-react-app <项目名字>
   npm start
   ```
 
+* 在项目文件中装`bootstrap`:
+
+  ```bash
+  npm i bootstrap
+  ```
+
 ### JSX
 
 * JSX是一种Javascript的扩展, 可以在Javascript中写XML语言.
-* JSX会被Babel编译成正常的Javascript, 
+* JSX会被Babel编译成正常的Javascript.
+
+
+
+### Components
+

@@ -12,26 +12,37 @@ mathjax: true
 
 * **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制), 并不会引入额外的运行时开销.
 
+
+
 ## 命名规范
 
-* 各种元素的命名方式: https://rust-lang.github.io/api-guidelines/naming.html
+> https://rust-lang.github.io/api-guidelines/naming.html
 
-* 数字字面值之间加入`_`可以增加可读性.
-* 如果出现了多个`else if`, 考虑用`match`重构.
+| 元素      | 命名方式       |
+| --------- | -------------- |
+| 局部变量  | snake_case     |
+| 函数      | snake_case     |
+| 方法      | snake_case     |
+| 结构体    | UpperCamelCase |
+| Trait     | UpperCamelCase |
+| 枚举      | UpperCamelCase |
+| 模块(mod) | snake_case     |
+
+
 
 ## 常量
 
-* 常量和**不可变的变量**有很大的不同.
+常量和**不可变的变量**有很大的不同.
 
-  * 常量需要使用`const`关键字, 并且**必须标注类型**.
+* 常量需要使用`const`关键字, 并且**必须标注类型**.
 
-    ```rust
-    <pub> const MAX_NUM: i32 = 1000_i32;
-    ```
+  ```rust
+  <pub> const MAX_NUM: i32 = 1000_i32;
+  ```
 
-  * 常量可以定义在任意作用域, 包括全局作用域.
+* 常量可以定义在任意作用域, 包括全局作用域.
 
-  * 常量必须绑定到**常量表达式**, 必须在编译时期就要算出来.
+* 常量必须绑定到**常量表达式**, 必须在编译时期就要算出来.
 
 
 
@@ -121,7 +132,6 @@ mathjax: true
     * 字符数组: `a.chars()`
   * 遍历字符串中的字符:
 
-  
 ```rust
   // a可以是String或者&str
   for ch in a.chars() {
@@ -615,11 +625,104 @@ impl Rectangle {
 
 
 
+## 异常处理
+
+* Rust中的错误分为两种:
+  * 可恢复的错误: Rust提供了`Result<T, E>`类型.
+  * 不可恢复的错误: Rust提供了`panic!`宏.
+
+* `panic!`宏使用: `panic!("错误信息")`
+
+  * `panic`有两种处理模式:
+
+    * `unwind`: 程序会展开调用栈, 并且依次清理函数中的数据 (工作量较大).
+    * `abort`: 程序直接终止调用栈, 数据由OS回收.
+
+  * 在`release`模式下, 需要用`abort`模式 (可以让二进制文件更小), 在`Cargo.toml`中加上:
+
+    ```toml
+    [profile.release]
+    panic = 'abort'
+    ```
+
+  * `panic`可能发生在源码中, 如果要定位源码的位置, 需要运行时将`RUST_BACKTRACE`设置为1.
+
+* `Result<T, E>`:
+
+  ```rust
+  enum Result<T, E> {
+    // 操作成功返回T类型
+    Ok(T),
+    // 操作失败返回E类型
+    Err(E)
+  }
+  ```
+
+* 处理`Result<T, E>`的几种方法:
+
+  * `match`表达式:
+
+    ```rust
+    let f = File::open("hello.txt");
+    
+    let f = match f {
+      Ok(file) => file,
+      // 错误类型
+      Err(error) => {
+        panic!("Error opening file {}", error);
+      }
+    }
+    ```
+
+  * `unwrap()`: 直接提取`Ok(T)`中的`T`, 如果失败就会直接`panic`.
+
+    ```rust
+    let f = File::open("hello.txt").unwrap();
+    ```
+
+  * `expect()`: 在`unwrap()`的基础上, 可以自定制错误信息:
+
+    ```rust
+    let f = File::open("hello.txt").expect("错误信息");
+    ```
+
+  * 向上传递错误:
+
+    * 在遇到错误的时候, 直接`return Err(e)`.
+
+    * 函数的返回值需要变成`Result<T, E>`.
+
+    * Rust中还提供了`?`宏, 专门用来传播错误:
+
+      ```rust
+      let mut f = File::open("hello.txt")?;
+      ```
+
+      * 如果函数返回`Ok(T)`, 那么`T`就会自动赋值给`f`.
+
+      * 如果返回`Err(e)`, 那么函数就会直接`return Err(e);`
+
+      * 如果一个函数内部有`?`, 那么最后函数需要写一个返回值`Ok(T)`.
+
+      * 如果在`main`函数中需要使用`?`, 那么`main`函数的签名需要是:
+
+        ```rust
+        // Box<dyn Error>表示任何可能的错误类型
+        fn main() -> Result<(), Box<dyn Error>> {
+          
+        }
+        ```
+
+    * `?`函数会隐式调用`From`函数, 将返回错误类型自动转换为函数签名所定义的错误类型.
+
+
+
+
 ## I/O
 
 * I/O的元素主要在`std::io`中.
 * 其中, 最重要的两个traits是`Read`和`Write`, 分别在`std::io::{Read, Write}`中.
-  * 实现了`Read` traits的叫`reader`, 可以调用`read`方法将数据读到buffer中, 返回成功读取的字节数.
+  * 实现了`Read` traits的叫`reader`, 可以调用`read`方法将reader中的数据读到buffer中, 返回成功读取的字节数.
   * 实现了`Write` traits的叫`writer`, 可以通过`write`方法将buffer中的内容写入到`writer`中, 返回成功写入的字节数.
 
 * 从标准输入读取`String`:
@@ -633,7 +736,7 @@ impl Rectangle {
 
 * Rust中, 默认的`./`是在你cargo项目的根路径.
 
-* `b"hello"`是`&[u8]`类型.
+* `b"hello"`是`&[u8]`类型(切片).
 
 * 使用I/O操作时, 一般会发生Error, 返回值一般是: `io::Result<T>`.
 
@@ -690,7 +793,7 @@ impl Rectangle {
     
     fn main() {
     
-      let mut stream = TcpListener::connect("127.0.0.1:3000").unwrap();
+      let mut stream = TcpStream::connect("127.0.0.1:3000").unwrap();
       // 发送消息
       stream.write("Hello".as_bytes()).unwrap();
       
@@ -863,25 +966,71 @@ impl Rectangle {
   let mut hashmap: HashMap<T, U> = HashMap::new();
   ```
 
-* 根据键获取值:
+  * HashMap中, 所有的Key必须是同一种类型, 所有的Value必须是同一种类型.
+  * 数据存储在Heap上.
+
+* 添加元素: `insert`
 
   ```rust
-  // 传入&T, 返回Option<U>
+  let a = String::from("haha");
+  let b = 1;
+  
+  let mut map: HashMap<String, i32> = HashMap::new();
+  map.insert(a, b);
+  ```
+
+* HashMap的所有权问题:
+
+  * 如果类型实现了Copy trait, 那么值会被复制到HashMap中.
+  * 对于有所有权的值, 所有权会转移到HashMap中, 例如调用`insert`.
+  * 如果将变量的引用插入HashMap, 那么HashMap有效的期间, 必须保证插入的引用有效.
+
+* 根据键获取值: `get`
+
+  * 参数: `&T`
+  * 返回值: `Option<&V>`
+
+  ```rust
+  // 传入&T, 返回Option<&U>
   hashmap.get(&key);
   ```
 
-* 根据原有的值更新值:
+* 遍历HashMap:
 
   ```rust
-  // value是&mut T类型
-  let value = hashmap.entry(key).or_insert(0);
-  // 更新
-  *value += 1;
+  // k, v都是&T, &U类型
+  for (k, v) in &hashmap {
+    
+  }
   ```
 
-  
+* 更新HashMap: 
 
-## 
+  * 首先判断Key是否存在:
+
+    ```rust
+    if hashmap.contains(&key) {
+      // ...
+    }
+    else {
+      
+    }
+    ```
+
+  * 如果key存在:
+
+    * 如果要用新值覆盖, 直接再次`insert`即可.
+
+    * 如果要基于原来的值计算新值:
+
+      ```rust
+      // 得到原来的值的&mut
+      let origin = hashmap.entry(&key).or_insert(0);
+      // 然后用*origin就可以基于原值计算
+      ```
+
+  * 如果key不存在, 直接`insert`插入即可.
+
 
 ## 迭代器
 
@@ -954,69 +1103,6 @@ Rust中, 裸指针(raw pointer)分为一下两种类型:
   }
   ```
 
-  
-
-## 多线程
-
-* 如果一个变量可能存在于多个线程之间, 并且可能需要被修改:
-
-  * 它的类型应该定义为: `Arc<Mutex<T>>`.
-
-  * 对它进行克隆用`Arc::clone(&T)`.
-
-  * 然后, 如果一个函数/方法中, 要接收`Arc<Mutex<T>>`类型的变量, 可以直接转移所有权, 不用写成引用.
-
-* 获取Mutex时, 把Mutex包裹的变量定义成`mut` (一般包裹的变量都需要修改).
-
-    ```rust
-    // 定义成mut, 然后后面进行修改
-    let mut a = b.lock().unwrap();
-    ```
-
-* 如果一个变量可能存在于多个线程之间, 但是不需要被修改:
-
-  * 类型定义为: `Arc<T>`.
-  * 克隆同样用`Arc::clone(&T)`.
-
-
-
-## 异常处理
-
-
-
-* 最快方法: `unwrap()`, 失败后`panic`.
-
-* 其次方法: `expect("字符串")`, 失败后打印给定字符串, 然后`panic`.
-
-* Match方法:
-
-  ```rust
-  let mut f = match File::open("hello.txt") {
-       Ok(file) => file,
-       Err(error) => Err(error)
-  };
-  ```
-
-* `?`宏:
-
-  ```rust
-  let mut f = File::open("hello.txt")?;
-  ```
-
-  * 这个语句等价为:
-
-    ```rust
-    let mut f = match File::open("hello.txt") {
-          	Ok(file) => file,
-          	Err(e) => return Err(e),
-    };
-    ```
-
-  * 因此, 如果`?`出现在一个函数中, 函数的返回值类型是`Result<T, Box<dyn std::error::Error>>`.
-
-  * 如果在`main`函数中使用`?`, 那么`main`函数签名要改成: `fn main() -> Result<(), Box<dyn std::error::Error>>`
-  
-    * `main`函数最后应该返回`Ok(())`
   
 
 
@@ -1198,12 +1284,6 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 很明显, `Actual Data Address`已经发生了改变, 但是`Value of data_ref`没有改变, 再使用`data_ref`就会发生不可预期的错误.
 
 > 构造一个样例, 解释变量在堆内存中的移动?
-
-
-
-
-
-## 异步编程
 
 
 

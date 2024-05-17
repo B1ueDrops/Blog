@@ -172,3 +172,98 @@ I'm father
 Child PID: 78608, Father PID: 1
 ```
 
+
+
+## 僵尸进程
+
+> 僵尸进程是怎么产生的?
+
+* 子进程先于父进程结束, 子进程的PCB等内核态资源需要父进程释放.
+* 如果父进程由于某些原因无法释放, 那么子进程就成了僵尸进程 (进程结束了, 但是PCB等内核资源没办法释放).
+
+> 产生僵尸进程代码?
+
+```cpp
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        // 父进程一直休眠
+        while (1) {
+            sleep(1);
+        }
+    }
+    else {
+        // 子进程直接退出, 成为僵尸进程
+        printf("Child PID: %d, Father PID: %d\n", getpid(), getppid());
+    }
+}
+```
+
+> 杀死僵尸进程的方法?
+
+* 杀死僵尸进程的父进程即可.
+* 用`kill`无法杀死僵尸进程.
+
+
+
+## 进程回收
+
+为了避免僵尸进程的产生, 需要让父进程回收子进程资源, 这个回收方式分为两种类型:
+
+* 阻塞回收.
+* 非阻塞回收.
+
+用`wait`函数可以实现对子进程的阻塞回收:
+
+* 头文件: `#include <sys/wait.h>`
+
+* 函数: `pid_t wait(int *status)`.
+  * `status`是你传进去的变量, 这个变量会保存子进程退出的状态码, 如果不需要直接传`NULL`.
+  * 返回值: 被回收的子进程的pid, 如果失败/没有子进程可以等待了, 就返回-1.
+
+* 注意: 这个函数被调用一次, 只能回收一个子进程资源, 如果有多个子进程, 需要调用多次.
+
+例子:
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+
+    pid_t pid;
+    for (int i = 0; i < 5; i ++) {
+      // 创建5个子进程
+        pid = fork();
+        if (pid == 0) {
+            break;
+        }
+    }
+
+    if (pid > 0) {
+        while (1) {
+            pid_t ret = wait(NULL);
+          // 如果成功回收
+            if (ret > 0) {
+                printf("Child %d PCB freed\n", ret);
+            }
+          // 如果没子进程可等了, 就退出
+            else {
+                printf("Child process freed error\n");
+                break;
+            }
+        }
+    }
+    else if (pid == 0) {
+        printf("I m father process\n");
+    }
+    return 0;
+}
+```
+
