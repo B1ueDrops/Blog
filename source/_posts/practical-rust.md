@@ -14,6 +14,27 @@ mathjax: true
 
 
 
+## rustc
+
+* rustc是Rust编译器.
+
+* rustc通过目标三元组(Target Triplet)来描述运行平台, 格式是: `CPU架构-厂商-OS-运行时库`.
+
+  * 可以通过`rustc --version --verbose`查看:
+
+  ```
+  rustc 1.76.0 (07dca489a 2024-02-04)
+  binary: rustc
+  commit-hash: 07dca489ac2d933c78d3c5158e3f43beefeb02ce
+  commit-date: 2024-02-04
+  host: aarch64-apple-darwin <- 运行平台
+  release: 1.76.0
+  LLVM version: 17.0.6
+  ```
+
+  * 使用`rustc --print target-list`可以查看这个版本的`rustc`总共可以支持多少个host.
+    * 如果想要添加一个平台, 可以用: `rustup target add riscv64gc-unknown-none-elf`
+
 ## 命名规范
 
 > https://rust-lang.github.io/api-guidelines/naming.html
@@ -197,11 +218,27 @@ mathjax: true
 
 * 默认的`cargo build`是用**debug级别**进行编译, 可以用`cargo build --release`进行release级别的编译.
   * 如果要跑benchmark, 一定要用`release`级别, 因为debug级别会增加很多影响性能的东西.
+  
 * 更新依赖: `cargo update`.
+
 * cargo下载的包在`CARGO_HOME`下.
   * 默认下载到`~/.cargo`.
+  
 * ✨检查代码编译是否正确用`cargo check`, 比`cargo build`快很多.
+
 * cargo添加完dependency后, 下载包用: `cargo build`
+
+* cargo交叉编译的配置:
+
+  * 在项目中新建`.cargo`文件夹, 创建`config`文件, 写入:
+
+    ```rust
+    [build]
+    target = "riscv64gc-unknown-none-elf"
+    ```
+
+  * `cargo build`就会生成目标平台的二进制文件.
+
 
 
 
@@ -1076,7 +1113,7 @@ Rust中, 裸指针(raw pointer)分为一下两种类型:
 * `*const T`: 不能通过裸指针修改原数据.
 * `*mut T`: 可以通过裸指针修改原数据.
 
-> 
+
 
 
 
@@ -1287,14 +1324,27 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
-## Snippets/Library
+## Rust标准库
 
-* 生成`[a, b)`的随机整数:
+* Rust的标准库`std`需要有操作系统的支持, 但是Rust也提供了一个不需要操作系统支持的精简版`std`, 叫做`core`.
 
-  * 使用`rand crate`.
+* 如果要让应用程序移除标准库`std`的支持, 需要干这几件事情:
 
-  ```rust
-  use rand::Rng;
+  * 加上`#![no_std]`.
+
+  * 提供`panic_handler`, `std`中用`#[panic_handler]`来标记`panic!`宏要对接的函数:
+
+    ```rust
+    use core::panic::PanicInfo;
     
-  let secret_number = rand::thread_rng().gen_range(a, b);
-  ```
+    // PanicInfo会保存程序的错误位置
+    #[panic_handler]
+    fn panic(_info: &PanicInfo) -> ! {
+        loop {}
+    }
+    ```
+
+* `start`语义项: 
+
+  * Rust标准库`std`和操作系统对接, 开始执行二进制文件时, 会先跳转到`std`中的`start`语义项, 执行一些准备工作, 然后跳转到`main`函数.
+  * 如果要移除`main`函数的支持, 需要加上`#![no_main]`.
