@@ -10,11 +10,9 @@ mathjax: true
 
 > Rust的优势?
 
-* **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制), 并不会引入额外的运行时开销.
+* **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制/泛型), 并不会引入额外的运行时开销.
 
-
-
-## rustc
+## `rustc`
 
 * rustc是Rust编译器.
 
@@ -35,19 +33,24 @@ mathjax: true
   * 使用`rustc --print target-list`可以查看这个版本的`rustc`总共可以支持多少个host.
     * 如果想要添加一个平台, 可以用: `rustup target add riscv64gc-unknown-none-elf`
 
+
+
 ## 命名规范
 
 > https://rust-lang.github.io/api-guidelines/naming.html
 
-| 元素      | 命名方式       |
-| --------- | -------------- |
-| 局部变量  | snake_case     |
-| 函数      | snake_case     |
-| 方法      | snake_case     |
-| 结构体    | UpperCamelCase |
-| Trait     | UpperCamelCase |
-| 枚举      | UpperCamelCase |
-| 模块(mod) | snake_case     |
+| 元素      | 命名方式            |
+| --------- | ------------------- |
+| 局部变量  | snake_case          |
+| 函数      | snake_case          |
+| 方法      | snake_case          |
+| 模块(mod) | snake_case          |
+| 结构体    | UpperCamelCase      |
+| Trait     | UpperCamelCase      |
+| 枚举      | UpperCamelCase      |
+| 常量      | `SCREAM_SNAKE_CASE` |
+
+
 
 
 
@@ -65,606 +68,1037 @@ mathjax: true
 
 * 常量必须绑定到**常量表达式**, 必须在编译时期就要算出来.
 
+* 数字的字面值可以用`_`分割.
+
+* 尽量让程序中所有的硬编码值都变成常量, 方便后续维护/提高可读性.
+
+
+
 
 
 ## 基本数据类型
 
-* 整数的类型转换一定要保证**小转大**.
+
+
+### 整数
+
+* 整数类型:
+
+  | 位数 | 有符号  | 无符号  |
+  | ---- | ------- | ------- |
+  | 8    | `i8`    | `u8`    |
+  | 16   | `i16`   | `u16`   |
+  | 32   | `i32`   | `u32`   |
+  | 64   | `i64`   | `u64`   |
+  | 128  | `i128`  | `u128`  |
+  | 架构 | `isize` | `usize` |
+
+* Rust整数的默认类型是`i32`.
+
+* 整数类型的字面值可以使用类型后缀:
+
+  ```rust
+  let a = 100_u8;
+  ```
+
+* 其他进制的字面值:
+
+| 进制     | 字面值        |
+| -------- | ------------- |
+| 二进制   | `0b1000_0000` |
+| 八进制   | `0o77`        |
+| 十六进制 | `0xffff_ffff` |
+
+* 将整数按照其他进制打印:
+  
+  * 二进制:
+  
+  ```rust
+  println!("{:#b}", x);
+  ```
+  
+  * 十六进制:
+  
+  ```rust
+  println!("{:#x}", x);
+  ```
+  
+  * 使用0填充, 最小宽度是`m`打印十六进制:
+  
+  ```rust
+  println!("{:#0mx}", x);
+  ```
+  
+* 整数溢出问题:
 
   * $n$位无符号数范围: $[0, 2^n - 1]$
-  * $n$位有符号数范围: $[-(2^{n}-1), 2^{n-1}-1]$​
+  * $n$位有符号数范围: $[-2^{n-1}, 2^{n-1}-1]$​​
+  * Rust在debug模式下, 遇到整数溢出会`panic`, 在release模式下, 不会`panic`, 直接按照循环溢出处理.
 
-* 字符转成ASCII码: `let c = 'a' as u8;`
 
-* 除了`byte`, 其他整数类型都可以使用类型后缀, 例如`57_u8, 128_i32`.
 
-* debug模式下会在编译时刻检查整数溢出, 但是release模式不会.
+### 浮点数
 
-* 打印变量的地址, 首先把它转成裸指针:
+* 浮点数类型: `f32`和`f64`, 默认是`f64`类型.
+
+* 浮点数只实现了`std::cmp::PartialEq`, 并且不能直接使用`<, <=`进行比较.
+  * 如果要比较, 需要`(0.1_f64 + 0.2 - 0.3).abs() < 0.00001`
+
+* 特殊的浮点数: `NaN`.
+  * 判断一个浮点数是否是`NaN`: `x.is_nan()`
+  * 与`NaN`进行运算都会得到`NaN`.
+
+
+
+### 类型转换
+
+* 基本类型转换: `as`
+  * 例如: `let a = 3.2 as u8;`
+  * 注意整数之间转换需要注意范围.
+  * 类型转换永远是显式的, Rust永远不会偷偷地将一种类型转换为另一种类型.
+
+
+
+### 字符
+
+* 字符类型: `char`
+
+  * 字符的字面值是`'a'`.
+
+  * 所有的Unicode值, 都可以作为Rust中的char.
+
+  * 由于Unicode值最多用4个字节进行编码, 因此, Rust中的字符类型占用4个字节.
+
+  * 如果某个字符的Unicode值用不了4个字节, 那么可以用`u8`来存储:
+
+    ```rust
+    // a是u8类型
+    let a = b'a';
+    ```
+
+* 打印一个变量所占的内存空间(单位是字节):
 
   ```rust
-  let ptr = &<变量名> as *const <变量类型>
+  let a = 'a';
+  println!("{}", std::mem::size_of_val(&a));
   ```
 
-  * 打印裸指针用`{:p}`.
+
+
+### 布尔
+
+* 布尔类型: `bool`:
+  * 只有两个字面值`true`和`false`.
 
 
 
-## 字符串/切片
+### `Unit Type`
 
-* Rust中字符串用`UTF-8`编码.
+* 单元类型 (unit type): `()`
 
-* Rust中, 语言层面只提供了一种字符串类型, 就是`&str`, 就是切片.
+  * 这个类型用来占位, 不占用任何内存.
+  * 本质上就是一个空的元组.
+  * `main`函数和`println!`的返回值是`()`.
 
-  * `&str`本质上就是对存储在其他地方, `UTF-8`编码的字符串的引用.
-    * 字符串字面值就存在于二进制文件中.
 
-* `String`本质上是对`Vec<u8>`的封装.
 
-* 创建字符串:
 
-  * `String::from()`函数.
-  
-    ```rust
-    let a = String::from(format!("haha {}", b));
-    ```
-  
-  * `to_string()`方法: 适用于实现了Display trait的数据类型, 包括`&str`.
-  
-* 从`String`类型字符串中获取字符:
+## 函数
 
- ```rust
-  a.chars().nth(index); // 返回Option, 自己处理
- ```
+* 函数的定义:
 
-* 更新String:
+  ```rust
+  fn add(a: i32, b: i32) -> i32;
+  ```
 
-  * 将字符附加到`String`: `push`
+  * 每一个参数, 以及返回值都需要标注类型.
 
-    ```rust
-    let mut s = String::from("foo");
-    s.push('l');
-    ```
+* 函数体:
 
-  * 将`&str`附加到`String`: `push_str`
+  * 函数体由一系列Statement (语句)以及最后的Expression (表达式)组成.
 
-    ```rust
-    let mut s = String::from("foo");
-    s.push_str("bar");
-    ```
-
-  * `String`字符串拼接:
-
-    ```rust
-    let s1 = String::from("Hello");
-    let s2 = String::from("World");
-    let s3 = s1 + &s2
-    ```
-
-    * 注意, 拼接的后面必须都是`&String/&str`类型, 因为`+`本质上是调用了类似`fn add(self, a: &str, ...)`这样签名的函数.
-    * 注意, 拼接之后, `s1`所有权就没有了, 后面不能再使用.
-
-* 访问字符串:
-
-  * `String`类型不能通过索引访问(没有实现Integer trait).
-* 因为索引访问的是`u8`, 而不是字符.
-  * Rust中有两种看待字符串的方法:
-    * 字节数组: `a.bytes()`
-    * 字符数组: `a.chars()`
-  * 遍历字符串中的字符:
-
-```rust
-  // a可以是String或者&str
-  for ch in a.chars() {
-    
+  ```rust
+  fn add_with_extra(x: i32, y: i32) -> i32 {
+      let x = x + 1; // 语句
+      let y = y + 5; // 语句
+      x + y // 表达式
   }
-```
-
-
-* 字符串逆序:
-
-  ```rust
-  // a是String类型
-  let a = a.chars().rev().collect::<String>();
   ```
 
-* 字符串转整数:
+  * 语句会返回`()`类型, 最后的表达式是函数返回的结果.
+  * 如果要在函数中间强制返回结果, 可以使用`return`.
+
+* 函数返回`()`可以代表函数没有返回值, 但是没有返回值的函数在rust中叫做diverge function:
 
   ```rust
-  let s1 = String::from("42");
-  let n1: u64 = s1.parse()?;
+  fn dead_end() -> ! {
+    panic("End of program");
+  }
   ```
 
-* 在使用`match`做字符串`&str`匹配时, 需要在匹配后面加上`_`的处理, 例如:
-
-  ```rust
-      let inst_struct = match inst.as_str() {
-          "0110111" => {
-              Inst {
-                  hex: inst,
-                  name: String::from("lui"),
-                  rd: 0_u8,
-                  rs1: 0_u8,
-                  rs2: 0_u8,
-              }
-          },
-        // 如果所有的都没匹配到
-          _ => {
-              panic!("Not implemented");
-          }
-      };
-  ```
-
-* **字符串切片:** `&str`
-
-	* 切片用来创造数组/字符串某一部分的**不可变引用**.
-
-	* 创建方法是: `&s[startIndex..endIndex]`, 选取的区间是`[startIndex, endIndex - 1]`.
-    * 从0开始: `&s[ ..endIndex]`
-    * 直到结尾: `&s[0 ..]`
-    * 选取全部: `&s[ .. ]`
-
-  * 注意: 切片索引访问的不是字符, 而是`u8`, 需要保证访问的索引在每一个字符的边界位置, 例如下面代码会报错:
-
-    ```rust
-    let s = "中国人";
-    // 中文在UTF-8中占3个字节, [0..2]正好在'中'的里面
-    let a = &s[0..2];
-    ```
-
-* 如果一个函数用字符串当作参数, 类型尽量定义成`&str`, 让API更加通用.
-
-## Cargo
-
-* 默认的`cargo build`是用**debug级别**进行编译, 可以用`cargo build --release`进行release级别的编译.
-  * 如果要跑benchmark, 一定要用`release`级别, 因为debug级别会增加很多影响性能的东西.
-  
-* 更新依赖: `cargo update`.
-
-* cargo下载的包在`CARGO_HOME`下.
-  * 默认下载到`~/.cargo`.
-  
-* ✨检查代码编译是否正确用`cargo check`, 比`cargo build`快很多.
-
-* cargo添加完dependency后, 下载包用: `cargo build`
-
-* cargo交叉编译的配置:
-
-  * 在项目中新建`.cargo`文件夹, 创建`config`文件, 写入:
-
-    ```rust
-    [build]
-    target = "riscv64gc-unknown-none-elf"
-    ```
-
-  * `cargo build`就会生成目标平台的二进制文件.
-
-
-
-
-## package, crate, module
-
-* Rust中, 默认导入了`std::prelude`, 里面包含了常用的函数, 包括`println!`.
-* Rust的引入规范:
-  * 引入函数时, 引入到父级模块, 然后用`父级模块::函数名`调用, 用于区分是哪个作用域中的函数.
-  * 引入struct, enum这种时, 引入到自身, 因为引入到父级模块的话就太难写了.
-* 如果有多个可执行文件, 可以放到`src/bin`中, 运行某个可执行文件就用: `cargo run --bin <可执行文件名字>`
-
-* crate是Rust中最小的编译单元, 分为两种类型:
-  * `binary crate`: 编译生成二进制文件.
-  * `library crate`: 为其他程序提供服务.
-* crate是一颗由`mod`组成的树状结构:
-  * 树的根是一个叫做`crate`的模块, 在概念上, 叫做crate root, 它由定义在`src/main.rs`和`src/lib.rs`中的元素组成.
-  * 如果要在mod和mod之间建立父子关系, 需要在父模块中使用`mod XXX;`来声明子模块.
-  * Rust中, 一个文件夹如果里面有`mod.rs`, 那么会被看成是和文件夹同名的mod, mod中的元素就是在`mod.rs`中的元素.
-  * Rust中, 一个文件默认也被看成一个和文件同名的mod.
-  
-* 如果要在某一个mod中引入其他mod中的元素, 可以使用`use`:
-  * 如果使用绝对路径, 需要从`crate::`开始引入.
-  * 如果使用相对路径, `super::`表示父亲mod.
-  
+  * 返回值是`!`时, 这个函数就是diverge function, 表示没有返回值.
+  * 这种函数一般会导致程序`panic`.
 
 
 
 ## 可变, 引用, 所有权
 
-* Stack和Heap:
+* 可变性:
 
-  * Stack用来存储编译时已知大小的数据.
+  * 如果一个变量的值在后面可能会发生变化, 应该用`mut`修饰:
 
-  * 访问Stack一般比访问Heap快, 因为Heap还需要定位指针, 而Stack一直维护栈顶, 访问内存次数较少.
-  
-* **借用规则:**
+  ```rust
+  let mut a = String::from("haha");
+  ```
 
-  * 同一作用域内, 对于同一个数据, 只能存在一个可变引用.
-  
-  * 同一作用域内, 对于同一个数据, 可变引用和不可变引用不能同时存在.
-  
-    * 有一个`Vec`的场景:
-  
+* 所有权:
+
+  * Rust中, 每一个值都被一个变量所拥有, 这个变量有这个值的所有权(ownership).
+  * 一个值只能拥有一个所有者.
+  * 当所有者离开作用域时, 值会被释放.
+
+* Rust中, 当一个变量赋值/当作函数参数传递时, 如果对应类型没有实现`Copy` trait, 则会发生所有权的转移.
+
+  ```rust
+  let a = String::from("haha");
+  let b = a;
+  // 此后, a不可使用, 否则会panic
+  ```
+
+  * 所有权的检查是在编译时期进行的, 对运行时的性能没有影响.
+  * 实现了`Copy` trait的类型有:
+    * 整数.
+    * 浮点数.
+    * 字符.
+    * 布尔.
+    * 所有元素都实现了`Copy trait`的元组.
+    * 不可变引用`&T`.
+  * 所有权的转移会涉及到变量地址的改变.
+
+* 引用: 引用变量可以看作对原变量值的租借(borrowing), 租借不会引起所有权的转变, 分为两种类型:
+
+  * 不可变引用`&T`: 可以使用原变量的值, 但是不可以改变值.
+
+    ```rust
+    let a = String::from("haha");
+    let b = &a;
+    ```
+
+  * 可变引用`&mut T`: 可以读/写原变量的值, 要求原变量必须可变`mut`.
+
+    ```rust
+    let a = String::from("haha");
+    let b = &mut a;
+    ```
+
+  * **借用规则:**
+
+    * 不可以对不可变数据进行可变借用.
+
+    * 同一作用域, 同一个值, 只能进行一次可变引用`&mut T`的借用.
+    
       ```rust
       let mut v = vec![1, 2, 3];
-      // 可变引用
-      let first = &v[0];
-      // 不可变引用
-      v.push(6);
-      println!("{first}");
-      // 这段代码会报错
-      ```
-  
       
-  
-  * **一个场景: **假设你有一个函数, 使用了变量`a`的不可变引用, 得到一个结果, 如果你后来改变了`a`, 那么得到的这个结果就可能会失效 (例如给定字符串计算长度, 你改了字符串, 这个长度结果肯定就不对), Rust不允许这种情况发生, 后面不能改(也就是不能使用不可变引用来修改).
-    * 也就是说, 通过不可变引用, **还能保证一个变量`x`和对应的函数`f(x)`随时可以保持关系**.
-  
-* **Race condition**发生的条件: Rust的借用规则可以从根本上避免出现race condition
-  * 两个/多个指针同时访问一块内存数据.
-  * 至少有一个指针尝试写入数据.
-  * 没有机制来同步指针对内存数据的访问.
-  
-* 根据Rust的所有权机制, 自引用结构体很难构造, 例如:
-  
-  ```rust
-  #[derive(Debug)]
-  pub struct SelfRef<'a> {
-      mystr: String,
-      mystr_ref: &'a str,
-  }
-  
-  fn main() {
-      let hello = "Hello".to_string();
-      let self_ref = SelfRef {
-          mystr_ref: &hello,
-          mystr: hello
-      };
-      println!("{:?}", self_ref);
-  }
-  ```
-  
-  * 这个代码编译错误, `hello`的所有权会移动到`self_ref.mystr`上, 这个时候, `&hello`这个不可变借用就会失效.
-  
-* 当你定义一个变量的时候, 你就需要问自己, 这个变量会不会在未来可变, 如果可变就定义成`mut`.
-  
-* 函数的返回值一般都会把所有权返回, 可用不可变变量接收/`mut`接收 (如果返回引用需要处理生命周期).
+      let b = &mut v[0];
+      let c = &mut v[1];
+      // 报错
+      println!("{}, {}", b, c);
+      ```
+    
+    * 同一作用域, 同一个值, 不能同时进行可变引用和不可变引用的借用.
+    
+    ```rust
+    let mut v = vec![1, 2, 3];
+    
+    let b = &v[0];
+    v.push(2);
+    // 报错
+    println!("{}", b);
+    ```
 
-* 注意, 当一个变量的所有权转移后, 这个变量值的可变性可能改变, **可以用所有权转移的方式改变一个原本不能被改变的值**
+
+
+## 元组
+
+* 元组类型: `(T, U, E)`, 其中`T, U, E`是类型.
+
+  * 创建元组:
 
   ```rust
-  let a = String::from("a");
-  let mut b = a;
-  b.push_str("haha"); // 不会报错
+  let tup: (i32, f64, u8) = (1, 1.1, 10);
   ```
 
-* 看一个结构体成员方法时, 注意方法参数:
-
-  * `self`: 会直接拿走结构体变量的所有权, 结构体变量后面就不能用了.
-  * `&self`: 没事, 随便用.
-  * `&mut self`: 结构体成员可能会发生变化, 具体什么变化看函数实现.
-
-* 结构体中的`new`关联方法中,  参数列表一般都不用引用, **直接拿走原变量的所有权**, 让所有权转移到结构体成员变量中.
-
-* 注意, 你在用`for .. in`遍历数组时, 会调用`into_iter()`, 这个方法会拿走原始变量的所有权, 因此需要考虑原始变量是否实现了`Copy trait`.
-
-* 如果你看到一个变量是`&mut`类型, 那么**你一定要记得, 这个类型没有实现`Copy trait`**, 需要注意所有权.
-
-* 所有权移动时, 一般会涉及变量地址的改变.
-
-
-
-## 结构体和方法
-
-* 定义`struct`: 需要为所有Field指明名称和类型:
+  * 解构元组:
 
   ```rust
-  struct User {
-    name: String,
-    sign_in_count: u64,
-    active: bool
-  }
+  let (x, y, z) = tup;
+  // 用.0/.1/.2访问元素
+  let z = tup.0
   ```
 
-  * 结尾没有`;`.
-
-* 实例化:
-
-  ```rust
-  let user = User {
-    active: true,
-    sign_in_count: 554,
-    name: String::from("haha")
-  };
-  ```
-
-  * 创建实例时, 必须同时为所有的字段都赋值.
-
-* 访问/修改`struct`用`.`, 例如`user.name`.
-
-* 一旦一个`struct`变量是`mut`, 那么它的所有字段都是`mut`.
-
-* 当字段的名字和字段 对应值的变量名是一样的时候, 就可以简写:
-
-  ```rust
-  let active = true;
-  let user = User {
-    active,
-    sign_in_count: 554,
-    name: String::from("haha")
-  }
-  ```
-
-* `struct`更新语法: 当你想基于某一个已有的结构体创建一个新结构体时, 可以用`..`
-
-  ```rust
-  let user = User {
-    active: true,
-    sign_in_count: 554,
-    name: String::from("haha")
-  };
-  // 没有更新语法
-  let user2 = User {
-    active: false,
-    sign_in_count: user.sign_in_count,
-    name: user.name
-  }
-  // 更新语法..
-  let user2 = User {
-    active: false,
-    ..user
-  }
-  ```
-
-* `tuple struct`: `struct`有名字, 但是字段没有名字:
-
-  ```rust
-  struct Color(i32, i32, i32);
-  
-  let black = Color(0, 0, 0);
-  // 访问元素
-  black.0
-  black.1
-  black.2
-  ```
-
-  * Rust函数也可以有多个返回值, 返回值用tuple包裹即可.
-
-* 方法和函数不同, 方法一般定义在`impl`内部, 并且参数一般含有`self/&self/&mut self`.
-
-  * `self`会夺去结构体变量的所有权.
+* 借助元组, 可以实现函数返回多个元素:
 
 ```rust
-struct Rectangle {
-  width: u32,
-  height: u32
+fn length(s: String) -> (String, usize) {
+  let length = s.len();
+  (s, length)
 }
 
-impl Rectangle {
-  fn area(&self) -> u32 {
-    self.width * self.height
-  }
+fn main() {
+  let a = String::from("haha");
+  let (s, l) = length(a);
 }
 ```
 
-* 可以在`impl`块中, 不包含`self`, 这叫做**关联函数**, 不是方法, 例如`String::from()`.
 
-  * 使用时, 用`::`调用.
 
-  * 一般用于构造器:
+## 切片
 
-    ```rust
-    impl Rectangle {
-      fn square(size: u32) -> {
-        Rectangle {
-          width: size,
-          height: size
-        }
-      }
-    }
-    
-    let a = Rectangle::square(2);
-    ```
+* 切片类型: `[T]` (`str`也是切片类型)
 
-* 给结构体/枚举加上`Debug`宏:
+  * 切片可以表示对一个集合中的部分数据.
+  * 在Rust中, 切片是一个动态类型(DST), 在编译时无法获取类型大小, 因此在代码中没法直接使用.
 
   ```rust
-  #[derive(Debug)]
+  // 报错
+  let a : str = "haha";
   ```
 
-  * 在调试时, 可以使用`{:?}`或者`{:#?}`进行输出, `{:#?}`的输出更优美一些.
+  * 对于切片的访问, 只能通过切片的引用`&[T]`来进行访问(引用已知大小).
+
+* 创建切片的语法: `&s[a..b]`, 获取`s`中`[a, b)`区间范围的数据 (`s`可以是数组, 或者是`String`类型).
+
+  * `&s[..]`获取全部.
+  * `&s[..b]`获取`[0, b)`.
+  * `&s[a..]`获取`[a, s.len)`.
+
+
+
+## 字符串
+
+* 字符串类型: `&str`
+
+  * 在Rust中, 语言层面只提供了`&str`类型作为字符串.
+
+  ```rust
+  // a是&str类型
+  let a = "hahaha";
+  ```
+
+  * 字符串字面值`"hahaha"`被硬编码在二进制文件中, 并且不可变, `&str`就是对这个不可变的值的引用.
+
+  * `&str`类型不可以用索引进行访问.
+
+  * 对`&str`取切片引用, 得到的还是`&str`类型:
+
+    ```rust
+    let a = "hahaha";
+    let b = &a[..];
+    ```
+
+* 更方便的字符串类型: `String`
+
+  * `String`定义在标准库`std`中.
+
+  * 字符串创建:
+
+    ```rust
+    let a = String::from("haha");
+    let a = "haha".to_string();
+    ```
+
+  * 字符串修改 (需要定义字符串为`mut`): 参考文档.
+
+  * `String`采用`UTF-8`进行编码, 底层采用`Vec<u8>`进行实现:
+
+    * `String`类型也不可以用索引进行访问.
+    * `String`类型可以取切片, 切片的类型是`&str`.
+    * `String`类型取切片时, <font color=red>一定注意, 索引的边界要在字符的边界上</font>.
+
+    ```rust
+    let a = String::from("中国人");
+    // 报错, 一个中文字符占3个字节, [0..2]正好在'中'的内部
+    let b = &a[0..2];
+    ```
+
+    * 如果想获取`String`中的第`n`个字符, 可以使用如下方法:
+
+    ```rust
+    let a = String::from("haha");
+    // b是Option<char>类型
+    let b = a.chars().nth(0);
+    
+    // 遍历每一个字符 (a.chars()返回一个迭代器)
+    for c in a.chars() {
+      // c是char类型
+      println!("{}", c);
+    }
+    ```
+
+    
+
+
+
+## 结构体
+
+* 结构体类型:
+
+  * 定义结构体:
+    * 每一个参数都需要显式标注类型.
+
+  ```rust
+  struct Student {
+    name: String,
+    age: u32,
+  }
+  ```
+
+  * 例化结构体:
+
+    ```rust
+    let mut stu = Student {
+      name: String::from("haha"),
+      age: 18
+    };
+    
+    // 如果变量和结构体字段重名, 那么可以简化:
+    let name = String::from("haha");
+    let mut stu = Student {
+      name,
+      age: 18
+    };
+    ```
+
+* 结构体的可变性: 如果结构体变量被设置为`mut`, 那么其中的每个字段都是可变.
+
+* 元组结构体: 只有`struct`名字, 没有字段名字的结构体:
+
+```rust
+struct Color(i32, i32, i32);
+
+let black = Color(0, 0, 0);
+// 访问元素
+black.0
+black.1
+black.2
+```
+
+
 
 ## 枚举
 
-* 定义枚举, 例如IP地址分为IPv4和IPv6:
+* 枚举类型: `enum`
+
+  * 定义枚举:
 
   ```rust
-  enum IpAddrKind {
-    V4,
-    V6
+  enum IpAddr {
+    IPv4,
+    IPv6
   }
   ```
 
-  * 使用: `let four = IpAddrKind::V4`.
-
-* Rust中, 允许将任意类型的数据附加到枚举的元素中:
+  * 访问枚举:
 
   ```rust
-  enum IpAddrKind {
-    V4(String),
-    V6(String)
-  }
+  let a = IpAddr::IPv4;
   ```
 
-  * 每个元素可以存储不同类型的值:
+* 枚举中的元素可以和一个值绑定:
 
+  ```rust
+  enum IpAddr {
+    IPv4(String),
+    IPv6(String)
+  }
+  ```
+  
+  * 构造/获取其中的值:
+  
     ```rust
-    enum IpAddrKind {
-      V4(u8, u8, u8, u8),
-      V6(String)
-    }
+    let a = IpAddr::IPv4(String::from("haha"));
     
-    let home = IpAddrKind::V4(127, 0, 0, 1);
-    ```
-
-* 为枚举定义方法: 和`struct`一样, 也用`impl`关键字
-
-  ```rust
-  impl IpAddrKind {
-    
-  }
-  ```
-
-* Option枚举:
-
-  * 在Rust中没有Null.
-
-  * 定义在`std::prelude`中.
-
-    ```rust
-    enum Option<T> {
-      Some(T),
-      None
+    if IpAddr::IPv4(s) = a {
+      println!("{}", s);
     }
     ```
 
-  * 如果一个值可能存在, 也可能不存在(为`None`), 那么就应该是`Option`类型.
 
-  * 如果你要声明一个变量是`None`, 那么需要显式声明类型:
+
+## 数组
+
+* 数组类型: `[T; num]`
+
+  * 数组是定长的, 创建语法:
 
     ```rust
-    let absent_number: Option<i32> = None;
+    let a = [1, 2, 3, 4, 5];
     ```
 
+  * 标注类型:
+
+    ```rust
+    let a: [i32; 5] = [1, 2, 3, 4, 5];
+    ```
+
+  * 创建一个包含多个重复值的数组:
+
+    ```rust
+    // a = [3, 3, 3, 3, 3]
+    let a = [3; 5];
+    ```
+
+    * 注意: 如果采用这种写法, 数组中的元素需要实现`Copy trait`, 如果没有实现, 需要用`std::array::from_fn`.
+
+* 可以通过索引访问数组元素.
+
+  * Rust会在编译时和运行时都检查数组越界, 运行时出现会直接`panic`.
+
+* 打印数组可以用`{:#?}`.
+
+* 可以创建数组的切片:
+
+  ```rust
+  let a: [i32; 5] = [1, 2, 3, 4, 5];
+  let slice: &[i32] = &a[1..3];
+  // 字面值比较
+  assert_eq!(slice, &[2, 3]);
+  ```
+
+
+
+## 控制流
+
+* `Range`:
+
+  * `Range<T>`是一个序列, 可以用`a..b`构造, 表示`[a, b)`
+  * `for`循环可以使用`Range`来遍历集合.
+
+  ```rust
+  let a = vec![1, 2, 3, 4];
+  
+  for i in 0..a.len() {
+    let b = a[i]
+  }
+  ```
+
+* `for`循环与迭代器的语法糖: 
+
+  * 如果要转移元素的所有权:
+
+    ```rust
+    // item为T类型
+    for item in collection {
+      
+    }
+    
+    // 等价于
+    for item in collection.into_iter() {
+      
+    }
+    // 如果需要索引
+    for (i, item) in collection.into_iter().enumerate() {
+      
+    }
+    ```
+
+  * 如果要用元素的不可变借用:
+
+    ```rust
+    // item为&T类型
+    for item in &collection {
+      
+    }
+    
+    // 等价于
+    for item in collection.iter() {
+      
+    }
+    ```
+
+  * 如果要用元素的可变借用:
+
+    ```rust
+    // item为&mut T类型
+    for item in &mut collection {
+      
+    }
+    
+    // 等价于
+    for item in collection.iter_mut() {
+      
+    }
+    ```
+
+* `for`循环遍历的性能问题:
+
+  * 用迭代器遍历性能大于用索引, 因为索引访问需要引入判断数组越界访问.
 
 
 
 ## 模式匹配
 
-* `match`表达式允许一个值和一系列模式进行匹配, 并且执行匹配成功的代码.
+* 模式匹配也是一种控制流, 它有两个功能:
 
-  * 模式可以是变量名, 字面值, 或者通配符.
+  * 解构变量.
+  * 根据变量的不同值, 采用不同的控制流.
+
+* 模式可以是如下内容:
+
+  * 字面值.
+  * 解构的枚举值, 元组, 结构体.
+
+* `match`表达式:
+    ```rust
+    match VALUE {
+        PATTERN => EXPRESSION,
+        PATTERN => EXPRESSION,
+        _ => EXPRESSION,
+    }
+    ```
+    
+    * 一个例子:
+    
+      ```rust
+      // 例子
+      enum Coin {
+      	A, B, C, D, E
+      }
+      
+      fn value_in_cents(coin: Coin) -> u8 {
+        match coin {
+          Coin::A => 1,
+          Coin::B => 2,
+          // | 表示两种情况
+          Coin::C | Coin::D => { 3 },
+          Coin::D => 4,
+          _ => { 5 },
+        }
+      }
+      ```
+    
+    * 用`match`来解构枚举值:
+    
+      ```rust
+      enum Option<T> {
+        Some(T),
+        None,
+      }
+      
+      let a = Some(3);
+      let c = match a {
+        Some(x) => {
+          let b = x;
+          b
+        },
+        None => {
+          0
+        }
+      }
+      ```
+    
+* `if let`表达式: 只关心一种匹配情况的`match`:
+  
+    ```rust
+    let c = if let Some(x) = a {
+      let b = x;
+      b
+    }
+    ```
+    
+    
+
+## 方法
+
+* 方法是绑定在类型上的一系列函数, 方法可以访问类型中的元素.
+
+  * 用`impl`定义方法:
 
   ```rust
-  enum Coin {
-    A,
-    B,
-    C,
-    D,
+  struct Student {
+   	name: String,
+    age: usize
   }
   
-  fn value_in_cents(coin: Coin) -> u8 {
-    match coin {
-      Coin::A => 1,
-      Coin::B => 2,
-      // 加了花括号, 后面不用,
-      Coin::C => {
-      }
-      Coin::D => 4,
+  impl Student {
+    fn name(&self) -> String {
+      self.name
     }
   }
   ```
 
-  * `match`匹配的分支可以绑定到被匹配 对象的部分值.
+  * `impl`可以分为多个, 可以按照逻辑组织`impl`.
 
-    * 可以从enum中拿到值:
+* 方法的类型:
 
+  * 关联函数: 方法签名中没有`self, &self, &mut self`.
+    * 用来实现构造函数.
+  * 其他方法: 方法签名中带有`self, &self, &mut self`.
 
-    ```rust
-    enum Coin {
-      A,
-      B,
-      C,
-      D(u8),
+* 方法的所有权问题:
+
+  * `self`: 会拿走类型变量的所有权, 调用后原变量不可用.
+  * `&self`: 对原变量采用不可变借用.
+  * `&mut self`: 对原变量采用可变借用, 可以修改变量的字段值.
+
+* 自动解引用(`Deref trait`): 
+
+  * 如果方法中的参数是`&self, &mut self`, 在访问变量时, 应该加上解引用`(*stu).name`.
+  * 但是, Rust会自动解引用, 因此可以直接`stu.name`访问.
+  * 本质上是Rust对`Self`这种类型实现了`Deref trait`.
+
+* 为枚举实现方法:
+
+  ```rust
+  enum Weekday {
+    Monday, Thuesday, Wednesday
+  }
+  
+  impl Weekday {
+    
+    fn show_mood(&self) {
+      match self {
+        Self::Monday => {},
+        Self::Thuesday => {},
+        //...
+      }
     }
     
-    fn value_in_cents(coin: Coin) -> u8 {
-      match coin {
-        Coin::A => 1,
-        Coin::B => 2,
-        // 加了花括号, 后面不用,
-        Coin::C => {
-          3
-        }
-        Coin::D(value) => {
-         		println!(value); 
-          	value
-        }
-      }
+  }
+  ```
+
+
+
+## 泛型
+
+* 泛型可以在函数, 结构体, 枚举, 方法中使用.
+
+* 泛型需要在函数名/结构体名/枚举名/方法名后面声明泛型参数`T`, 然后再使用:
+
+  * 函数:
+
+    ```rust
+    fn largest<T>(list: &[T]) -> T {
+      
+    }
+    ```
+
+  * 结构体:
+
+    ```rust
+    struct Point<T, U> {
+      x: T,
+      y: U
+    }
+    ```
+
+  * 枚举:
+
+    ```rust
+    enum Result<T, E> {
+      Ok(T),
+      Err(E)
+    }
+    ```
+
+  * 方法:
+
+    ```rust
+    impl<T, U> Point<T, U> {
+      
+    }
+    // 如果方法要针对某种具体的类型
+    impl Point<i32, i32> {
+      //...
     }
     ```
 
 
-  * `match`匹配必须穷举所有的可能.
-    * `_`代替其余没有被列出来的值.
 
-* `if let`处理只关心一种匹配, 不关心其他匹配的情况:
+## `Trait`
+
+### 基本用法
+
+* Trait是一种类型, 里面包含了若干个方法, 用来定义一个对象所必须满足的行为:
 
   ```rust
-  if let Some(3) = v {
-    println!("three");
-  }
-  else {
-    println!("others");
+  trait Show {
+    fn show(&self) -> String;
   }
   ```
 
+* 可以将某一个Trait绑定到一个类型上:
+
+  ```rust
+  struct Student {
+    name: String
+  }
   
+  impl Show for Student {
+    fn show(&self) -> String {
+      self.name
+    }
+  }
+  ```
 
-## Option
+* Trait中可以提供默认实现的方法, 绑定的类型可以选择是否重载这个方法.
 
-* 如果一个变量在之后可能被设置为None, 那么:
+  ```rust
+  trait Show {
+    fn show(&self) -> String {
+      String::from("Read more!")
+    }
+  }
+  ```
 
-  * 在定义时:
+
+
+### 孤儿规则
+
+* 如果你要为一个类型`T`实现一个Trait, 那么Trait和`T`至少有一个需要定义在当前作用域.
+  * 不能为外部的类型实现外部的Trait.
+
+
+
+#### `newtype`
+
+* newtype可以绕过孤儿规则, 为外部类型实现外部trait.
+
+* 使用方法:
+
+  * 用一个元组结构体作为`Wrapper`, 包裹其中的外部类型.
+  * 为这个元组结构体实现外部trait.
+
+  ```rust
+  struct Wrapper(Vec<String>);
+  
+  impl Display for Wrapper {
+    // ...
+  }
+  // 之后可以使用Wrapper代替外部类型
+  ```
+
+
+
+### 特征约束
+
+
+
+#### 泛型特征约束
+
+* 泛型参数`T`在声明的时候, 可以限制这个泛型`T`必须实现某几种特征:
+
+  * 实现一种特征:
 
     ```rust
-    // 注意, 一定是mut
-    let mut a: Option<T> = Some(...);
+    fn notify<T: Summary>(item: &T) {}
     ```
 
-  * 后期, 如果要把取`a`的值, 并且把`a`设置为None, 那么就用: `let b = a.take().unwrap();`, `take()`方法会直接让原来`Option`变量变成`None`.
+  * 实现两种特征: `+`
 
-  * 此时, `a.is_none()`的返回值就是True.
+    ```rust
+    fn notify<T: Summary + Display>(item: &T) {}
+    ```
 
-* 快速接收`Option`变量: `if let`
+  * 实现好几种特征: `where`表达式
+
+    ```rust
+    fn notify<T, U>(item: &T, other: &U)
+    	where T: Display + Clone,
+    				U: Summary + Display
+    {}
+    ```
+
+  * 在方法中进行特征约束的时候, 只需要在第一个`<>`中进行特征约束即可:
+
+    ```rust
+    impl<T: Display> Point<T> {}
+    ```
+
+* 语法糖: `impl A`
+
+  * 表示实现了`A`这个Trait的对象.
+    ```rust
+    fn notify(item: &impl Summary) {}
+    ```
+
+  * 约束多个特征:
+  
+    ```rust
+    fn notify(item: &(impl Summary + Display)) {}
+    ```
+  
+  * 注意: `impl A`一般不可以作为函数返回值的类型:
+  
+    * 函数可能返回`T`这个具体类型的变量, 也可能返回`U`这个具体类型的变量, 都符合`impl A`的定义(假设类型`T`和`U`都实现了`A`这个trait), 但是函数返回值只能是一个具体类型(在编译时确定).
+  
+    * 函数返回值一般采用特征对象作为类型标注.
+  
+* 静态分发 (static dispatch):  无论是泛型的特征约束, 还是`impl A`, 都会在编译期处理完成, 编译器会为每一个泛型分配一个具体类型, 这就是静态分发.
+
+
+
+#### trait特征约束
+
+* 如果你要求: 一种类型在实现一个trait时, 需要先实现另一个trait, 可以使用trait特征约束:
 
   ```rust
-  if let Some(x) = a {
-    // x就是其中的值
-  }
-  else {
-    // 如果是None怎么处理
-  }
-  
-  // 如果要使用可变的值
-  if let Some(mut x) = a {
-    
-  }
-  // 从Some(T)中拿到不可变引用:
-  if let Some(x) = a.as_ref() {
-    
-  }
-  // 可变引用
-  if let Some(x) = a.as_mut() {
-    
+  // 实现Show trait之前, 你需要为类型实现Display和Clone
+  trait Show: Display + Clone {
+    fn show(&self) -> String;
   }
   ```
 
-  * `if let`会拿走`Some(x)`中`x`的所有权, 叫做partially move, 同样, `match`也会拿走, 模式匹配时可以考虑`as_ref()/as_mut()`
+  
 
-* 注意, 使用`a.unwrap()`会拿走`a`的所有权(如果没有实现Copy trait), 可以考虑实现`clone()`.
+### 特征对象
 
-* 从`Option`中获取其中**值的引用**: 假设`x`是`Option<T>`类型的变量
+* 特征对象也表示实现了某个trait的对象, 但是与泛型的特征约束不同, 这个对象的具体类型在运行时才能确定下来.
 
-  * **不可变引用**: `x.as_ref().unwrap()`.
-  * **可变引用**:  `x.as_mut().unwrap()`.
+* 特征对象类型: `dyn A`
 
-* 注意, 假设`x`是`&Option<T>`类型, `x.unwrap()`也会拿走`x`的所有权, 因为这里会隐式调用`Deref` trait中的`deref`方法.
+  * 注意, 特征对象只能在运行时才能确定大小, 因此需要用引用`&`或者`Box<T>`的形式使用.
 
-  * 也需要用`as_ref()`或者`as_mut()`, 防止所有权转移.
+  ```rust
+  // 定义一个trait
+  trait Show {
+    fn show(&self) -> String;
+  }
+  
+  // 两个对象实现了这个trait
+  impl Student for Show {
+    fn show(&self) -> String {
+      self.name
+    }
+  }
+  impl Teacher for Show {
+    fn show(&self) -> String {
+      self.name
+    }
+  }
+  
+  // 定义一个函数, 参数是实现了Show trait的对象
+  fn call_show(people: &dyn Show) { people.show(); }
+  // 或者使用Box<dyn Show>
+  fn call_show(people: Box<dyn Show>) { people.show(); }
+  ```
+
+* 不是所有的trait都可以有特征对象, 需要满足对象安全(object safety)条件:
+
+  * trait中的方法没有泛型参数`T`.
+  * trait的返回值不能是`Self`.
+
+> 为什么要满足对象安全条件, 才能拥有特征对象?
 
 
+
+### 关联类型
+
+* 在trait中一般不使用泛型, 一般用关联类型代替.
+
+* 关联类型用`type`定义, 也可以用泛型约束.
+
+  ```rust
+  trait Show {
+    type Item : Display + Clone;
+    
+    fn show(&self) -> Option<Self::Item>;
+  }
+  
+  // 实现Show trait
+  impl Show for Student {
+    // 指定具体的关联类型
+    type Item = String;
+    
+    //...
+  }
+  ```
+
+  * 关联类型采用`Self::A`进行索引.
+
+
+
+### 完全限定语法
+
+* 如果一个类型实现了多个trait, 不同trait中有方法同名, 那么这个类型的对象在调用方法时, 可以使用完全限定语法(Fully Qualified Syntax)规定调用哪个方法.
+
+  * 格式是: `<Type as Trait>::function(receiver_if_method, next_arg, ...);`
+
+  ```rust
+  // trait1
+  trait Show1 {
+    fn show(&self) -> String;
+  }
+  // trait2
+  trait Show2 {
+    fn show(&self) -> String;
+  }
+  // implement trait1 and trait2 for a type
+  impl Show1 for Student {
+    fn show(&self) -> String {}
+  }
+  impl Show2 for Student {
+    fn show(&self) -> String {}
+  }
+  
+  fn main() {
+    let stu := Student {};
+    // 调用trait1中的show
+    <Student as Show1>::show(&stu);
+    // 调用trait2中的show
+    <Student as Show2>::show(&stu);
+  }
+  ```
+
+  
+
+## `Option`
+
+* 在Rust中, 如果一个变量可能为`None`, 那么它的类型应该是`Option<T>`:
+
+  ```rust
+  enum Option<T> {
+    Some(T),
+    None
+  }
+  ```
+
+* 可以利用`match`表达式和`if let`对`Option<T>`进行解构.
+
+* `Option<T>`提供的解构方法:
+
+  * `unwrap()`:
+
+    * 对`Some(T)`: 可以直接拿到`T`类型的值.
+    * 对`None`: 程序`panic`.
+
+  * `expect("错误信息")`:
+
+    * 与`unwrap()`用法相同, 但是可以自定制`panic`后的错误信息.
+
+  * 如果想从`Option<T>`中拿到`&T`类型: 使用`as_ref()`:
+
+    ```rust
+    let a = Some(T);
+    // b是&T类型
+    let b = a.as_ref().unwrap();
+    ```
+
+  * 如果想从`Option<T>`中拿到`&mut T`类型: 使用`as_mut()`:
+
+    ```rust
+    let a = Some(T);
+    // b是&mut T类型
+    let b = a.as_mut().unwrap();
+    ```
+
+    
 
 ## 异常处理
 
 * Rust中的错误分为两种:
+
   * 可恢复的错误: Rust提供了`Result<T, E>`类型.
   * 不可恢复的错误: Rust提供了`panic!`宏.
 
@@ -683,6 +1117,20 @@ impl Rectangle {
     ```
 
   * `panic`可能发生在源码中, 如果要定位源码的位置, 需要运行时将`RUST_BACKTRACE`设置为1.
+
+  * `panic`的底层原理:
+
+    * 在Rust中, 处理`panic!`的函数叫做`panic_handler`, 采用`#[panic_handler]`来进行标注:
+
+      ```rust
+      use core::panic::PanicInfo;
+      
+      // PanicInfo会保存程序的错误位置
+      #[panic_handler]
+      fn panic(_info: &PanicInfo) -> ! {
+          // ....
+      }
+      ```
 
 * `Result<T, E>`:
 
@@ -754,307 +1202,9 @@ impl Rectangle {
 
 
 
+## 集合
 
-## I/O
-
-* I/O的元素主要在`std::io`中.
-* 其中, 最重要的两个traits是`Read`和`Write`, 分别在`std::io::{Read, Write}`中.
-  * 实现了`Read` traits的叫`reader`, 可以调用`read`方法将reader中的数据读到buffer中, 返回成功读取的字节数.
-  * 实现了`Write` traits的叫`writer`, 可以通过`write`方法将buffer中的内容写入到`writer`中, 返回成功写入的字节数.
-
-* 从标准输入读取`String`:
-
-  ```rust
-  use std::io;
-  
-  let mut a = String::new();
-  io::stdin().read_line(&mut a).expect("");
-  ```
-
-* Rust中, 默认的`./`是在你cargo项目的根路径.
-
-* `b"hello"`是`&[u8]`类型(切片).
-
-* 使用I/O操作时, 一般会发生Error, 返回值一般是: `io::Result<T>`.
-
-  * 这个是在`std::io`里定义的一个别名, 全称还是`Result<T, Error>`.
-
-* 读取一个文件的每一行:
-
-  ```rust
-  use std::fs::File;
-  use std::io::BufReader;
-  use std::io::{self, BufRead, Read, Write};
-  
-  fn main() -> io::Result<()> {
-  
-      let f = File::open("./foo.txt")?;
-      let mut reader = BufReader::new(f);
-  
-      for line in reader.lines() {
-          println!("{}", line.unwrap());
-      }
-  
-      Ok(())
-  }
-  ```
-
-* TCP Server:
-
-  ```rust
-  use std::io::{Read, Write};
-  use std::net::TcpListener;
-  
-  fn main() {
-  
-      // 监听
-      let listener = TcpListener::bind("127.0.0.1:3000").unwrap();
-  
-      for stream in listener.incoming() {
-          let mut stream = stream.unwrap();
-          let mut buffer = [0; 1024];
-          // 读取到buffer
-          stream.read(&mut buffer).unwrap();
-          // 给客户端返回buffer
-          stream.write(&mut buffer).unwrap();
-      }
-  }
-  ```
-
-  * TCP Client:
-
-    ```rust
-    use std::io::{Read, Write};
-    use std::net::TcpStream;
-    use std::str;
-    
-    fn main() {
-    
-      let mut stream = TcpStream::connect("127.0.0.1:3000").unwrap();
-      // 发送消息
-      stream.write("Hello".as_bytes()).unwrap();
-      
-    	// 接收消息
-      let mut buffer = [0; 5];
-      stream.read(&mut buffer).unwrap();
-      
-      println!("Response from server:{:?}", str::from_utf8(&buffer).unwrap());
-      
-    }
-    ```
-
-    
-
-## 泛型
-
-* 泛型函数:
-
-  ```rust
-  fn largest<T>(list: &[T]) -> T {
-    
-  }
-  ```
-
-* 泛型结构体:
-
-  ```rust
-  struct Point<T, U> {
-    x: T,
-    y: U,
-  }
-  ```
-
-* 泛型枚举:
-
-  ```rust
-  enum Option<T> {
-    Some(T),
-    None,
-  }
-  ```
-
-* 泛型方法:
-
-  ```rust
-  impl<T> Point<T> {
-    fn x(&self) -> T {
-      //...
-    }
-  }
-  ```
-
-* 泛型trait:
-
-  ```rust
-  pub trait Iterator<T> {
-      fn next(&mut self) -> Option<T>;
-  }
-  ```
-  
-  
-  
-* Rust使用泛型和使用具体类型时, 代码的性能是一样的:
-
-  * 因为Rust会将泛型替换为具体类型, 这种特性叫做单态化 (monomorphization).
-
-## trait
-
-
-
-* PartialEq采用了离散数学中对Equivalence Relation的定义.
-
-  * 如果一个关系是Equivalence Relation, 那么需要满足自反性(reflexivity, `a = a`), 对称性(symmetry, `a = b -> b = a`)以及传递性(transivity `a = b && b = c -> a = c`).
-
-  * 如果一个关系不满足自反性, 那么这个关系就是Partial Equivalence Relation, 例如浮点数中的`NaN`.
-
-    ```rust
-    let x = f64::NAN;
-    assert!(x != x);
-    ```
-
-* 给结构体实现`Default `trait, 可以在使用时获取一个默认值:
-
-  ```rust
-  impl Default for Student {
-    fn default() -> Self {
-      // 构造默认值
-    }
-  }
-  ```
-
-  * 可以使用`Student::default()`返回一个`Student`类型的默认值.
-
-* 如果一个结构体需要比较操作:
-
-  * 如果结构体成员都可以进行比较, 用`#[derive(Eq)]`
-  * 如果出现了不满足自反性的成员, 用`#[derive(PartialEq)]`.
-  * 比较结构体本质上是对每一个成员进行比较.
-  * 一般**枚举**应该都需要比较, 定义枚举时需要考虑.
-
-* 给结构体/枚举实现`From`  trait可以通过`into()`和类型标注转换为对应的结构体类型, 例如:
-
-  ```rust
-  #[derive(Debug, PartialEq)]
-  pub enum Method {
-      Get,
-      Post,
-      Uninitialized,
-  }
-  // &str到Method类型的转换
-  impl From<&str> for Method {
-      fn from(s: &str) -> Self {
-          match s {
-              "GET" => Method::Get,
-              "POST" => Method::Post,
-              _ => Method::Uninitialized,
-          }
-      }
-  }
-  
-  // 可以用如下方法进行类型转换
-  // "GET".into()
-  // Method::from("GET")
-  ```
-
-
-
-## 生命周期
-
-* 可以对引用进行生命周期的标注, 例如: `first: &'a i32`:
-
-  * 标注的意思是: **这个引用所指向的原变量的生命周期是`a`**.
-
-* **函数的生命周期约束: **如果函数返回值是**引用**, 那么**返回值引用指向的原变量**的生命周期, 要小于等于所有参数生命周期的最小值.
-
-  * 函数如果返回引用, 那么这个引用只有两个来源:
-    * 函数参数.
-    * 函数内部新的变量的引用, 这种情况会出现Dangling Reference, 需要返回原变量, 让其发生所有权转移.
-
-* **Rust消除生命周期标注的规则:**
-
-  * 对于输入的每个引用, 都会分配一个生命周期标注:
-
-    ```rust
-    // 分配前
-    fn foo(x: &i32, y: &i32);
-    // 分配后
-    fn foo<'a, 'b>(x: &'a i32, y: &'b i32);
-    ```
-
-  * 如果只有一个输入生命周期`a`, 并且函数返回值是引用, 那么返回值引用的生命周期也会被标注为`a`.
-
-  * 如果存在多个输入生命周期, 但是其中有一个引用是`&self`或者是`&mut self`, 并且函数返回值是引用, 那么返回值引用的生命周期会和`&self/&mut self`标注的一样.
-
-* 如果实际情况不符合生命周期标注规则, 那么就需要**手动标注**, 否则编译不通过:
-
-  * 最典型情况: 函数参数有多个引用类型, 并且返回值也是引用类型.
-
-    * 为什么这种情况需要标注?
-
-      * 因为返回值引用必然依赖于函数参数引用, 但是可能函数在运行时才能决定依赖于那些参数引用, 例如这个例子:
-
-        ```rust
-        // 函数用来返回长度较长的字符串的引用, 具体返回哪个参数取决于运行时
-        fn longest(x: &str, y: &str) -> &str {
-            if x.len() > y.len() {
-                x
-            } else {
-                y
-            }
-        }
-        ```
-
-  * 怎么标注?
-
-    ```rust
-    fn longest<'a>(x: &'a str, y: &'a &str) -> &'a str {
-      	if x.len() > y.len() {
-            x
-        } else {
-            y
-        }
-    }
-    ```
-
-    * 表示返回值的引用指向的原变量的生命周期, 和函数参数`x, y`具有相同的生命周期, 这才能通过编译.
-
-* **最长的生命周期:** `'static`, 这个生命周期能和程序活得一样久.
-
-  * 字符串字面值: `let s: &'static str = "我没啥优点，就是活得久，嘿嘿";`
-
-* **结构体的生命周期约束:** 结构体的成员变量如果存在引用, 那么结构体的生命周期一定要小于等于引用成员变量所指向的原变量的生命周期.
-
-* **生命周期标注语法:**
-
-  ```rust
-  struct ImportantExcept<'a> {
-      part: &'a str,
-  }
-  
-  impl<'a> ImportantExcerpt<'a> {
-      fn level(&self) -> i32 {
-          3
-      }
-  }
-  ```
-
-* **生命周期约束语法:** `'a:'b`表示`'b`这个生命周期小于`'a`这个生命周期.
-
-  ```rust
-  // 假设有这样一个方法
-  impl<'a: 'b, 'b> ImportantExcept<'a> {
-      fn announce_and_return_part(&'a self, announcement: &'b str) -> &'b str {
-          println!("Attention please: {}", announcement);
-          self.part
-      }
-  }
-  ```
-
-* 生命周期标注如果和泛型出现在一起, 可以同时写到`<>`中: `fn longest_with_an_announcement<'a, T>`
-
-
-
-## Vector
+### `Vector`
 
 * Vector的类型是`Vec<T>`, 是由标准库提供的.
 
@@ -1075,8 +1225,6 @@ impl Rectangle {
       Data::String("3"),
     ];
     ```
-
-    
 
 * 创建`Vec`:
 
@@ -1105,36 +1253,21 @@ impl Rectangle {
 
   * 索引: 如果索引超出范围, 程序就会`panic`.
   * `get方法`: 返回值是`Option<T>`, 如果越界会返回`None`.
-
-* `Vec`的各种遍历方式:
-
-  ```rust
-  let a = vec![1, 2, 3];
   
-  // 只有下标
-  // a.len()返回值是usize, i也是usize, 考虑溢出
-  for i in 0..a.len() {
-    	// a[i]
-  }
+* `Vec<T>`的`length`与`capacity`:
+
+  * `length`表示`Vec<T>`中的元素个数, 而`capacity`表示`Vec<T>`中底层数组的容量.
   
-  // T
-  for &item in a.iter() {
-    // item是T类型
-  }
+  * 可以通过预先分配一定的`capacity`, 来减少动态数组扩容, 提高性能:
   
-  // &T
-  for item in a.iter() {
-    
-  }
-  // 带下标&T
-  for (i, item) in a.iter().enumerate() {
-    
-  }
-  ```
+    ```rust
+    let mut v = Vec::with_capacity(10);
+    ```
+  
 
 
 
-## HashMap
+### `HashMap`
 
 * 引入:
 
@@ -1215,678 +1348,768 @@ impl Rectangle {
 
 
 
-## 闭包
+## 多文件编程
 
-* 闭包是一种匿名函数, 可以赋值给变量, 也可以捕获闭包之外的作用域中的值.
+### `mod`树状结构
 
-* 语法:
+* Rust中, 一个`.rs`文件是一个`mod`, 名字和文件名一样.
+
+  * `mod`中可以包含各种元素, 例如常量, 函数, 结构体, trait等.
+
+* 在Rust的文件中, 声明`mod`的语句是:
 
   ```rust
-  let a = |x: i32, y: i32| -> i32 {
+  // A.rs
+  mod B;
+  
+  // 声明+定义的方式
+  mod B {
+    pub fn add(a: i32, b: i32) -> i32 { a + b }
+  }
+  ```
+
+  * 这个语句的含义是, A这个`mod`的子节点是B.
+
+* Rust中, 一个文件夹也可以是一个`mod`, 需要在文件夹中添加`mod.rs`, 然后在其中声明文件夹内的所有`mod`:
+
+  ```rust
+  // mod.rs
+  mod A;
+  mod C;
+  mod D;
+  ```
+
+* `mod`的根节点是`src/main.rs`或者是`src/lib.rs`, 根节点的名称叫做`crate`.
+
+
+
+### 权限管理/`use`
+
+* 如果一个`mod`中的元素需要被其他`mod`导入, 需要在前面加上`pub`.
+
+  ```rust
+  pub const MAX_NUM: i32 = 1000;
+  
+  pub fn notify<T>(item: &T) {}
+  ```
+
+* 如果需要导入其他`mod`中的元素, 可以使用`use`关键字:
+
+  * 首先确定你用`mod`声明语句建立好了`mod`树.
+
+  * 使用绝对路径: 从`crate`开始向下找:
+
+    ```rust
+    use crate::A::B;
+    ```
+
+  * 使用相对路径:
+
+    * `super`: 表示当前`mod`的父亲`mod`.
+    * `self`: 表示当前`mod`.
+
+
+
+## 格式化输出
+
+* `format!`可以用来生成`String`类型的格式化字符串:
+
+  ```rust
+  let a = String::from("hello");
+  let b = String::from("world");
+  
+  let s = format!("{}, {}", a, b);
+  ```
+
+* `println!()`用来打印输出:
+
+  * `{}`占位符适合实现了`Display` trait的类型.
+  * `{:?}`或者`{:#?}`适合实现了`Debug` trait的类型.
+
+
+
+### `Display`
+
+* `Display`这个trait一般用来更加美化地输出一个类型信息:
+
+  ```rust
+  use std::fmt::Display;
+  
+  struct Student {
+      name: String,
+      age: usize
+  }
+  
+  impl Display for Student {
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // 第二个参数是格式化字符串, 后面是具体的参数
+          write!(f, "Student Name {}, Student age {}", self.name, self.age)
+      }
+  }
+  ```
+
+
+
+### `Debug`
+
+* `Debug`用来输出与这个类型有关的调试信息:
+
+  ```rust
+  #[derive(Debug)]
+  struct Student {
+      name: String,
+      age: usize
+  }
+  ```
+
+  ```rust
+  use std::fmt::Debug;
+  
+  struct Student {
+      name: String,
+      age: usize
+  }
+  
+  impl Debug for Student {
+    // 实现方式和Display相同
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+          write!(f, "Student Name {}, Student age {}", self.name, self.age)
+      }
+  }
+  ```
+
+
+
+## 闭包
+
+* 闭包是一种可以使用调用者作用域变量的匿名函数.
+
+  ```rust
+  |param1, param2, param3, ...| {
+    Statement1;
+    Statement2;
+    //...
+    Expression
+  }
+  
+  let a = |x: i32, y: i32| {
     	x + y
   };
   ```
 
-* **闭包的一个用法: 简化冗余代码.**
+* 闭包的所有权问题:
 
-  * 假设你有一个目的, 有很多种方法实现, 目的留出接口, 那么实现就可以用不同的闭包.
+  * 闭包内可以使用调用者作用域的变量, 但是变量的所有权可能会发生转移, 里面涉及三个trait:
+    * `FnOnce`: 闭包内会拿走外部作用域变量的所有权, 因此这个闭包只能运行一次.
+    * `Fn`: 以不可变借用捕获外部作用域的变量.
+    * `FnMut`: 以可变借用捕获外部作用域的变量.
 
-* 闭包可以进行自动类型推导, 但是函数必须要标注类型.
+* 闭包的类型表达式:
 
-* **闭包作为结构体成员变量:**
+  * 闭包一般用`impl A`或者`Box(dyn A)`标注类型, 例如:
+    * `Box<dyn FnOnce(i32, i32) -> i32>`.
+    * `Box<dyn Fn(i32, i32) -> i32>`.
+    * `Box<dyn FnMut(i32, i32) -> i32>`
 
-  ```rust
-  struct Cacher<T> where T: Fn(u32) -> u32 {
-    query: T,
-    value: Option<u32>
-  }
-  // 调用闭包
-  (self.query)(args);
-  ```
+> 如何确定一个闭包实现了哪个trait ?
 
-  * 其中, `Fn(u32) -> u32`是一个特征用来规范闭包类型`T`.
+* 取决于这个闭包内, 如何使用外部变量.
 
-* **闭包作为函数参数:**
+  * 所有闭包默认实现了`FnOnce`, 确保闭包能够调用一次.
+  * 如果闭包内没有对变量进行改变, 那么就实现了`Fn`.
+  * 如果闭包内对变量进行了改变, 并且没有返回变量的所有权, 那么就实现了`FnMut`.
 
-  ```rust
-  fn some_function<F>(func: F) where F: Fn(usize) -> bool {
-    
-  }
-  ```
+* `move`关键字:
 
-* **闭包的特征, 以及所有权问题:**
-
-  * 闭包能够捕获闭包作用域之外的值, 但是这个捕获就涉及所有权转移的问题.
-
-  * **特征1: `FnOnce`**: 实现这个trait的闭包, 会把参数/里面捕获的变量的所有权拿走, 因此只能运行一次.
+  * `move`关键字可以强制闭包夺取外部变量的所有权.
 
     ```rust
-    fn some_function<F>(func: F) where F: FnOnce(usize) -> bool, {
-      func(3);
-      // 调用第二次时, x的所有权已经被第一个闭包拿走, 第二个闭包没权利用x
-      func(4);
-    }
-    
-    fn main() {
-      let x = vec![1, 2, 3];
-     	let closure = |z| { z == x.len() };
-      fn_once(closure);
-    }
+    let v = vec![1, 2, 3];
+    let handle = thread::spawn(move || {
+      println!("{:?}", v);
+    });
     ```
 
-  * **`FnOnce`加`Copy`**: 如果闭包trait实现了Copy trait, 那么在使用时, 就会调用闭包的拷贝, 可以运行多次.
+  * 为什么需要`move`关键字:
 
-    * 注意, 如果一个闭包实现了Copy trait, 那么不管其中捕获的变量是否实现Copy trait, 都没有关系, 都会调用闭包的拷贝.
+    * 有些情况下, 闭包的生命周期可能比外部变量的更长 (例如多线程).
+    * 如果不夺去所有权的话, 外部变量被回收内存后, 闭包中再使用这个变量的引用就会出问题.
 
-    ```rust
-    fn some_function<F>(func: F) where F: FnOnce(usize) -> bool + Copy, {
-      func(3);
-      // 调用第二次时, x的所有权已经被第一个闭包拿走, 第二个闭包没权利用x
-      func(4);
-    }
-    
-    fn main() {
-      let x = vec![1, 2, 3];
-     	let closure = |z| { z == x.len() };
-      fn_once(closure);
-    }
-    ```
 
-    * **如何判断一个闭包是否实现了`Copy`特征?**
-      * 如果一个闭包捕获的所有变量的类型都实现了`Copy`特征, 那么这个闭包就会自动实现Copy特征.
-
-  * **特征2: `FnMut`**: 以可变引用`&mut`的方式捕获
-
-    * 只要闭包声明时带了`mut`, 那么这个闭包就默认实现了`FnMut`.
-
-      ```rust
-      fn main() {
-          let mut s = String::new();
-          let mut update_string = |str| s.push_str(str);
-      }
-      ```
-
-  * **特征3: `Fn`**: 以不可变借用`&`的方式捕获:
-
-    ```rust
-    fn main() {
-        let mut s = String::new();
-        let update_string =  |str| s.push_str(str);
-    }
-    ```
-
-  * **闭包实现特征的规律:**
-
-    * 一个闭包可以同时实现多个特征.
-    * 所有闭包默认实现`FnOnce`, 保证一个闭包至少可以被调用一次.
-    * 如果闭包内没有对捕获变量进行改变, 那么实现了`Fn`特征.
-    * 如果闭包把捕获变量的所有权改变了, 那么实现了`FnMut`特征.
-
-* **`move`关键字:** 定义在参数列表`||`之前, 表示闭包会强制把捕获变量的所有权拿走, 适用于**闭包生命周期大于捕获变量生命周期**.
 
 ## 迭代器
 
-* 一个类型, 如果实现了`Iterator` trait, 那么它就是一个迭代器类型.
+* 与迭代器相关的trait一共有两个:
 
-* `Iterator` trait的内容如下:
-
-  ```rust
-  pub trait Iterator {
-    type Item;
-    fn next(&mut self) -> Option<Self::Item>;
-  }
-  ```
-
-* 一个集合如果实现了`IntoIterator` trait, 那么它就能够通过`into_iter(), iter(), iter_mut()`方法变成迭代器:
-
-  * `into_iter()`会拿走集合变量的所有权, 调用`next()`返回的类型是`Some(T)`.
-  * `iter()`使用集合的不可变引用, 调用`next()`返回`Some(&T)`.
-  * `iter_mut()`使用集合的可变引用, 调用`next()`返回`Some(&mut T)`, 可以通过它修改集合中的元素.
-
-* **注意: **`next()`方法会改变迭代器的状态, 如果一个迭代器变量需要用到`next()`方法, 就需要`mut`.
-
-  ```rust
-  let a = vec![1, 2, 3];
-  let b = a.iter();
-  // 代码会报错, 需要将b定义成mut
-  b.next().unwrap();
-  ```
-
-* Rust中迭代器是懒加载的, 只创建不使用迭代器不会产生任何性能损失.
-
-  ```rust
-  let v = vec![1, 2, 3];
-  // 将数组转化为迭代器
-  let v_iter = v.iter();
-  // 使用迭代器遍历
-  for item in v_iter {
-    //...
-  }
-  ```
-
-* 所有迭代器默认实现了`Iterator` trait
-
-  ```rust
-  pub trait Iterator {
-    type Item;
-    // next方法返回下一个元素, 并且会消耗掉, 没有元素后就会返回None
-    fn next(&mut self) -> Option<Self::Item>;
-  }
-  ```
-
-  * 还有一个trait叫`IntoIterator`, 如果一个类型实现了这个trait, 那么它就可以通过`iter()/into_iter()`变成迭代器.
-
-* 迭代器和所有权问题: 将数组转换为迭代器时, 有可能会把数组中元素的所有权给拿走, 具体分为以下三种情况:
-
-  * 不可变借用: `iter()`
+  * `Iterator`: 如果一个类型实现了这个trait, 那么它就是迭代器:
 
     ```rust
-    let values = vec![1, 2, 3];
-    for v in values.iter() {
-      // v的类型是&T
+    pub trait Iterator {
+      type Item;
+      fn next(&mut self) -> Option<Self::Item>;
     }
     ```
 
-  * 可变借用: `iter_mut()`
+  * `IntoIterator`: 如果一个集合实现了这个trait, 那么它就可以转化为迭代器.
 
-    ```rust
-    // 原数组必须可变
-    let mut values = vec![1, 2, 3];
-    for item in a.iter_mut() {
-      // item类型是&mut T, 可以修改原数组元素
-    }
-    ```
+* 将集合转化为迭代器的方法:
 
-  * 会夺走元素所有权: `into_iter()`
-
-    ```rust
-    let values = vec![1, 2, 3];
-    for item in a.into_iter() {
-      // item的类型是T
-    }
-    ```
-
-* **迭代器适配器/迭代器消费者:**
-
-  * 迭代器适配器非常强大, 可以把一个迭代器转换成你想要的迭代器, 然后配合迭代器消费者, 可以将一个数组转换成你想要的数组.
-
-  * `map + collect` : `map`方法可以传入一个闭包, 对原数组进行操作, 然后用迭代器消费者`collect()`转换成数组.
-
-    * 注意, 使用`collect()`必须进行类型标注, `_`表示让编译器进行标注.
-
-    ```rust
-    let v = vec![1, 2, 3];
-    // 把v中的元素加1, 放到新数组中, 对原数组所有权没有影响
-    let v1: Vec<_> = v.iter().map(|x| x + 1).collect();
-    ```
-
-  * `filter + collect`: `filter`方法可以传入一个返回bool的闭包, 如果返回值是true, 那么会在原数组中保留, 否则删除.
-
-    ```rust
-    let v = vec![1, 2, 3];
-    // 筛选原数组中的偶数, 注意v2中的元素是&i32类型
-    let v2: Vec<&i32> = v.iter().filter(|x| **x % 2 == 0).collect();
-    ```
-
-    
+  * `into_iter()`: 返回的元素类型是`T`, 会拿走集合变量的所有权.
+  * `iter()`: 返回的元素类型是`&T`, 是集合变量的不可变引用.
+  * `iter_mut()`: 返回的元素类型是`&mut T`, 是集合变量的可变引用.
 
 
 
+### 迭代器消费者/收集者
 
+* 如果要对一个集合中的元素进行运算, 并且将运算结果打包成一个新的集合, 可以使用迭代器消费者/收集者.
 
-## 裸指针
-
-Rust中, 裸指针(raw pointer)分为一下两种类型:
-
-* `*const T`: 不能通过裸指针修改原数据.
-* `*mut T`: 可以通过裸指针修改原数据.
-
-
-
-
-
-## 单元测试
-
-* 快速单元测试的框架, 在你写的函数里面用:
-
-  ```rust
-  #[cfg(test)]
-  mod tests {
-    
-    use super::*;
-    
-    // 测试函数, 可以写多个
-    #[test]
-    fn test_XXX1() {
-      assert_eq!(...);
-    }
-    
-    #[test]
-    fn test_XXX2() {
-      assert_eq!(...);
-    }
-  }
-  ```
-
-
-
-
-## 常见的trait
-
-### Clone
-
-Clone接口的定义是:
-
-```rust
-pub trait Clone: Sized {
-  fn clone(&self) -> Self;
-}
-```
-
-* 调用`clone`方法返回原对象的深拷贝.
-
-Clone trait可以和`derive`一起使用:
-
-```rust
-#[derive(Clone)]
-pub struct Student {
+* 迭代器消费者负责运算, 生成新的迭代器
+  * 迭代器消费者的参数可以是闭包类型.
+  * 常见的迭代器消费者有`map, zip`等.
   
-}
-```
+* 迭代器收集者负责将迭代器转换为指定类型的集合, 一般用`collect`函数.
+  * 使用`collect`函数时, 一般需要进行类型标注.
 
+* `map + collect`
 
+  ```rust
+  let v1 = vec![1, 2, 3];
+  // _是什么类型会自动推断
+  let v2: Vec<_> = v1.iter().map(|x| x + 1).collect(); 
+  ```
 
-### Copy
+* `zip + collect`
 
-文档: https://doc.rust-lang.org/std/marker/trait.Copy.html
+  ```rust
+  let keys = ["h1","h2"];
+  let values = [1, 2];
+  
+  let hashmap: HashMap<_, _> = keys.into_iter().zip(values.into_iter()).collect();
+  ```
 
+* `String`字符串逆序:
 
-
-### From
-
-From trait定义了一种类型如何转换成另一种类型:
-
-```rust
-use std::convert::From;
-
-#[derive(Debug)]
-struct Number {
-    value: i32,
-}
-
-impl From<i32> for Number {
-    fn from(item: i32) -> Self {
-        Number { value: item }
-    }
-}
-
-fn main() {
-  // 用from方法转换
-    let num = Number::from(30);
-    println!("My number is {:?}", num);
-}
-
-```
-
-* 有时候`from`也会当做构造方法.
-
-### Deref
-
-Deref是一个有关于解引用的trait.
-
-假设我有一个结构体:
-
-```rust
-struct MyBox<T>(T);
-
-impl<T> MyBox<T> {
-  fn new(x: T) -> MyBox<T> {
-    MyBox(x);
-  }
-}
-```
-
-现在, 你可以为这个结构体实现`Deref` 这个trait, 来让你能`*`一个结构体引用.
-
-```rust
-use std::ops::Deref;
-
-impl<T> Deref for MyBox<T> {
-  // &self是结构体引用类型, 在这个函数中, 你要通过这个结构体引用, find一个基本类型的引用, 然后返回
-  fn deref(&self) -> &T {
-    &self.0
-  }
-}
-```
-
-本质上, `deref`会把一个结构体引用, 转换成一个基本类型引用.
-
-实现``deref`后, 你再`*`一个结构体引用`x`, 就等价于`*(x.deref())`
-
-
-
-> 自动deref机制
-
-看这段代码:
-
-```rust
-fn display(s: &str) {
-    println!("{}",s);
-}
-
-fn main() {
-    let s = MyBox::new(String::from("hello world"));
-    display(&s)
-}
-```
-
-对于`&s`, 它会被连续`deref` , 直到转换成`&str`为止.
-
-在Rust中, 引用类型其实不用你手动`*`才能访问值, 例如你有一个结构体引用, 你不用`(*x).name`才能访问成员, 而是直接用`x.name`就可以, 背后的机制就是`deref trait`.
-
-
-
-### Drop
-
-Drop是一个`trait`, 如果一个结构体实现了`Drop`, 那么它的生命周期结束之后, 就会自动调用`drop`方法实现收尾工作, rust就是因为这个才可以不实现`GC`.
-
-```rust
-impl Drop for XXX {
-  fn drop(&mut self) {
-  }
-}
-```
-
-但是, 在这段代码中, `drop`的参数是`&mut self`, 就表示一个结构体调用`drop`函数后, 它的所有权没有被收走.
-
-* 因此, 你不可以对一个结构体`x`显示地调用`x.drop()`函数.
-
-但是, 有些场景下, 你需要提前释放某些资源, 例如互斥锁等, 这个时候可以使用`std::prelude::drop`函数.
-
-这个函数签名是:
-
-```rust
-pub fn drop<T>(_x: T)
-```
-
-会直接把所有权拿走, 调用完这个函数, 如果在下面再使用原变量, 就会编译错误.
+  ```rust
+  let a = String::from("haha");
+  let b: String = a.chars().rev().collect();
+  ```
 
 
 
 ## 智能指针
 
-### Box\<T\>
+### `Deref`
 
-Box指针本质上还是引用类型, 只是这个引用会把你原本的数据放到堆上, 然后再给你返回一个引用.
+* `Deref`是一个trait, 实现了这个trait的类型可以具有智能指针的行为.
 
-```rust
-// a数据存在3上
-let a = Box::new(3);
-```
+  * 一个类型为`T`的对象, 如果实现了`Deref<Target=U>`, 那么在使用`&T/&mut T`类型或者`Box<T>`类型的引用时, 就会被自动转换成`&U`.
 
-如果你想打印`a`:
+  ```rust
+  use std::ops::Deref;
+  
+  pub trait Deref {
+    type Target;
+    // deref函数负责将原始类型的引用, 转换为Target类型的不可变引用
+    fn deref(&self) -> &Self::Target;
+  }
+  ```
 
-```rust
-println!("{}", a);
-```
+  * 如果需要将`&mut T`自动转换为`&mut U`, 需要`DerefMut<Target=U>` trait.
 
-这时可以打印, 并且不会报错的, 因为`a`会隐式调用`deref`进行解引用.
+* `Deref`的优势:
 
-但是如果你想拿这个值做运算:
+  * 如果一个类型实现了`Deref`, 那么它的引用当作参数传递时, 会根据函数的签名自动解引用到对应的数据类型:
 
-```rust
-let b = a + 1;
-```
-
-这就会报错, 正确写法是`let b = *a + 1`, 这个时候需要手动调用`deref`.
-
-<font color=red>注意: Box指针会导致所有权的转移</font>, `Box::new(xxx)`之后, `xxx`的所有权会转移到接收变量中.
-
-```rust
-fn main() {
-    let s = String::from("hello, world");
-    // s在这里被转移给a
-    let a = Box::new(s);
-    // 报错！此处继续尝试将 s 转移给 b
-    let b = Box::new(s);
-}
-```
-
-**Box指针有一个非常有效的应用场景:**
-
-* 在Rust中, 编译器要求类型的大小必须是固定的.
-* 但是有些类型是无法在编译时期知道大小的, 例如递归的类型定义.
-* 这时, 可以将递归的成员变量转换成`Box<T>`指针类型.
-
-例如, 如果你想用一个数组, 存储所有实现了某一个`trait`的对象(动态类型), 就需要用到`Box`指针, 例子如下:
-
-```rust
-trait Draw {
-    fn draw(&self);
-}
-// 下面Button和Select都实现了Draw这个trait
-struct Button {
-    id: u32
-}
-impl Draw for Button {
-    fn draw(&self) {
-        println!("Button {}", self.id);
+    ```rust
+    fn display(s: &str) {
+      println!("{}", s);
     }
-}
-struct Select {
-    id: u32
-}
-impl Draw for Select {
-    fn draw(&self) {
-        println!("Select {}", self.id)
-    }
-}
-
-fn main() {
-  	// 定义类型时需要加上dyn, 因为实现trait的对象都是一个动态类型
-    let elems: Vec<Box<dyn Draw>> = vec![ Box::new(Button {id:1}), Box::new(Select {id: 1}) ];
-    for e in elems {
-        e.draw();
-    }
-}
-```
-
-如果你要从Box指针数组中取出元素时, 你需要解两次引用, 例如下面这个例子:
-
-```rust
-fn main() {
-    let arr = vec![ Box::new(1), Box::new(2) ];
-    // 注意, 这里必须取引用, 否则会发生所有权转移
-    let (first, second) = (&arr[0], &arr[1]);
-    // 第一次将&Box<i32>转成Box<i32>, 第二次将Box<i32>转成i32
-    let sum = **first + **second;
     
-}
-```
+    fn main() {
+      let s = Box::new(String::from("hello world"));
+      // &String类型会连续调用deref转换成&str.
+      display(&s);
+    }
+    ```
+
+### `Drop`
+
+* 如果一个类型实现了`Drop`这个trait, 那么这个类型的变量在超出作用域后, 会自动执行一段代码.
+
+  ```rust
+  impl Drop for XXX {
+    fn drop(&mut self) {}
+  }
+  ```
+
+  * `Drop` trait一般用于回收内存资源, 以及做一些收尾工作.
+
+* Rust基本为几乎所有的类型实现了`Drop`, 因此超过作用域后, 内存资源都会被释放:
+
+  * 变量按照逆序进行释放.
+  * 结构体中的变量按照顺序进行释放.
+
+* 手动提前释放: 可以使用`std::mem::drop`
+
+  ```rust
+  let a = String::from("haha");
+  // drop函数会拿走变量的所有权
+  drop(a);
+  ```
+
+* 如果一个类型实现了`Copy`, 那么它就不能实现`Drop`.
+
+### `Box<T>`
+
+* `Box<T>`是一个智能指针类型, 可以强制让`T`类型的数据存储在堆上, 并且返回值的引用.
+
+  ```rust
+  // 3存储在堆上
+  let a = Box::new(3);
+  ```
+
+  * 注意: `Box::new(T)`会拿走原始数据的所有权.
+
+  ```rust
+  let s = String::from("haha");
+  // s的所有权转移到s_box
+  let s_box = Box::new(s);
+  ```
+
+* `Box<T>`的使用场景:
+
+  * 特征对象`Box<dyn T>`.
+  * 将动态类型转换成已知大小的类型.
+  * 实现了`Copy` trait的数据过大, 转移所有权时需要避免拷贝:
+
+  ```rust
+  let arr = Box::new([10; 1000]);
+  // 此时arr所有权转移到arr_new, 并没有发生数据拷贝
+  let arr_new = arr;
+  ```
+
+### `Rc<T>/Arc<T>`
+
+* `Rc<T>`可以实现对于一个值, 有多个不可变引用, 并且只有所有不可变引用都被`drop`后, 值才会被`drop`.
+
+  ```rust
+  use std::rc::Rc;
+  
+  // 第一个引用, a
+  let a = Rc::new(String::from("haha"));
+  // 第二个引用
+  let b = Rc::clone(&a);
+  ```
+
+  * `Rc<T>`变量同时实现了`Deref`和`Drop`.
+  * `Rc<T>`类型没有实现`Send` trait, 因此无法在多线程间传递.
+
+* `Arc<T>`是实现了`Send`的`Rc<T>`, 可以在多线程之间传递所有权.
+
+  * 用法和`Rc<T>`一致.
+  * 所在的包是`std::sync::Arc`.
+  * `Arc<T>`采用了原子指令维护引用计数, 因此有一定的性能损耗.
+
+### `RefCell<T>`
+
+* `RefCell<T>`可以对不可变的变量进行可变借用.
+
+  ```rust
+  use std::cell::RefCell;
+  
+  let val = RefCell::new(10);
+  *val.borrow_mut() += 1;
+  ```
+
+* 使用`RefCell<T>`依然要遵循Rust的借用规则, 如果不遵循, 会在运行时`panic`, 而不会编译器出错.
+
+  ```rust
+  let s = RefCell::new(String::from("haha"));
+  // 报错, 不可变引用和可变引用同时存在
+  let a = s.borrow();
+  let b = s.borrow_mut();
+  ```
+
+* `Rc<T>`可以和`RefCell<T>`一起使用, 实现可变引用和不可变引用同时存在.
+
+  ```rust
+  let s = Rc::new(RefCell::new(String::from("haha")));
+  
+  // 对RefCell的多个不可变引用
+  let a = Rc::clone(&s);
+  let b = Rc::clone(&s);
+  let c = Rc::clone(&s);
+  
+  // RefCell对内部的值进行可变借用
+  c.borrow_mut().push_str("world");
+  
+  println!("{}", *s.borrow());
+  ```
+
+* `RefCell<T>`没有实现`Send` trait, 不能在多线程环境下使用.
 
 
 
-### Rc\<T\>
+## 并发编程
 
-Rc\<T\>可以在单线程环境下, 创建一个数据的多个**不可变引用**, 并且提供了如下功能:
+* Rust中的线程库是`std::thread`.
 
-* 实现了`Deref`和`Drop`.
-* 提供了引用计数(reference counting), 一旦数据的引用计数是0, 就会自动释放.
+### 创建线程
 
-用法如下:
+* 创建线程可以使用`thread::spawn`:
+
+  ```rust
+  use std::thread;
+  
+  fn main() {
+    
+    let handle = thread::spawn(move || {
+      println!("Hello World");
+    });
+    
+    handle.join().unwrap();
+  }
+  ```
+
+  * 由于Rust在编译时不确定线程会存活多久, 因此闭包中需要强制用`move`把外部变量的所有权拿走.
+  * `main`线程需要等待所有子线程结束后再退出, 因此需要对子线程调用`join().unwrap()`.
+
+
+
+### `Send/Sync`
+
+* 如果一个类型`T`实现了`Send`特征, 那么这个类型可以在线程之间传递所有权.
+  * 也就是说, 一个值, 如果有办法让多个线程都能读/写到 (不保证多个线程有值的引用.), 那么对应类型就实现了`Send`.
+* 如果一个类型`T`实现了`Sync`特征, 那么这个类型可以在线程之间, 通过引用进行共享.
+* 特征约束: 如果`&T`实现了`Send`特征, 那么`T`就实现了`Sync`特征.
+* Rust中, 绝大部分类型都实现了`Send/Sync` trait, 可以通过`#[derive()]`进行自动实现.
+  * 没有实现的: `Rc`, `RefCell`.
+
+### `Mutex<T>`
+
+* Rust中的互斥锁是`std::sync::Mutex`, 可以保证一个线程修改临界区数据时, 不会被其他线程打断.
+
+* `Mutex<T>`本质上是一种智能指针, 可以通过`Mutex<T>`创建数据的可变引用, 并且通过这个可变引用修改数据时, 不会被其他线程打断.
+
+  ```rust
+  let m = Mutex::new(3);
+  
+  // 上锁, 获取可变引用进行修改
+  let mut value = m.lock().unwrap();
+  *value += 2
+  // 超过作用域后释放锁
+  ```
+
+  * `Mutex<T>`实现了`Sync` trait, 可以让多个线程以引用的形式共享一个`Mutex`.
+  * `Mutex`有一个泛型约束, 要求`T`实现`Send` trait, 因为这个值不能仅仅停留在一个线程, 需要在多个线程中都能获取到.
+
+* 如果一个类型`T`的数据要在多线程间共享, 那么应该使用`Arc<Mutex<T>>`类型.
+
+  * `Arc`实现了`Send` trait, 可以在一个线程中对`Mutex<T>`创建多个不可变引用, 并且将这些引用转移到不同线程.
+  * `Mutex<T>`实现了`Sync` trait, 可以让多个线程以引用的形式共享.
+  * `Mutex<T>`还可以保证在线程中, 以可变引用的形式修改临界区数据`T`时, 不会被其他线程打断.
+
+一个例子: 多线程从1数到10
 
 ```rust
-use std::rc::Rc;
+use std::thread;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 fn main() {
-  	// 用Rc::new创建一个数据的引用, 类型是Rc<String>
-    let a = Rc::new(String::from("hello world"));
+
+    let m_main = Arc::new(Mutex::new(0));
+    let mut handles = Vec::new();
+
+    for i in 0..10 {
+        let m = Arc::clone(&m_main);
+        let handle = thread::spawn(move || {
+            let mut value = m.lock().unwrap();
+            *value += 1;
+        });
+        handles.push(handle);
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    println!("{}", m_main.lock().unwrap());
+}
+```
+
+### `Condvar`
+
+* 条件变量`Condvar`在`std::sync::Condvar`中, 可以保证一个线程在另一个线程满足一定条件后再执行.
+* 由于`Condvar`也要在多个线程中共享, 因此也需要配合`Arc<T>`一起使用.
+* 使用方式:
+  * 首先创建`Arc<Condvar>`类型的条件变量, 然后`clone`到两个线程.
+  * 其中一个线程中, 调用`wait`阻塞线程, 并且暂时释放锁.
+  * 在另一个线程中, 如果满足条件, 调用`notify`唤醒线程.
+
+一个例子: 等待计数器为10时, 唤醒线程:
+
+```rust
+use std::thread;
+use std::time::Duration;
+use std::sync::{Arc, Mutex, Condvar};
+
+fn main() {
+
+    let counter = Arc::new(Mutex::new(0));
+    let cond = Arc::new(Condvar::new());
+
+    let counter1 = Arc::clone(&counter);
+    let counter2 = Arc::clone(&counter);
+
+    let cond1 = Arc::clone(&cond);
+    let cond2 = Arc::clone(&cond);
+
+    // 等待counter变成10
+    let handle1 = thread::spawn(move || {
+        let mut m = counter1.lock().unwrap();
+        if *m != 10 {
+            println!("counter is not 10, wait...");
+            m = cond1.wait(m).unwrap();
+        }
+        println!("counter is {}", *m);
+    });
+
+    // 将counter变成10
+    let handle2 = thread::spawn(move || {
+        let mut m = counter2.lock().unwrap();
+        for _ in 0..10 {
+            *m = *m + 1;
+          // 1s加1次
+            thread::sleep(Duration::from_secs(1));
+        }
+        cond2.notify_one();
+    });
+    handle1.join().unwrap();
+    handle2.join().unwrap();
+}
+```
+
+### `channel`
+
+* `channel`可以用于本地两个线程之间的通信, 采用的是生产者-消费者模型.
+* Rust中使用最多的是多生产者, 单消费者的`channel`, 在`std::sync::mpsc`中.
+
+例子: 一个线程发送消息给另一个线程:
+  ```rust
+  use std::thread;
+  use std::sync::mpsc;
+
+  fn main() {
+
+      let (tx, rx) = mpsc::channel();
+
+      let handle1 = thread::spawn(move || {
+          tx.send(1).unwrap();
+      });
+      let handle2 = thread::spawn(move || {
+          let value = rx.recv().unwrap();
+          println!("Receiver got {}", value);
+      });
+      handle1.join().unwrap();
+      handle2.join().unwrap();
+  }
+  ```
+
+* 其中, `tx, rx`分别是`mpsc::Sender<T>`和`mpsc::Receiver<T>`类型, 具体类型编译器会推导.
+* 如果需要多个发送者, 只需要将`tx.clone()`即可.
+* 调用`send`时, 原数据如果没有实现`Copy` trait, 会被夺走所有权.
+
+
+
+## `I/O`
+
+* Rust中, 与I/O相关的元素大部分在`std::io`中.
+
+### `Read/Write`
+
+* 对于I/O来说, 最重要的两个trait是`Read/Write`, 它们在`std::io::{Read, Write}`.
+
+  * `Read`: 实现了这个trait的类型叫做`Reader`, 可以使用`read`方法, 把数据读取到`&mut [u8]`中.
+
+    ```rust
+    // 返回值是成功写入的字节数
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
+    ```
+
+  * `Write`: 实现了这个trait的类型叫做`Writer`, 可以用`write`把数据写入`&mut [u8]`:
+
+    ```rust
+    // 返回值是成功写入的字节数
+    fn write(&mut self, buf: &[u8]) -> Result<usize>;
+    ```
+
+* 除了`read`和`write`, `Read/Write` trait中还提供了很多封装的方法, 用来将数据从`reader/writer`读取/写入.
+
+### `I/O`异常
+
+* `I/O`异常定义在`std::io::Result<T>`, 定义是:
+
+  ```rust
+  pub type Result<T> = Result<T, std::io::Error>;
+  ```
+
+* 处理`I/O`异常的一般方法:
+
+  * 在`I/O`操作后面用`?`.
+  * `I/O`操作所在函数的返回值就是`io::Result<T>`.
+
+### `BufReader/BufWriter`
+
+* 对于一个`reader/writer`, 如果你需要多次调用`read/write`方法, 那么就会涉及多次系统调用, 性能较低.
+* 这时可以使用`BufReader/BufWriter`, 在每一次读/写时, 都会把一些多的数据读取到`Buffer`中, 下一次`read/write`就可以从`Buffer`中进行操作, 可以提高性能.
+
+> 例子: 读取一个文件的每一行
+
+```rust
+fn main() -> std::io::Result<()> {
   
-  	// 用Rc::clone创建数据的新的不可变引用, 这个clone是浅拷贝, 性能比较高
-    let b = Rc::clone(&a);
-  	let c = Rc::clone(&a);
+  let f = File::open("log.txt")?;
+  let mut reader = BufReader::new(f);
   
-		// 用Rc::strong_count输出变量的计数
-    assert_eq!(3, Rc::strong_count(&a));
-    assert_eq!(Rc::strong_count(&a), Rc::strong_count(&b));
+  for line in reader.lines() {
+    // ...
+  }
 }
 ```
 
 
 
-### Arc\<T\>
+### 网络`I/O`
 
-Arc\<T\>可以在多线程环境下, 实现多个线程拥有同一个数据的多个不可变引用, 和`Rc<T>`的API完全相同.
-
-* 和`Rc<T>`不同之处在于, `Arc<T>`采用原子指令维护了引用计数, 会有一定的性能损耗.
+* 网络`I/O`的包大部分在`std::net`中.
 
 
 
-### RefCell\<T\>
+#### `TCP Client/Server`
 
-* RefCell\<T\>提供了变量的内部可变性, 也就是**原变量不可变的前提下, 你还可以创建可变引用**.
+* 如果要构建`TCP Server`, 需要使用`std::net::TcpListener`:
 
   ```rust
-  // val的类型是RefCell<i32>
-  let val = RefCell::new(10);
+  let listener = TcpListener::bind("127.0.0.1:9999").unwrap();
   
-  // 可变引用修改
-  *val.borrow_mut() += 1;
-  
-  println!("{}", *val.borrow());
+  // 接收
+  for stream in listener.incoming() {
+    // stream是reader和writer
+    let mut stream = stream.unwrap();
+    handle_connection(&mut stream);
+  }
   ```
 
-* 但是, `RefCell<T>`仍然要遵守rust的借用规则, 例如不能让可变引用和不可变引用共存.
+  * 对`stream`调用`read/write`相当于通过`TCP`协议发送消息.
+
+* 如果要构建`TCP Client`, 需要使用`std::net::TcpStream`:
 
   ```rust
-  // 报错, 同时有了可变借用和不可变借用
-  let a = RefCell::new(10);
-  let b = a.borrow();
-  let c = a.borrow_mut();
-  println!("{}, {}", b, c);
-  ```
-
-* 一个例子: 假设你要为自己的类型实现trait, 但是trait中方法签名是`&self`, 但是你就想在这个方法中修改成员变量, 这个时候需要将成员变量定义成`RefCell<T>`类型.
-
-* `Rc + Refcell`: Rc可以实现一个数据有多个不可变引用, 结合`Refcell`可以通过不可变引用修改数据.
-
-  ```rust
-  let a = Rc::new(RefCell::new(10));
-  
-  let a1 = Rc::clone(&a);
-  let a2 = Rc::clone(&a);
-  
-  *a1.borrow_mut() += 1;
-  *a2.borrow_mut() += 2;
-  
-  println!("{}", a.borrow()); //13
+  let mut stream = TcpStream::connect("127.0.0.1:9999").unwrap();
+  // stream也是reader/writer
   ```
 
 
 
-## tokio
+## 生命周期
+
+* 在Rust中, 每一个变量都会有自己的生命周期, 只有在生命周期时, 使用引用变量`&T/&mut T`才有效.
+
+* 在函数/方法/结构体中, 有隐含的生命周期约束:
+
+  * 函数/方法的参数如果是引用, 那么引用参数对应的原变量的生命周期, 必须大于等于返回值变量的生命周期.
+  * 结构体的字段如果是引用, 那么字段对应的原变量的生命周期, 必须大于等于结构体变量的生命周期.
+
+* 但是, 在定义这种函数/结构体时, 往往无法在编译时确定生命周期的大小关系, 这时候就需要手动标注生命周期:
+
+  * 标注生命周期的函数:
+  
+    ```rust
+    fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+      if x.len() > y.len() {
+        x
+      }
+      else {
+        y
+      }
+    }
+    ```
+  
+  * 结构体:
+  
+    ```rust
+    struct Student<'a> {
+      part: &'a str,
+    }
+    ```
+  
+* 生命周期消除语法: 有的时候, 函数参数是引用/结构体字段是引用并不需要标注, Rust可以采用消除语法来自动进行标注, 规则如下:
+
+  * 每一个引用参数都会获得自己的生命周期参数`'a`.
+  * 如果只有一个输入生命周期(函数的引用参数/结构体的引用字段), 那么这个引用参数`'a`就会自动被标注到所有的输出生命周期中.
+  * 如果有多个输入生命周期, 但是有一个是`&self/&mut self`, 那么`&self/&mut self`的生命周期会被标注到所有的输出生命周期中.
 
 
 
-* 引入包:
+## 类型系统
 
-```toml
-[dependencies]
-tokio = { version = "1", features = ["full"] }
+### `Sized/?Sized`
+
+* `Sized` trait表示一个类型在编译时期可以知道大小.
+  * 所有的泛型参数, 在使用时, 均隐式进行了泛型约束: `T: Sized`.
+* `?Sized` trait表示一个类型可能是静态类型, 也可能动态类型.
+  * 如果要使用动态类型, 需要`T: ?Sized`.
+
+## 异步编程
+
+* 异步编程包括两个元素: `Future`以及`Executor`:
+
+  * `Future`可以理解为是一个异步任务.
+  * `Executor`是`Future`的执行器, 负责调度多个`Future`进行执行.
+  * 当`Future`被阻塞时, `Executor`可以调度其他的`Future`执行.
+
+* Rust中最好的异步运行环境是`tokio`, 在`Cargo.toml`中加入:
+
+  ```toml
+  [dependencies]
+  tokio = { version = "1", features = ["full"] }
+  ```
+
+### `async/.await`
+
+* 使用`async`标注的函数/语法块, 调用后, 会产生一个`Future`对象.
+
+* 在`async`函数/语法块内部, 调用其他的`async`函数可以使用`.await`:
+  * 调用`.await`后, 只有等被调用的函数结束之后, 才能继续执行外层函数, `.await`可以规定`Future`之间执行的顺序.
+
+例子: 异步打印1, 2, 3:
+
+```rust
+async fn print_one() {
+    println!("1");
+}
+async fn print_two() {
+    print_one().await;
+    println!("2");
+}
+async fn print_three() {
+    print_two().await;
+    println!("3");
+}
+
+#[tokio::main]
+async fn main() {
+    tokio::spawn(print_three()).await.unwrap();
+}
 ```
 
 
 
-### 异步锁
-
-* 默认情况下, `tokio`的任务调度器是**多线程**, 这样, 你就需要考虑一个问题:
-  * 使用`.await`时, 任务可能会被阻塞, tokio可能会把任务调度到另一个线程中执行.
-  * 这样, 与`.await`在同一个作用域的所有变量, 都会被封装成一个状态, 在线程间传递, 如果在线程间传递, 那么这些变量就需要实现`Send` trait.
-  * 最典型的例子是, 如果你在`.await`之前, **在同一作用域内**用`std::sync::Mutex`获取了互斥锁, 由于`MutexGuard<T>`没有实现Send trait, 就会报错.
-  * 一个解决方案是, 让`.await`调用的作用域在获取Mutex作用域之后, 另一个解决方案是使用**异步锁**.
-* **异步锁: `tokio::sync::Mutex`**:
-  * 如果在`.await`之间获取了`std::sync::Mutex`, 那么调用`.await`后, 任务会被阻塞, 但是锁没有被释放, 这时候如果另一个任务尝试获取锁, 就会产生死锁.
-  * 使用tokio的异步锁可以在`.await`作用域内获取锁, 但是会有性能开销.
+### `Future`
 
 
 
-### 异步客户端
-
-* **tokio实现异步客户端的思路: **
-  * 首先, `spawn`一个manager异步任务, 这个任务负责管理所有客户端, 相当于客户端的proxy.
-  * 然后, 在众多客户端和manager之间建立一个`tokio::sync::mpsc`.
-    * 众多`tx`由众多客户端拿到, 客户端用`tx`给manager发送打包好的命令.
-    * `rx`由manager拿到, 负责接收客户端发送来的命令.
-
-  * 然后, 在客户端内部, 建立一个`tokio::sync::oneshot` (单生产者, 单消费者, 一次发送一个任务)
-    * `oneshot_tx`会被客户端打包到命令中, 发送给manager, manager收到之后会通过`oneshot_tx`把服务器发送来的东西返回给客户端.
-    * `oneshot_rx`给客户端用来接收manager返回过来的命令.
-
-  * manager通过connection资源与服务器交互.
-
-
-
-### tokio I/O
-
-
-* tokio I/O的包主要在: `tokio::io`中, 和`std::io`的用法基本一致, 区别在于tokio中的I/O操作是异步的.
-* 其中, 最重要的两个traits是`AsyncReadExt`和`AsyncWriteExt`, 实现了这两个trait可以使用异步的`read`和`write`.
-
-* 异步echo服务端:
-
-  ```rust
-  use tokio::io;
-  use tokio::net::TcpListener;
-  
-  #[tokio::main]
-  async fn main() -> io::Result<()> {
-  
-      let listener = TcpListener::bind("127.0.0.1:6142").await?;
-  
-      loop {
-          let (mut socket, _) = listener.accept().await?;
-          tokio::spawn(async move {
-              let (mut rd, mut wr) = socket.split();
-              // 异步将reader的内容copy到writer中, copy以后writer就直接发送了
-              if io::copy(&mut rd, &mut wr).await.is_err() {
-                  eprintln!("failed to copy");
-              }
-          });
-      }
-      Ok(())
-  }
-  ```
-
-* 异步echo客户端:
-
-  ```rust
-  use tokio::net::TcpStream;
-  use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
-  
-  #[tokio::main]
-  async fn main() -> io::Result<()> {
-  
-      let socket = TcpStream::connect("127.0.0.1:6142").await?;
-    	// 分离reader和writer, 适合同时实现了AsyncRead和AsyncWrite的对象
-      let (mut rd, mut wr) = socket.split();
-  
-      tokio::spawn(async move {
-          wr.write_all(b"hello\r\n") .await?;
-          wr.write_all(b"hello\r\n").await?;
-          Ok::<_, io::Error>(())
-      });
-  
-      let mut buf = vec![0; 128];
-      let n = rd.read(&mut buf).await?;
-      println!("GOT {:?}", &buf[..n]);
-      Ok(())
-  }
-  ```
-
-
-
-
-## Pin/Unpin
+### `Pin/Unpin`
 
 在Rust中, 一个变量的内存地址是可能会被移动的. 这种移动会引发一些问题, 考虑以下几个场景:
 
@@ -1964,56 +2187,54 @@ Actual Data Address: 0x16eec22b0, Actual Data Content: 1, Value of data_ref: 0x1
 
 
 
-## 宏
-
-在Rust中, 宏可以分为两类:
-
-* 声明宏.
-* 过程宏.
 
 
+## `cargo`项目管理
 
-### derive
+### 注释与文档
 
-* derive一般用在结构体/枚举中, 用来给结构体/枚举快速实现某些trait.
+### 单元测试
 
-  * 语法:
+* 假设你在你的`.rs`文件中写好了函数, 现在需要测试函数的功能.
+* 直接在`.rs`文件的最后, 加上这些: 其中`test_XXX1()`就是针对某个函数的测试函数.
 
-    ```rust
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-    struct MyStruct {
-    
-    }
-    ```
+```rust
+#[cfg(test)]
+mod tests {
+  
+  use super::*;
+  
+  // 测试函数, 可以写多个
+  #[test]
+  fn test_XXX1() {
+    assert_eq!(...);
+  }
+  
+  #[test]
+  fn test_XXX2() {
+    assert_eq!(...);
+  }
+}
+```
 
-  * 常见的trait:
+* 写好之后, 直接使用`cargo test`就可以进行测试.
 
-    * `Debug`: 可以使用`println!("{:?}", my_struct)`打印结构体.
-    * `Clone`: 可以使用`my_struct.clone()`.
-    * `PartialEq`: 结构体具有部分相等性.
-    * `Eq`: 结构体具有完全相等性.
 
-## Rust标准库
 
-* Rust的标准库`std`需要有操作系统的支持, 但是Rust也提供了一个不需要操作系统支持的精简版`std`, 叫做`core`.
+## `Unsafe Rust`
 
-* 如果要让应用程序移除标准库`std`的支持, 需要干这几件事情:
+### 裸指针
 
-  * 加上`#![no_std]`.
+* Rust中, 裸指针(raw pointer)分为一下两种类型:
 
-  * 提供`panic_handler`, `std`中用`#[panic_handler]`来标记`panic!`宏要对接的函数:
+  * `*const T`: 不能通过裸指针修改原数据.
 
-    ```rust
-    use core::panic::PanicInfo;
-    
-    // PanicInfo会保存程序的错误位置
-    #[panic_handler]
-    fn panic(_info: &PanicInfo) -> ! {
-        loop {}
-    }
-    ```
+  * `*mut T`: 可以通过裸指针修改原数据.
 
-* `start`语义项: 
 
-  * Rust标准库`std`和操作系统对接, 开始执行二进制文件时, 会先跳转到`std`中的`start`语义项, 执行一些准备工作, 然后跳转到`main`函数.
-  * 如果要移除`main`函数的支持, 需要加上`#![no_main]`.
+* 打印变量的地址, 首先把它转成裸指针, 然后用`{:p}`打印.
+
+```rust
+let ptr = &a as *const T;
+println!("{:p}", ptr);
+```
