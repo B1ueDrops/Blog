@@ -1375,9 +1375,9 @@ black.2
 
   ```rust
   // mod.rs
-  mod A;
-  mod C;
-  mod D;
+  pub mod A;
+  pub mod C;
+  pub mod D;
   ```
 
 * `mod`的根节点是`src/main.rs`或者是`src/lib.rs`, 根节点的名称叫做`crate`.
@@ -1663,6 +1663,10 @@ black.2
   ```
 
 * 如果一个类型实现了`Copy`, 那么它就不能实现`Drop`.
+
+* 在Rust中, 使用`File::open`/或者使用`socket`时, 不需要手动调用`close`等函数释放资源, 因为这些对象实现了`drop` .
+
+* 程序`panic!`后, 也会自动调用`drop`.
 
 ### `Box<T>`
 
@@ -2264,6 +2268,27 @@ mod tests {
 let ptr = &a as *const T;
 println!("{:p}", ptr);
 ```
+
+
+
+
+
+## `Serde`
+
+### `serde_json`
+
+* 将一个`json`文件解析为`serde_json`中的`Value`结构体:
+
+  ```rust
+  pub fn json_to_serde_value(path: &str) -> Value {
+      let file = File::open(path).unwrap();
+      let reader = BufReader::new(file);
+      let serde_value = serde_json::from_reader(reader).unwrap();
+      return serde_value;
+  }
+  ```
+
+  
 
 
 

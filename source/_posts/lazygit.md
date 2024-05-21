@@ -1,5 +1,5 @@
 ---
-title: lazygit的一些常见用法
+title: Git/Lazygit版本控制
 categories: 工具/环境
 ---
 
@@ -36,3 +36,12 @@ categories: 工具/环境
 
 在commit pane中, 使用`r`就可以改写commit信息.
 
+
+
+## Commit格式
+
+* 标题: 
+
+  ```
+  [<type>](<scope>) <subject> (#pr)
+  ```
