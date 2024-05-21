@@ -84,18 +84,21 @@ $$
 
 ## 傅立叶变换
 
-* 根据周期函数傅立叶级数的结果, 真正决定一个函数的是$C_n$
+* 根据周期函数傅立叶级数的结果, 真正决定一个函数的是$C_n$.
   * $C_n$是一个函数, 给定一个$n$, 就会对应一个复数, 其中给定一个$n$就等价于给定一个$n\omega_0$, 这个函数就是频谱.
-* $f(t) = \sum_{n=-\infty}^{\infty} \frac{\Delta \omega}{2\pi} \int_{-\frac{T}{2}}^{\frac{T}{2}}f(t)dt\ e^{in \omega_0 t}$​​
+* 将$C_n$的结果带入$f(t)$, 可以得到: $f(t) = \sum_{n=-\infty}^{\infty} \frac{\Delta \omega}{2\pi} \int_{-\frac{T}{2}}^{\frac{T}{2}}f(t)dt\ e^{in \omega_0 t}$​​
   * 其中, $\Delta \omega$就是频谱两个离散的$\omega$之间的距离, 当周期趋于正无穷时, $\Delta \omega$趋于0, $\omega_0$就相当于一个基频率.
 * 当$T \rightarrow \infty$​时,
   * $\sum_{n=-\infty}^{\infty}\Delta \omega = \int_{-\infty}^{\infty}d\omega$​
   * $n\omega_0$可以用一个连续的$\omega$来代替.
-  *  $f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty}\int_{-\infty}^{\infty}f(t) e^{in\omega_0 t}dt\ d\omega$​
+  *  $f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty}\int_{-\infty}^{\infty}f(t) e^{-in\omega_0 t}dt\ d\omega$​
 * 那么傅立叶变换就是:
 
 $$
-F(\omega) = \int_{-\infty}^{\infty}f(t) e^{i\omega t}dt \\
-f(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty}F(\omega)d\omega
+F(\omega) = \int_{-\infty}^{\infty}f(t) e^{-i\omega t}dt \\
 $$
 
+* 傅立叶逆变换就是:
+  $$
+  f(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty}F(\omega)e^{i\omega t}d\omega
+  $$

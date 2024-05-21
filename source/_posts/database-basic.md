@@ -66,9 +66,9 @@ psql -h hostname \
 
 
 
-## psql的配置和常用命令
+## `psql`的配置和常用命令
 
-### psql的增强版-pgcli
+### `psql`的增强版-`pgcli`
 
 > https://github.com/dbcli/pgcli
 
@@ -82,7 +82,7 @@ brew install pgcli
 
 
 
-### psql的常见命令
+### `psql`的常见命令
 
 | 命令            | 含义                         |
 | --------------- | ---------------------------- |
@@ -100,11 +100,11 @@ brew install pgcli
 
 
 
-## PostgreSQL的逻辑存储
+## 逻辑存储
 
 
 
-### Database
+### `Database`
 
 Database是数据库逻辑存储的最高一级, 可以通过下面的命令创建:
 
@@ -120,7 +120,7 @@ create database <Database_name>;
 
 
 
-### Schema
+### `Schema`
 
 Schema是Database下面一级的一个空间, 这个Schema可以存储不同的数据库对象, 例如表, 索引, 函数等.
 
@@ -142,7 +142,7 @@ create schema <Schema_name>;
 
 
 
-## Create Table
+## 建表语句
 
 创建表格的文法如下:
 
@@ -163,7 +163,7 @@ create table <table_name>
 
 
 
-## 字段的数据类型
+## 数据类型
 
 ### 整数
 
@@ -195,7 +195,7 @@ create table <table_name>
 
 
 
-## NULL
+## `NULL`
 
 注意: <font color=red>在SQL中, null不是一个数值, 而是表示这个字段还没有设置值.</font>
 
@@ -213,13 +213,13 @@ select * from xxx where xxx is not null;
 
 
 
-### not null
+### `not null`
 
 这个约束表示一个字段不允许存在`null`值, 是一个inline-constraint, 定义的关键词就是`not null`.
 
 
 
-### unique
+### `unique`
 
 如果一个/多个字段被设置成unique, 那么表中不允许有两条纪录有同样的字段值, 关键词是`unique`. 
 
@@ -234,7 +234,7 @@ unique(first_name, last_name)
 
 
 
-### primary key(主键)
+### `primary key`(主键)
 
 主键的关键字是`primary key`.
 
@@ -256,7 +256,7 @@ primary key(column1, column2)
 
 
 
-### foreign key(外键)
+### `foreign key`(外键)
 
 外键的关键字是`foreign key`, 外键主要是用来管理表与表之间的integration的.
 
@@ -291,7 +291,7 @@ foreign key (column) references table_name (column)
 
 
 
-## Insert
+## `Insert`
 
 Insert语句用来向已经创建的表中插入一行, 语法是:
 
@@ -309,7 +309,7 @@ insert into <table_name>(column1, column2, ...) values
 
 
 
-## Select
+## `Select`
 
 Select指令用于从表中查询数据.
 

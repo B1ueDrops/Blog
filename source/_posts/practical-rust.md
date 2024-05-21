@@ -1051,7 +1051,8 @@ black.2
   }
   ```
 
-  
+
+
 
 ## `Option`
 
@@ -1603,7 +1604,10 @@ black.2
 
 * `Deref`是一个trait, 实现了这个trait的类型可以具有智能指针的行为.
 
-  * 一个类型为`T`的对象, 如果实现了`Deref<Target=U>`, 那么在使用`&T/&mut T`类型或者`Box<T>`类型的引用时, 就会被自动转换成`&U`.
+  * 一个类型为`T`的对象, 如果实现了`Deref<Target=U>`, 那么
+    * 在使用`T`类型的对象时, 可以直接调用`U`类型的方法.
+    * 在使用`&T/&mut T`类型或者`Box<T>`类型的引用时, 就会被自动转换成`&U`.
+
 
   ```rust
   use std::ops::Deref;
@@ -2205,14 +2209,34 @@ mod tests {
   use super::*;
   
   // 测试函数, 可以写多个
-  #[test]
-  fn test_XXX1() {
-    assert_eq!(...);
+  mod testset1 {
+    
+    use super::*;
+    
+    #[test]
+  	fn test_XXX1() {
+    	assert_eq!(...);
+  	}
+  
+    #[test]
+    fn test_XXX2() {
+      assert_eq!(...);
+    }
   }
   
-  #[test]
-  fn test_XXX2() {
-    assert_eq!(...);
+  mod testset2 {
+    
+    use super::*;
+    
+    #[test]
+    fn test_XXX1() {
+      assert_eq!(...);
+    }
+
+    #[test]
+    fn test_XXX2() {
+      assert_eq!(...);
+    }
   }
 }
 ```
@@ -2222,6 +2246,8 @@ mod tests {
 
 
 ## `Unsafe Rust`
+
+
 
 ### 裸指针
 
@@ -2238,3 +2264,138 @@ mod tests {
 let ptr = &a as *const T;
 println!("{:p}", ptr);
 ```
+
+
+
+## Rust的接口设计
+
+
+
+### `Unsurprising`
+
+* 实现`Debug` trait:
+
+  * `Debug trait`可以采用`#[derive(Debug)]`进行实现.
+  * 实现之后, 可以通过`{:?}`或者`{:#?}`进行打印.
+  * 如果实现`Debug`的类型中有泛型参数`T`, 那么`T`也需要实现`Debug` trait, 否则就会报错.
+
+* 实现`Send` trait:
+
+  * 如果没有实现`Send`, 那么就不能被放入`Mutex`中, 也不能用于多线程环境.
+
+* 实现`Clone` trait:
+
+  * `#[derive(Clone)]`.
+  * 可以调用`stu.clone()`方法为对象进行克隆.
+
+* 实现`Default` trait:
+
+  * `#[derive(Default)]`.
+  
+  * 可以调用`Student::default()`获取类型的默认值.
+  
+    ```rust
+    impl Default for Student {
+      fn default() -> Self {
+        Self {
+          //...
+        }
+      }
+    }
+    ```
+  
+* 实现`PartialEq` trait:
+
+  * `#[derive(PartialEq)]`.
+  * 实现之后, 可通过`==/assert_eq!`判断对象是否相等.
+  
+* 实现`PartialOrd` trait:
+
+  * `#[derive(PartialOrd)]`.
+  * 实现之后, 可通过`>, >=, <, <=`进行比较.
+  
+* 如果要实现`Ord`或者`Eq`这两个Trait:
+
+  * 首先, 必须先实现`PartialOrd`和`PartialEq`这两个trait.
+  
+  * 之后, 判断类型是否满足要求:
+  
+    * 如果类型`T`可以实现`Ord` trait, 那么必须满足下面的要求:
+      * 反身性 (Reflexivity): 对于任意类型`T`的对象`x`, `x == x` 必须为真.
+      * 对称性 (Symmertry): 对于任意类型`T`的对象 `x, y`, 如果`x == y`, 那么`y == x`为真.
+      * 传递性 (Transitivity): 对于任意类型`T`对象`x, y, z`, 如果`x == y && y == z`, 那么`x == z`为真.
+  
+    * 如果类型`T`可以实现`Eq` trait, 那么必须满足下面的要求:
+      * 反身性 (Reflexivity): 对于任意类型`T`的对象`x`, `x <= x`和`x >= x` 必须为真.
+      * 反对称性 (Anti-Symmertry): 对于任意类型`T`的对象 `x, y`, 如果`x <= y && y <= x`, 那么`x == y`为真.
+      * 传递性 (Transitivity): 对于任意类型`T`对象`x, y, z`, 如果`x <= y && y <= z`, 那么`x <= z`为真.
+  
+  * 对于包装类型(`Wrapper`):
+  
+    * 实现`Deref` trait, 允许包装类型在使用`.`时, 会自动解引用为内部类型, 可以直接使用内部类型的方法:
+  
+      ```rust
+      struct Wrapper(String);
+      
+      impl Deref for Wrapper {
+        type Target = String;
+        
+        fn deref(&self) -> &Self::Target {
+          &self.0
+        }
+      }
+      
+      let wrapper = Wrapper(String::from("haha"));
+      // 可以直接调用内部String的len()
+      let n = wrapper.len();
+      ```
+  
+    * 实现`AsRef` trait, 可以让用户轻松通过外部类型获取内部引用:
+  
+      ```rust
+      // Wrapper -> &str
+      impl AsRef<str> for Wrapper {
+        fn as_ref(&self) -> &str {
+          &self.0
+        }
+      }
+      ```
+  
+    * 为外部类型实现`From<内部类型>` trait, 方便使用`Wrapper::from()`转换为外部类型:
+  
+      ```rust
+      // String -> Wrapper
+      impl From<String> for Wrapper {
+        fn from(s: String) -> Self {
+          Wrapper(s)
+        }
+      }
+      ```
+  
+    * 为内部类型实现`From<外部类型>` trait, 方便内部类型使用`into()`转为外部类型:
+  
+      ```rust
+      // Wrapper -> String
+      impl From<Wrapper> for String {
+        fn from(wrapper: Wrapper) -> String {
+          wrapper.0
+        }
+      }
+      ```
+  
+      
+  
+
+
+
+
+### `Flexible`
+
+
+
+### `Obvious`
+
+
+
+### `Constrained`
+

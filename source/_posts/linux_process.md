@@ -5,7 +5,7 @@ categories: UNIX编程
 
 
 
-## PCB
+## 进程结构体`PCB`
 
 Linux上的PCB (Process Control Block) 本质上是一个叫做`task_struct`的结构体, 需要包含以下信息:
 
@@ -22,7 +22,7 @@ Linux上的PCB (Process Control Block) 本质上是一个叫做`task_struct`的�
 
 
 
-## 创建进程
+## 创建进程`fork()`
 
 * 头文件: `#include <unistd.h>`
 
@@ -95,7 +95,7 @@ Current pid is 35950 <-
 
 
 
-## 进程执行可执行文件
+## 进程执行`exec`
 
 进程控制一般用到`execl`和`execlp`这两个函数, 两个函数都在`<unistd.h>`中:
 
@@ -211,7 +211,11 @@ int main() {
 
 
 
-## 进程回收
+## 进程回收`wait`
+
+
+
+### `wait`
 
 为了避免僵尸进程的产生, 需要让父进程回收子进程资源, 这个回收方式分为两种类型:
 
@@ -254,6 +258,72 @@ int main() {
                 printf("Child %d PCB freed\n", ret);
             }
           // 如果没子进程可等了, 就退出
+            else {
+                printf("Child process freed error\n");
+                break;
+            }
+        }
+    }
+    else if (pid == 0) {
+        printf("I m father process\n");
+    }
+    return 0;
+}
+```
+
+
+
+### `waitpid`
+
+* `waitpid`是`wait`的升级版本, 可以对回收行为做进一步的控制.
+* `waitpid`也是在`<sys/wait.h>`中:
+  * 函数签名: `pid_t waitpid(pid_t pid, int *status, int options)`:
+    * `pid`: 
+      * 小于`-1`: 回收进程组ID是`|pid|`的所有子进程.
+      * `-1`: 和`wait()`一样, 无差别回收.
+      * `0`: 回收当前进程组所有的子进程.
+      * `> 0`: 指定回收进程ID是`pid`的进程.
+    * `status`: 和`wait`一样.
+    * `options`: 控制函数是否阻塞当前进程:
+      * `0`: 阻塞.
+      * `WNOHANG`: 非阻塞.
+  * 返回值:
+    * `0`: 函数非阻塞, 子进程还在运行.
+    * `-1`: 回收失败.
+    * 成功会得到回收的子进程的`pid`.
+
+
+
+> 例子: 通过`waitpid`非阻塞回收子进程资源
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+
+    pid_t pid;
+    for (int i = 0; i < 5; i ++) {
+      // 创建5个子进程
+        pid = fork();
+        if (pid == 0) {
+            break;
+        }
+    }
+
+    if (pid > 0) {
+        while (1) {
+            pid_t ret = waitpid(-1, NULL, WNOHANG);
+          // 成功回收
+            if (ret > 0) {
+                printf("Child %d PCB freed\n", ret);
+            }
+          // 子进程还没退出
+          	else if (ret == 0) {
+              
+            }
+          // 回收失败
             else {
                 printf("Child process freed error\n");
                 break;

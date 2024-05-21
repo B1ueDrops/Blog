@@ -6,6 +6,142 @@ mathjax: true
 
 
 
+
+
+## 用数组模拟栈
+
+> https://www.acwing.com/problem/content/description/
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 100010;
+
+int tt = -1;
+int stk[N];
+
+int main() {
+
+    int m;
+    cin >> m;
+
+    while (m --) {
+
+        string op;
+        cin >> op;
+
+        if (op == "push") {
+            int x;
+            cin >> x;
+            stk[++ tt] = x;
+        }
+        else if (op == "pop") {
+            -- tt;
+        }
+        else if (op == "empty") {
+            if (tt < 0) puts("YES");
+            else puts("NO");
+        }
+        else {
+            printf("%d\n", stk[tt]);
+        }
+    }
+    return 0;
+}
+```
+
+
+
+## 表达式求值(栈)
+
+> https://www.acwing.com/problem/content/description/3305/
+>
+> https://www.acwing.com/problem/content/description/456/
+
+直接背模板:
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <unordered_map>
+
+
+using namespace std;
+
+/* 将运算符映射到优先级上 */
+unordered_map<char, int> pr = {
+    { '+', 1 },
+    { '-', 1 },
+    { '*', 2 },
+    { '/', 2 }
+};
+
+/* 存储运算数的栈 */
+stack<int> nums;
+/* 存储运算符的栈 */
+stack<char> op;
+
+/* 表达式 */
+string str;
+
+void eval()
+{
+    int b = nums.top(); nums.pop();
+    int a = nums.top(); nums.pop();
+    
+    char c = op.top(); op.pop();
+    
+    if (c == '+') nums.push(a + b);
+    else if (c == '-') nums.push(a - b);
+    else if (c == '*') nums.push(a * b);
+    else nums.push(a / b);
+}
+
+int main()
+{
+    cin >> str;
+    
+    for (int i = 0; i < str.size(); i ++)
+    {
+        /* 如果是左括号, 加入运算符的栈 */
+        if (str[i] == '(') op.push(str[i]);
+        /* 如果是右括号, 那么需要eval括号内表达式的值 */
+        else if (str[i] == ')')
+        {
+            while (op.size() && op.top() != '(') eval();
+            op.pop();
+        }
+        /* 如果是数位, 那么需要找到整个数, 然后放到nums栈中 */
+        else if (isdigit(str[i]))
+        {
+            int x = 0, j = i;
+          	/* 这个j ++不要忘记 */
+            while (j < str.size() && isdigit(str[j])) x = 10 * x + str[j ++] - '0';
+            i = j - 1;
+            nums.push(x);
+        }
+        /* 如果是运算符, 需要先eval优先级高的运算符, 然后放到栈中 */
+        else
+        {
+            while (op.size() && pr[op.top()] >= pr[str[i]]) eval();
+            op.push(str[i]);
+        }
+    }
+    while (op.size()) eval();
+    
+    cout << nums.top() << endl;
+    return 0;
+}
+```
+
+
+
+
+
+
+
 ## 单调队列模板
 
 > https://www.acwing.com/problem/content/156/

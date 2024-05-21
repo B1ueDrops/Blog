@@ -5,7 +5,7 @@ categories: 编程语言
 
 
 
-## HTML
+## `HTML`
 
 > MDN官方文档: https://developer.mozilla.org/zh-CN/
 
@@ -108,11 +108,11 @@ categories: 编程语言
 
 
 
-## Javascript
+## `Javascript`
 
 
 
-### ES6语法糖
+### `ES6`语法糖
 
 * `bind()`函数:
 
@@ -205,43 +205,64 @@ categories: 编程语言
   * `export`: 可以`export`多个, `import`时需要加上`{}`, 名称需要匹配 (用别名用`as`).
   * `export default`: 只能`export default`一个, `import`时不用`{}`, 名称不需要匹配.
 
-## React
 
-### 配环境
 
-* 配置环境:
+## `Vue3`
 
-  ```bash
-  npm i -g create-react-app
-  ```
+
 
 ### 创建项目
 
-* 创建项目:
+* 安装Vue命令行客户端:
 
-```bash
-create-react-app <项目名字>
-```
+  ```bash
+  npm i -g @vue/cli
+  ```
+
+
+* 要创建一个Vue项目: 用`vue ui`按照图形化界面引导创建.
 
 * 启动项目:
 
   ```bash
-  cd <项目名字>
-  npm start
+  vue serve
   ```
 
-* 在项目文件中装`bootstrap`:
+  
 
-  ```bash
-  npm i bootstrap
-  ```
+### `slot`插槽
 
-### JSX
+* `slot`插槽相当于一个`Component`的“参数”:
 
-* JSX是一种Javascript的扩展, 可以在Javascript中写XML语言.
-* JSX会被Babel编译成正常的Javascript.
+  * 假设定义了一个组件叫`MainFrame.vue`:
 
+    ```vue
+    <!-- MainFrame.vue -->
+    <template>
+    	<slot name="header"></slot>
+    	<slot name="main"></slot>
+    	<slot name="footer"></slot>
+    </template>
+    ```
 
+  * 如果在其他组件中想要调用这个组件, 并且向`slot`中填充内容:
 
-### Components
+    ```vue
+    <MainFrame>
+      
+    	<template #header>
+      	<!-- 这里放header内容 -->
+      </template>
+      
+      <template #main>
+      	<!-- 这里放main内容 -->
+      </template>
+      
+      <template #footer>
+      	<!-- 这里放footer内容 -->
+      </template>
+      
+    </MainFrame>
+    ```
 
+    
