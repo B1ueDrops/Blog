@@ -1987,6 +1987,26 @@ fn main() -> std::io::Result<()> {
 
 
 
+### `PathBuf/Path`
+
+* `PathBuf`和`Path`用来封装对文件系统路径的一些操作, 这个封装是跨平台的.
+
+* `PathBuf`和`Path`在`std::path::{PathBuf, Path}`中.
+
+* `PathBuf`和`Path`的关系类似于`String`和`&str`的关系, `PathBuf`能够自动`deref`到`Path`.
+
+* 要封装一个`PathBuf`变量:
+
+  ```rust
+  let mut pathbuf = PathBuf::from("foo/bar/target.txt");
+  ```
+
+  * 之后, 操作`PathBuf`变量就和操作栈一样:
+    * `pathbuf.push("/dir")`可以将目录更近一层, 变成`foo/bar/target.txt/dir`.
+    * `pathbuf.pop()`可以变为上级路径: `foo/bar`.
+
+
+
 ### 网络`I/O`
 
 * 网络`I/O`的包大部分在`std::net`中.
