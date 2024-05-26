@@ -649,6 +649,10 @@ black.2
   * 字面值.
   * 解构的枚举值, 元组, 结构体.
 
+
+
+### `match`表达式
+
 * `match`表达式:
     ```rust
     match VALUE {
@@ -657,9 +661,9 @@ black.2
         _ => EXPRESSION,
     }
     ```
-    
+
     * 一个例子:
-    
+
       ```rust
       // 例子
       enum Coin {
@@ -677,9 +681,9 @@ black.2
         }
       }
       ```
-    
+
     * 用`match`来解构枚举值:
-    
+
       ```rust
       enum Option<T> {
         Some(T),
@@ -697,17 +701,82 @@ black.2
         }
       }
       ```
+
+
+
+### 所有权问题与`ref`
+
+* 在进行变量解构时, 可能会导致部分所有权的转移, 例如下面的代码:
+
+  ```rust
+  fn main() {
+      let a = Some(String::from("haha"));
+      let b = match a {
+          Some(s) => {
+              println!("{}", s);
+              2
+          },
+          None => { 1 }
+      };
+      println!("{}", a.unwrap());
+  }
+  ```
+
+  * 其中, `a`中的`String`变量`s`的所有权进行了转移, 会报错.
+
+* 解决这个问题有两种方式:
+
+  * 对这个变量的引用进行模式匹配:
+
+    ```rust
+    fn main() {
+        let a = Some(String::from("haha"));
+        let b = match &a {
+            Some(s) => {
+              // 这里的s是&String类型
+                println!("{}", s);
+                2
+            },
+            None => { 1 }
+        };
+        println!("{}", a.unwrap());
+    }
+    ```
+
+  * 使用`ref`关键字:
+
+    ```rust
+    fn main() {
     
+        let a = Some(String::from("haha"));
+    
+        let b = match a {
+          // s也是&String类型
+            Some(ref s) => {
+                println!("{}", s);
+                2
+            },
+            None => { 1 }
+        };
+        println!("{}", a.unwrap());
+    }
+    ```
+
+### `if let`表达式
+
+
+
 * `if let`表达式: 只关心一种匹配情况的`match`:
-  
+
     ```rust
     let c = if let Some(x) = a {
       let b = x;
       b
     }
     ```
-    
-    
+
+
+​    
 
 ## 方法
 
@@ -958,7 +1027,7 @@ black.2
 
 * 特征对象类型: `dyn A`
 
-  * 注意, 特征对象只能在运行时才能确定大小, 因此需要用引用`&`或者`Box<T>`的形式使用.
+  * 注意, 特征对象只能在运行时才能确定大小, 因此需要用引用`&dyn`或者`Box<dyn A>`的形式使用.
 
   ```rust
   // 定义一个trait
@@ -1103,6 +1172,10 @@ black.2
   * 可恢复的错误: Rust提供了`Result<T, E>`类型.
   * 不可恢复的错误: Rust提供了`panic!`宏.
 
+
+
+### `panic!`
+
 * `panic!`宏使用: `panic!("错误信息")`
 
   * `panic`有两种处理模式:
@@ -1132,6 +1205,10 @@ black.2
           // ....
       }
       ```
+
+
+
+### `Result<T, E>`与`?`
 
 * `Result<T, E>`:
 
@@ -1166,7 +1243,7 @@ black.2
     let f = File::open("hello.txt").unwrap();
     ```
 
-  * `expect()`: 在`unwrap()`的基础上, 可以自定制错误信息:
+  * `expect()`: 在`unwrap()`的基础上, 可以DIY错误信息:
 
     ```rust
     let f = File::open("hello.txt").expect("错误信息");
@@ -1201,6 +1278,209 @@ black.2
 
     * `?`函数会隐式调用`From`函数, 将返回错误类型自动转换为函数签名所定义的错误类型.
 
+
+
+### `Error`与自定义异常
+
+* 如果要自定义异常, 需要实现`std::error::Error`, 其中需要关心的方法是`source`方法:
+
+  ```rust
+  pub trait Error: Debug + Display {
+    fn source(&self) -> Option<&(dyn Error + 'static)> { None }
+  }
+  ```
+
+  * 通过`source()`方法, 可以将你的异常对象转换成更低级别的异常.
+
+* 自定义异常的步骤:
+
+  * 实现`Display` trait.
+  * 实现`Debug` trait, 可以用`#[derive(Debug)]`.
+  * 实现`std::error::Error` trait, 如果自定义的`Error`有子异常, 需要覆盖其中的`source()`方法:
+    * `source()`方法返回`Some(子err)`.
+
+* 例子:
+
+  * 定义一个子异常`ChildError`: 
+
+    * 子异常一般是更低级别的异常, 因为你的自定义异常基本也是由若干的子异常组成.
+
+    ```rust
+    #[derive(Debug)]
+    struct ChildError;
+    
+    // 实现Display
+    impl std::fmt::Display for ChildError {
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ChildError is here!")
+      }
+    }
+    
+    // 实现Error, 没有子Error, 不用覆盖source
+    impl std::error::Error for ChildError {}
+    ```
+
+  * 自定义异常`MyError`, 子异常是`ChildError`:
+
+    ```rust
+    #[derive(Debug)]
+    struct MyError {
+      err: ChildError,
+    }
+    
+    impl Display for MyError {
+      // ...
+    }
+    // 返回子异常
+    impl Error for MyError {
+      fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.err)
+      }
+    }
+    ```
+
+### 优雅处理异常
+
+> https://github.com/baoyachi/rust-error-handle
+
+* 首先, 把自定义异常定义为枚举, 枚举中的元素是组成自定义异常的若干异常:
+
+  ```rust
+  #[derive(Debug)]
+  enum CustomError {
+    ParseIntError(std::num::ParseIntError),
+    UTF8Error(std::str::Utf8Error),
+    IOError(std::io::Error)
+  }
+  ```
+
+* 实现`Display`的时候, 对自定义异常进行模式匹配, 然后对子异常递归调用`Display`中的`fmt`方法:
+
+  ```rust
+  impl Display for CustomError {
+    fn fmt(&self, &mut Formatter<'_>) -> std::fmt::Result {
+      match &self {
+        CustomError::IOError(ref e) => e.fmt(f),
+        CustomError::UTF8Error(ref e) => e.fmt(f),
+        CustomError::ParseIntError(ref e) => e.fmt(f),
+      }
+    }
+  }
+  ```
+
+* 实现`Error`时, 同样对自定义异常进行模式匹配, 然后返回对应的子异常:
+
+  ```rust
+  impl Error for CustomError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+      match &self {
+        CustomError::IOError(ref e) => Some(e),
+        CustomError::UTF8Error(ref e) => Some(e),
+        CustomError::ParseIntError(ref e) => Some(e),
+      }
+    }
+  }
+  ```
+
+* 然后, 为自定义异常`CustomError`实现`From` trait, 让子异常能够自动转化到上级异常:
+
+  ```rust
+  impl From<ParseIntError> for CustomError {
+    fn from(e: std::num::ParseIntError) -> Self {
+      CustomError::ParseIntError(e)
+    }
+  }
+  
+  impl From<IOError> for CustomError {
+    fn from(e: std::io::Error) -> Self {
+      CustomError::IOError(e)
+    }
+  }
+  
+  impl From<UTF8Error> for CustomError {
+    fn from(e: std::str::UTF8Error) -> Self {
+      CustomError::UTF8Error(e)
+    }
+  }
+  ```
+  
+* 之后, 假设有三个`utils`级别的子函数, 这三个子函数分别会抛出`ParseIntError`, `io::Error`和`std::str::UTF8Error`:
+
+  ```rust
+  fn read_file(path: &str) -> Result<String, io::Error> {
+    // ...
+  }
+  fn to_u32(v: &str) -> Result<u32, UTF8Error> {
+  	// ...  
+  }
+  fn to_utf8(v: &[u8]) -> Result<&str, ParseIntError> {
+    // ...
+  }
+  ```
+
+  * 然后, 把其中的子异常全部换成`CustomError`, 借助`From` trait, 子异常可以自动转换为`CustomError`:
+  
+    ```rust
+    fn read_file(path: &str) -> Result<String, CustomError> {
+      // ...
+    }
+    fn to_u32(v: &str) -> Result<u32, CustomError> {
+    	// ...  
+    }
+    fn to_utf8(v: &[u8]) -> Result<&str, CustomError> {
+      // ...
+    }
+    ```
+  
+  * 然后, 用类型表达式进一步简化:
+  
+    ```rust
+    pub type MyResult<T> = Result<T, CustomError>;
+    
+    fn read_file(path: &str) -> MyResult<String> {
+      // ...
+    }
+    fn to_u32(v: &str) -> MyResult<u32> {
+    	// ...  
+    }
+    fn to_utf8(v: &[u8]) -> MyResult<&str> {
+      // ...
+    }
+    ```
+  
+* 然后, 如果在你的逻辑中, 同时可能返回这三种异常, 就可以直接全部使用`?`, 异常会被自动转为自定义异常.
+
+  ```rust
+  fn my_func() -> MyResult<()> {
+    
+    let v = read_file("../")?;
+    let x = to_utf8(v.as_bytes())?;
+    let u = to_u32(x)?;
+    Ok(())
+  
+  }
+  ```
+
+* 这样, 在每一层都会把比较底层的`Exception`进行一层封装, 然后抛出到上级, 在上级可以通过对`Exception`进行解析, 统一处理.
+
+### 优雅处理`Option`
+
+* 如果你认为`Option`变量如果是`None`的情况足以变成异常, 那么可以采用如下方法:
+
+  * 首先自定义一个异常, 对应`Option`变量变成`None`的情况:
+
+    ```rust
+    struct NoneError;
+    //...
+    ```
+
+  * 然后, 假设一个方法可能返回`Option`, 那么就用`ok_or`方法, 这个方法可以把对应的`Option`变成`Result`, 就可以使用`?`.
+
+    ```rust
+    let a = gen_option().ok_or(NoneError)?;
+    ```
+
+    
 
 
 ## 集合
@@ -1444,12 +1724,13 @@ black.2
   impl Display for Student {
       fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // 第二个参数是格式化字符串, 后面是具体的参数
+        // 最后没有;
           write!(f, "Student Name {}, Student age {}", self.name, self.age)
       }
   }
   ```
-
-
+  
+  * 实现`Display` trait之后, 可以对一个对象调用`to_string()`方法, 生成`String` 来进行打印.
 
 ### `Debug`
 
@@ -1478,8 +1759,8 @@ black.2
       }
   }
   ```
-
-
+  
+  * 实现`Debug` trait之后, 可以使用`{:?}`或者`{:#?}`占位符来进行打印.
 
 ## 闭包
 
