@@ -7,8 +7,10 @@ categories: 编程语言
 
 ## Python基础
 
-* 查看dict的keys: `print(a.keys())`.
-* 对某个对象`obj`做浅拷贝: `copyed_obj = obj.copy()`.
+* 查看dict的keys: `print(list(a.keys())`
+* 对某个对象`obj`做深拷贝:
+  *  `copyed_obj = obj.copy()`, 对`obj`
+
 
 ## Python面向对象
 
@@ -33,15 +35,3 @@ categories: 编程语言
 * `df.rolling()`方法可以用于滑动窗口计算操作, 通常和`mean(), sum(), std_dev()`等一起使用.
   * `df.ewm()`可以执行指数加权平均(Exponential Weighted Moving Average).
 
-## Snippets/Library
-
-* 读取matlab的`.mat`文件, 选用`mat73`库:
-
-  ```bash
-  pip3 install mat73
-  ```
-
-  ```python
-  # data是字典类型
-  data = mat73.loadmat('mat文件路径')
-  ```
