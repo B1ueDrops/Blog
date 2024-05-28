@@ -38,8 +38,9 @@ $$
   \end{cases}
   $$
 
-  * $u(t)$在$t = 0$处没有定义, 可以等于任何值.
-
+  * $u(t)$在$t = 0$​处没有定义, 可以等于任何值.
+  * 区间$[a, b]$上的, 高度为1的方波可以表示为: $u(t - a) - u(t - b)$.
+  
 * 冲激信号:
   $$
   \delta(t) = \begin{cases}
@@ -123,6 +124,50 @@ $$
 
 
 
+### 因果系统
+
+* 因果系统定义: 输出$y(t)$在输入$x(t)$之后发生.
+
+* 因果系统的判据: $x$括号中的数恒小于$y$括号中的数.
+
+
+
+### 无记忆系统
+
+* 无记忆系统定义: 一个系统无记忆, 是指$y(t)$的值仅仅依赖于$x(t)$的值.
+* 无记忆系统一定是因果系统.
+
+
+
+### 可逆系统
+
+* 定义: $x(t)$能够唯一写成$y(t)$的表达形式.
+
+
+
+### 稳定系统
+
+* 定义: 对于一个系统$x(t) \rightarrow y(t)$, 如果$x(t)$有界能够推出$y(t)$有界, 那么这个系统就是稳定系统.
+* 有界的定义: $\forall t \in R, \exist M, |x(t)| < M$, 那么$x(t)$就是有界.
+
+## LTI系统
+
+* LTI系统的全称是线性时不变系统(Linear Time invarient System, LTI).
+
+
+
+### 稳定性
+
+* LTI系统稳定的充要条件是: $\int_{-\infty}^{\infty}|h(t)|dt < +\infty$​.
+  * 或者是$\sum_{k=-\infty}^{\infty}|h[k]| < +\infty$​
+
+
+
+### 因果性
+
+* LTI系统是因果系统的充要条件是: 当$t < 0$时, $h(t) = 0$​.
+  * 如果$t < 0$时, $h(t)$有一些离散的值, 这个定理依然成立 (勒贝格积分).
+
 ## 卷积公式
 
 这里的卷积公式是针对线性时不变系统(Linear Time invarient System, LTI).
@@ -153,13 +198,18 @@ $$
 * 然后, 再根据线性系统叠加性: $\sum_{k=-\infty}^{+\infty}x[k]\delta[n-k] \rightarrow \sum_{k=-\infty}^{+\infty}x[k]h[n-k]$​
 * 即: $x[n] \rightarrow y[n]$.
 
-
+那么离散卷积公式就是: $x[n] * h[n] = \sum_{k=-\infty}^{\infty}x[k]h[n-k]$.
 
 * 离散卷积的计算:
   * 首先求系统的$h[n]$.
   * 然后, 如果已知$x[k]$, 求$y[k]$:
     * 首先把$h[n]$左右翻转.
-    * 然后向右移动$k$个单位, 然后从后向前相乘相加到$k$.
+    * 然后向右移动$k$个单位, 然后从后向前相乘相加到$k$​.
+
+> 离散卷积的信号长度
+
+* 假设$x_1[n]$有$N_1$个元素, $x_2[n]$有$N_2$个元素, 那么$x_1[n] * x_2[n]$有$N_1+ N_2 - 1$​个元素.
+* 假设$x_1[n]$在$[a_1, b_1]$有值, $x_2[n]$在$[a_2, b_2]$有值, 那么$x_1[n] * x_2[n]$在$[a_1 + a_2, b_1 + b_2]$有值.
 
 
 
@@ -190,3 +240,161 @@ $$
 * 那么卷积公式就是: $y(t) = x(t) * h(t) = \int_{-\infty}^{\infty}x(\tau)h(t-\tau)d\tau$
 
 其中$h(t)$就是系统的单位脉冲响应, 可以唯一标识一个连续的LTI系统.
+
+
+
+
+
+## 冲激信号的性质
+
+
+
+### 性质1
+
+> 证明: $\int_{-\infty}^{\infty}\delta(t)dt = 1$
+
+* $\int_{-\infty}^{\infty}\delta(t)dt = \int_{-\infty}^{\infty}[\lim\limits_{\Delta\rightarrow 0}\delta_{\Delta}(t)]dt = \lim\limits_{\Delta\rightarrow 0}\int_{-\infty}^{\infty}\delta_{\Delta}(t)dt = 1$.
+
+
+
+### 性质2
+
+> 证明: $\int_{-\infty}^{\infty}x(t)\delta(t)dt = x(0)$
+
+$$
+\int_{-\infty}^{\infty}x(t)\delta(t)dt = \int_{-\infty}^{\infty}x(t)\lim\limits_{\Delta\rightarrow0}\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{-\infty}^{\infty}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt
+$$
+
+$$
+\lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt
+$$
+
+* 根据积分中值定理, 可以得到:
+
+$$
+\lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}x(\epsilon) \Delta = \lim\limits_{\Delta\rightarrow0}x(\epsilon), \epsilon \in (0, \Delta)
+$$
+
+* 当$\Delta \rightarrow 0$时, 最终的结果就是$x(0)$.
+
+
+
+### 勒贝格定义
+
+* 勒贝格定义: 两个函数$f_1(t)$和$f_2(t)$相等是指, 对于任意函数$y(t)$, 都有:
+  $$
+  \int_{-\infty}^{\infty}y(t)f_1(t)dt = \int_{-\infty}^{\infty}y(t)f_2(t)dt
+  $$
+
+* 勒贝格定义说明, 如果两个函数只在有限个点的函数值不相等, 那么它们仍然可以是相等函数.
+
+* 假设两个系统的单位脉冲响应分别是$h_1(t)$和$h_2(t)$, 如果在勒贝格定义下, $h_1(t) = h_2(t)$, 那么就有$x(t) * h_1(t) = x(t) * h_2(t)$.
+* 如果要证明一个$f(t)是$$\delta(t)$, 只需要证明: 对于任意函数$y(t)$, 都有$\int_{-\infty}^{\infty}y(t)f(t)dt = y(0)$​.
+
+
+
+> 证明: 假设$f(t) = \lim\limits_{\omega \rightarrow \infty}\frac{sin\omega t}{\pi t} = \delta(t)$
+
+* 引理: 如果$x(t)$不是无限震荡函数, 那么有:
+
+$$
+\lim\limits_{\omega \rightarrow +\infty}\int_{-\infty}^{\infty}x(t)cos(\omega t)dt = 0 \\
+\lim\limits_{\omega \rightarrow +\infty}\int_{-\infty}^{\infty}x(t)sin(\omega t)dt = 0
+$$
+
+* 引理的证明: 假设$x(t)$​可导, 那么:
+
+  * 分部积分法: $\int udv = uv - \int vdu$
+
+  $$
+  \int_{-\infty}^{\infty}x(t)cos(\omega t)dt = \frac{1}{\omega}\int_{-\infty}^{\infty}x(t)dsin(\omega t) = \frac{1}{\omega}x(t)sin(\omega t) - \frac{1}{\omega}\int_{-\infty}^{\infty}sin(\omega t)x^{'}(t)dt
+  $$
+
+  * 当$\omega \rightarrow +\infty$​时, 这个式子等于0 (因为`-`两边都是有界变量乘无穷大的形式).
+
+* 下面回到原定理的证明:
+
+$$
+\int_{-\infty}^{\infty} y(t)f(t)dt = \int_{-\infty}^{\infty}y(t)\lim\limits_{\omega \rightarrow \infty}\frac{sin\omega t}{\pi t} dt = \lim\limits_{\omega \rightarrow \infty} \int_{-\infty}^{\infty}\frac{y(t)}{\pi t}  sin\omega t dt
+$$
+
+* 对于这个式子, 可以写成:
+  $$
+  \lim\limits_{\omega \rightarrow \infty} \int_{-\infty}^{\infty}\frac{y(t) - y(0)}{\pi t}sin\omega t dt + y(0) \lim\limits_{\omega \rightarrow \infty} \int_{-\infty}^{\infty} \frac{sin\omega t}{\pi t} dt
+  $$
+
+  * 左边, 由于$\frac{y(t) - y(0)}{\pi t}$不是无限震荡函数(在0处的极限可以通过洛必达法则求出), 根据引理, 等于0.
+  * 右边, 根据$\int_{-\infty}^{\infty} \frac{sin\omega t}{\pi t} dt = 1$(采样函数的性质), 等于$y(0)$.
+
+* 因此, 证明成功.
+
+### 性质3
+
+> 证明: $x(t)\delta(t) = x(0)\delta(t)$
+
+* 根据勒贝格定义, 证明左边等于右边只需要证明左边的函数和右边的函数相等.
+
+左边:
+$$
+\int_{-\infty}^{\infty}y(t)[x(t)\delta(t)]dt = y(0)x(0)
+$$
+右边:
+$$
+\int_{-\infty}^{\infty}y(t)[x(0)\delta(t)]dt = x(0)\int_{-\infty}^{\infty}y(t)[\delta(t)]dt = x(0)y(0)
+$$
+因此两边相等.
+
+根据这个式子可以得到: $x(t)\delta(t - t_0) = x(t_0)\delta(t - t_0)$
+
+
+
+### 性质4
+
+*  $\delta(f(t)) = \sum_{\forall f(t_0) = 0} \frac{1}{|f^{'}(t_0)|}\delta(t - t_0)$, $t_0$是$f(t)$的零点.
+
+
+
+## 卷积的性质
+
+* 交换律: $x(t) * h(t) = h(t) * x(t)$.
+* 结合律: $[x(t) * h_1(t)] * h_2(t) = x(t) * [h_1(t) * h_2(t)]$​.
+* 分配律: $x(t) * [h_1(t) + h_2(t)] = x(t) * h_1(t) + x(t) * h_2(t)$​​.
+* 平移: $x(t + t_0) * h(t - t_0) = x(t) * h(t)$​​.
+  * 理解: 左边界不变, 右边界不变, 面积不变.
+
+* 卷积的导数: $\frac{d[x(t) * h(t)]}{dt} = x(t) * \frac{dh(t)}{dt} = \frac{dx(t)}{dt} * h(t)$​
+  * 证明可以用微分是LTI和$\delta^{'}(t)$来证明.
+
+
+
+
+## 常见的卷积
+
+### 积分
+
+
+
+* 积分器: $\int_{-\infty}^{t}x(\tau)d\tau = x(t) * u(t)$​
+  * 积分是一个LTI系统, 其中$h(t) = u(t)$.
+
+### 微分
+
+
+
+* 微分器: $\frac{dx(t)}{dt} = x(t) * \delta^{'}(t)$
+  * 微分也是一个LTI系统, 其中$h(t) = \delta^{'}(t)$​.
+
+* 其中$\delta^{'}(t) = \frac{d\delta(t)}{dt}$.
+
+> 证明: $\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = -y^{'}(0)$
+
+$$
+\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = \int_{-\infty}^{\infty} y(t)d\delta(t) = y(t)\delta(t) |_{-\infty}^{\infty} - \int_{-\infty}^{\infty} y^{'}(t)\delta(t)dt = -y^{'}(0)
+$$
+
+
+
+
+
+## 函数的正交分解
+
