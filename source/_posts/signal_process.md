@@ -159,14 +159,33 @@ $$
 ### 稳定性
 
 * LTI系统稳定的充要条件是: $\int_{-\infty}^{\infty}|h(t)|dt < +\infty$​.
-  * 或者是$\sum_{k=-\infty}^{\infty}|h[k]| < +\infty$​
+
+* 证明:
+
+> 充分性: 如果$\int_{-\infty}^{\infty}|h(t)|dt < +\infty$, 那么如果$x(t)$有界, 能够推出$y(t)$有界.
+
+$|y(t)| = |x(t) * h(t)| = |\int_{-\infty}^{\infty}x(\tau)h(t - \tau)d\tau| \leqslant \int_{-\infty}^{\infty}|x(\tau)||h(t-\tau)|d\tau$.
+
+* 由于$x(t)$和$h(t)$都是有界的, $y(t)$也是有界的.
 
 
+
+> 必要性: 如果$x(t)$有界能够推出$y(t)$有界, 那么$\int_{-\infty}^{\infty}|h(t)|dt < +\infty$.
+
+* 取$x(t) = \begin{cases} 1 & h(-t) < 0 \\ -1 & h(-t) > 0 \end{cases}$.
+* $y(0)$有界, 并且$y(0) = \int_{-\infty}^{\infty}x(\tau)h(-\tau)d\tau = \int_{-\infty}^{\infty}|h(-\tau)|d(-\tau)$, 因此, $\int_{-\infty}^{\infty}|h(t)|dt < +\infty$.
 
 ### 因果性
 
 * LTI系统是因果系统的充要条件是: 当$t < 0$时, $h(t) = 0$​.
-  * 如果$t < 0$时, $h(t)$有一些离散的值, 这个定理依然成立 (勒贝格积分).
+  * 如果$t < 0$时, $h(t)$​有一些离散的值, 这个定理依然成立 (勒贝格积分).
+  
+* 证明:
+  
+  * 系统因果性的定义是$\forall t_0$, 系统在$t_0$时刻的值$y(t_0)$仅由$t_0$及其之前时刻的$x(t)$值决定.
+  
+  * $y(t_0) = x(t_0) * h(t_0) = \int_{-\infty}^{\infty}x(\tau)h(t_0 - \tau)d\tau$.
+  * 如果$\tau > t_0$, 那么$h(t_0 - \tau) = 0$, 积分就等于0, 因此$y(t_0) = \int_{-\infty}^{t_0}x(\tau)h(t_0 - \tau)d\tau$, 是一个因果系统.
 
 ## 卷积公式
 
@@ -245,41 +264,7 @@ $$
 
 
 
-## 冲激信号的性质
-
-
-
-### 性质1
-
-> 证明: $\int_{-\infty}^{\infty}\delta(t)dt = 1$
-
-* $\int_{-\infty}^{\infty}\delta(t)dt = \int_{-\infty}^{\infty}[\lim\limits_{\Delta\rightarrow 0}\delta_{\Delta}(t)]dt = \lim\limits_{\Delta\rightarrow 0}\int_{-\infty}^{\infty}\delta_{\Delta}(t)dt = 1$.
-
-
-
-### 性质2
-
-> 证明: $\int_{-\infty}^{\infty}x(t)\delta(t)dt = x(0)$
-
-$$
-\int_{-\infty}^{\infty}x(t)\delta(t)dt = \int_{-\infty}^{\infty}x(t)\lim\limits_{\Delta\rightarrow0}\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{-\infty}^{\infty}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt
-$$
-
-$$
-\lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt
-$$
-
-* 根据积分中值定理, 可以得到:
-
-$$
-\lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}x(\epsilon) \Delta = \lim\limits_{\Delta\rightarrow0}x(\epsilon), \epsilon \in (0, \Delta)
-$$
-
-* 当$\Delta \rightarrow 0$时, 最终的结果就是$x(0)$.
-
-
-
-### 勒贝格定义
+## 勒贝格定义
 
 * 勒贝格定义: 两个函数$f_1(t)$和$f_2(t)$相等是指, 对于任意函数$y(t)$, 都有:
   $$
@@ -289,6 +274,7 @@ $$
 * 勒贝格定义说明, 如果两个函数只在有限个点的函数值不相等, 那么它们仍然可以是相等函数.
 
 * 假设两个系统的单位脉冲响应分别是$h_1(t)$和$h_2(t)$, 如果在勒贝格定义下, $h_1(t) = h_2(t)$, 那么就有$x(t) * h_1(t) = x(t) * h_2(t)$.
+
 * 如果要证明一个$f(t)是$$\delta(t)$, 只需要证明: 对于任意函数$y(t)$, 都有$\int_{-\infty}^{\infty}y(t)f(t)dt = y(0)$​.
 
 
@@ -328,6 +314,42 @@ $$
 
 * 因此, 证明成功.
 
+## 冲激信号的性质
+
+
+
+### 性质1
+
+> 证明: $\int_{-\infty}^{\infty}\delta(t)dt = 1$
+
+* $\int_{-\infty}^{\infty}\delta(t)dt = \int_{-\infty}^{\infty}[\lim\limits_{\Delta\rightarrow 0}\delta_{\Delta}(t)]dt = \lim\limits_{\Delta\rightarrow 0}\int_{-\infty}^{\infty}\delta_{\Delta}(t)dt = 1$.
+
+
+
+### 性质2
+
+> 证明: $\int_{-\infty}^{\infty}x(t)\delta(t)dt = x(0)$
+
+$$
+\int_{-\infty}^{\infty}x(t)\delta(t)dt = \int_{-\infty}^{\infty}x(t)\lim\limits_{\Delta\rightarrow0}\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{-\infty}^{\infty}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt
+$$
+
+$$
+\lim\limits_{\Delta\rightarrow0}\int_{0}^{\Delta}x(t)\delta_{\Delta}(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt
+$$
+
+* 根据积分中值定理, 可以得到:
+
+$$
+\lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}\int_{0}^{\Delta}x(t)dt = \lim\limits_{\Delta\rightarrow0}\frac{1}{\Delta}x(\epsilon) \Delta = \lim\limits_{\Delta\rightarrow0}x(\epsilon), \epsilon \in (0, \Delta)
+$$
+
+* 当$\Delta \rightarrow 0$时, 最终的结果就是$x(0)$.
+
+
+
+
+
 ### 性质3
 
 > 证明: $x(t)\delta(t) = x(0)\delta(t)$
@@ -353,6 +375,22 @@ $$
 *  $\delta(f(t)) = \sum_{\forall f(t_0) = 0} \frac{1}{|f^{'}(t_0)|}\delta(t - t_0)$, $t_0$是$f(t)$的零点.
 
 
+
+### 性质5
+
+> 证明: $\lim\limits_{N \rightarrow 0} \frac{sinNt}{\pi t} = \delta(t)$​
+
+* 在勒贝格定义下, 证明两个函数相等, 只需要证明$\int_{-\infty}^{\infty}y(t)\lim\limits_{N \rightarrow 0} \frac{sinNt}{\pi t} dt = y(0)$.
+
+$$
+\int_{-\infty}^{\infty}y(t)\lim\limits_{N \rightarrow 0} \frac{sinNt}{\pi t} dt = \lim\limits_{N \rightarrow 0}\int_{-\infty}^{\infty}\frac{y(t)}{\pi t}sinNt\ dt = \lim\limits_{N \rightarrow 0}\int_{-\infty}^{\infty}\frac{y(t)}{\pi t}sinNt\ dt
+$$
+
+* 这个式子可以写成:
+  $$
+  \lim\limits_{N \rightarrow 0}\int_{-\infty}^{\infty}\frac{y(t) - y(0)}{\pi t}sinNt\ dt + y(0)\lim\limits_{N \rightarrow 0}\int_{-\infty}^{\infty}\frac{sinNt}{\pi t}\ dt = y(0)
+  $$
+  
 
 ## 卷积的性质
 
@@ -389,7 +427,7 @@ $$
 > 证明: $\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = -y^{'}(0)$
 
 $$
-\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = \int_{-\infty}^{\infty} y(t)d\delta(t) = y(t)\delta(t) |_{-\infty}^{\infty} - \int_{-\infty}^{\infty} y^{'}(t)\delta(t)dt = -y^{'}(0)
+\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = \int_{-\infty}^{\infty} y(t)d\delta(t) =y(t)\delta(t) |_{-\infty}^{\infty} - \int_{-\infty}^{\infty} y^{'}(t)\delta(t)dt = -y^{'}(0)
 $$
 
 
@@ -398,3 +436,163 @@ $$
 
 ## 函数的正交分解
 
+* 内积运算: 如果一个运算$<*>$满足下面四个性质, 就是一个内积运算:
+  * 交换律: $<x, y> = \bar{<y, x>}$​
+  * 齐次性: $<\lambda x, y> = \lambda <x, y>$
+  * 叠加性: $<x + y, z> = <x, z> + <y, z>$
+  * 非负性: $<x, x> \geqslant 0$ 当且仅当$x = 0$时等号成立.
+* 函数的正交运算:
+  * $f(t)$和$g(t)$的内积$<f(t),g(t)>$定义为: $\int_{a}^{b} f(t)\bar{g(t)}dt$.
+
+* 正交函数族:
+
+  * 若函数族$\{f_k(t)\}, k \in (-\infty, \infty), k \in Z$​满足:
+
+    * $\forall k \in Z, <f_k(t), f_k(t)> \geqslant 0$.
+    * $\forall k_1, k_2 \in Z, <f_{k_1}(t), f_{k_2}(t)> = 0$.
+
+    那么这个函数族就是正交函数族.
+
+  * 标准正交函数族: 在正交函数族的基础上加上$\forall k \in Z, <f_k(t), f_k(t)> = 1$, 那么就是标准正交函数族.
+
+* 函数正交分解: 把一个函数在区间$T_0$上变成标准正交函数族的线性组合的过程就是函数的正交分解.
+
+  * $x(t) = \sum_{k=-\infty}^{\infty} a_k f_k(t)$, 其中, $a_k = <x(t), f_k(t)>$
+
+$$
+<x(t), f_i(t)>\ =\ <\sum_{k=-\infty}^{\infty} a_k f_k(t), f_i(t)> = \sum_{k=-\infty}^{\infty}a_k<f_k(t), f_i(t)> = a_i
+$$
+
+
+
+## 傅立叶级数
+
+> 证明: 函数族$\{e^{jk\omega_0 t}\}, k \in Z, k \in (-\infty, +\infty)$​是正交函数族.
+
+* $<e^{jk\omega_0 t}, e^{jk\omega_0 t}> = \int_{T_0} e^{jk\omega_0 t}e^{-jk\omega_0 t}dt = T_0$.
+* $\forall k_1, k_2 \in Z, k_1 \neq k_2$, $<e^{jk_1\omega_0 t}, e^{j k_2\omega_0 t}> = \int_{T_0} e^{j(k_1 - k_2)\omega_0 t}dt = \frac{1}{j(k_1 - k_2)\omega_0} e^{j (k_1 - k_2)\omega_0 t}|_{t=0}^{T_0}$​.
+  * 将$T_0 = \frac{2\pi}{\omega_0}$带入(傅立叶级数针对的是周期函数), 结合欧拉公式可以求出该式为0.
+
+
+
+> 证明: 假设周期函数$f(t)$的周期是$T_0$, 那么在这个周期内, 函数$f(t)$​可以被正交分解.
+
+* $f(t)$可以表示成: $f(t) = \sum_{k=-\infty}^{\infty} a_k e^{jk\omega_0 t}$
+
+* $<f(t), e^{jk\omega_0 t}> = T_0 a_k$, 因此, $a_k = \frac{1}{T_0}<f(t), e^{jk\omega_0 t}> = \frac{1}{T_0}\int_{T_0}f(t)e^{-jk\omega_0t}dt$
+
+这个分解就是傅立叶级数, 只针对周期为$T_0$​的周期函数.
+
+总结来说, 傅立叶级数的表达式就是:
+$$
+a_k = \frac{1}{T_0} \int_{T_0} f(t) e^{-jk\omega_0t}dt \\
+f(t) = \sum_{k=-\infty}^{\infty} a_k e^{jk\omega_0 t}
+$$
+
+
+
+
+## 傅立叶变换
+
+* 傅立叶级数的表达式是:
+
+$$
+f(t) = \sum_{k=-\infty}^{\infty}a_k e^{jk\omega_0 t} \\
+a_k = \frac{1}{T_0}\int_{T_0}f(t)e^{-jk\omega_0 t} dt
+$$
+
+* 其中$f(t)$是周期为$T_0$的周期函数, 并且$w_0 = \frac{2\pi}{T_0}$.
+* 定义函数: $F(\omega) = \int_{T_0} f(t) e^{-j\omega t} dt$.
+
+* 那么$f(t) = \sum_{k=-\infty}^{\infty} \frac{\omega_0}{2\pi} F(k\omega_0) e^{jk\omega_0t}$
+  * 当$\omega_0 \rightarrow 0$时, $f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty}F(\omega) e^{j\omega t} d\omega$.
+  * 同样, $F(\omega) = \int_{-\infty}^{\infty} f(t)e^{-j\omega t} dt$.
+
+那么对于一个非周期函数, 傅立叶变换/反变换就是:
+$$
+F(\omega) = \int_{-\infty}^{\infty}  f(t) e^{-j\omega t} dt \\
+f(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty}F(\omega) e^{j\omega t} dt
+$$
+
+
+
+
+## 常见信号的傅立叶变换
+
+| 原信号                                | 傅立叶变换                                                   |
+| ------------------------------------- | ------------------------------------------------------------ |
+| $\delta(t)$                           | 1                                                            |
+| 1                                     | $2\pi \delta(\omega)$                                        |
+| $e^{-at}u(t)$                         | $\frac{1}{a + j\omega}$                                      |
+| $\frac{sin\omega_ct}{\pi t}$          | 方波, 偶函数, 宽度是$2\omega_c$, 高度是1                     |
+| 方波, 偶函数, 宽度是$\tau$, 高度是$E$ | $E\tau Sa(\frac{\tau}{2} \omega)$                            |
+| $cosw_0t$                             | $\pi [\delta(\omega - \omega_0) + \delta(\omega + \omega_0)]$ |
+| $sinw_0 t$                            | $\frac{\pi}{j} [\delta(\omega - \omega_0) - \delta(\omega + \omega_0)]$ |
+| $u(t)$                                | $\frac{1}{j\omega} + \pi \delta(\omega)$                     |
+|                                       |                                                              |
+
+## 傅立叶变换的性质
+
+* 线性: $af_1(t) + bf_2(t)$的傅立叶变换是$aF_1(\omega) + bF_2(\omega)$.
+* 时移性质: $f(t - t_0)$的傅立叶变换是$F(\omega)e^{j\omega t_0}$.
+* 频移性质: $f(t)e^{j\omega t_0}$的傅立叶变换是$F(\omega - \omega_0)$.
+
+* 时域微分性质: $\frac{df(t)}{dt}$的傅立叶变换是$j\omega F(\omega)$​
+* 频域微分性质: $tx(t)$的傅立叶变换是$j\frac{dF(\omega)}{d\omega}$.
+* 时域卷积性质: $f(t) * h(t)$的傅立叶变换是$F(\omega)H(\omega)$​​​ (时域卷积等于频域相乘).
+  * 已知LTI系统的$y(t)$和$x(t)$, 怎么求出$h(t)$?
+    * 首先求$y(t)$和$x(t)$的傅立叶变换$Y(\omega)$和$X(\omega)$​.
+    * 然后, 根据$H(\omega) = \frac{Y(\omega)}{X(\omega)}$, 求出$H(\omega)$​.
+    * 最后, 用傅立叶反变换求出来$h(t)$.
+
+* 调制性质: $f_1(t)f_2(t)$的傅立叶变换是$\frac{1}{2\pi} F_1(\omega) * F_2(\omega)$​ (频域卷积等于时域相乘).
+* 尺度变换: $f(at)$的傅立叶变换是$\frac{1}{|a|}F(\frac{\omega}{a})$.
+  * 时域越瘦, 频域越胖.
+* 帕斯瓦尔定理: 傅立叶变换能量守恒.
+  * $\int_{-\infty}^{\infty} |f(t)|^2 dt = \frac{1}{2\pi}\int_{-\infty}^{\infty}|F(\omega)|^2 d\omega$​
+* 共轭对称性:
+  * 如果$f(t)$是实函数, 并且是偶函数, 那么$F(\omega)$也是实函数, 也是偶函数 (只有$cos\omega t$分量).
+  * 如果$f(t)$是实函数, 并且是奇函数, 那么$F(\omega)$是虚函数, 也是奇函数 (只有$sin\omega t$​分量).
+  * 如果$f(t)$是实函数, 那么$F(\omega)$实部是偶函数, 虚部是奇函数.
+  * 如果$f(t)$是实函数, 并且$F(\omega) = |F(\omega)|e^{j\theta(\omega)}$, 那么$|F(\omega)|$是偶函数, $\theta(\omega)$是奇函数.
+
+
+
+## 离散傅立叶变换
+
+* 离散傅立叶变换为:
+
+$$
+F(\omega) = \sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}\\
+x[n] = \frac{1}{2\pi}\int_{2\pi}F(\omega) e^{j\omega n} d\omega
+$$
+
+> 证明: $F(\omega)$是一个周期是$2\pi$​的周期函数.
+
+* $e^{j2k\pi} = cos(2k\pi) + jsin(2k\pi) = 1$
+
+* $F(\omega + 2\pi) = \sum_{n=-\infty}^{\infty}x[n]e^{-j(\omega + 2\pi)n} = \sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}e^{-j2\pi n} = F(\omega)$.
+
+
+
+## 常见序列的离散傅立叶变换
+
+
+
+## 离散傅立叶变换的性质
+
+* 线性: $ax_1[n] + bx_2[n]$的离散傅立叶变换是$aF_1(\omega) + bF_2(\omega)$.
+
+
+
+
+
+
+
+## 快速傅立叶变换
+
+* 离散傅立叶变换的表达式是: $F(\omega) = \sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}$.
+* 首先, 计算机不能处理无限, 所以假定, $x[n]$只在$0, 1, ..., N - 1$上有定义.
+  * 此时, 离散傅立叶变换就是: $F(\omega) = \sum_{n=0}^{N-1}x[n]e^{-j\omega n}$
+
+* 对于$F(\omega)$, 我只需要知道这个函数在一个周期内$N$个点的值, 就可以知道$F(\omega)$的所有值.
