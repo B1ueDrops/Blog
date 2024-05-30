@@ -1,6 +1,7 @@
 ---
 title: 卡尔曼滤波数学推导
 categories: 信号处理
+mathjax: true
 ---
 
 
@@ -114,7 +115,6 @@ $$
   \hat{P_k} = A\bar{P}_k A^T + Q
   $$
   
-
 * 而将$\hat{P}_k$修正为$\bar{P}_k$, 可以用:
 
 $$
