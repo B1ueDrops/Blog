@@ -516,8 +516,9 @@ $$
 
 
 
-
 ## 常见信号的傅立叶变换
+
+
 
 | 原信号                                | 傅立叶变换                                                   |
 | ------------------------------------- | ------------------------------------------------------------ |
@@ -530,6 +531,32 @@ $$
 | $sinw_0 t$                            | $\frac{\pi}{j} [\delta(\omega - \omega_0) - \delta(\omega + \omega_0)]$ |
 | $u(t)$                                | $\frac{1}{j\omega} + \pi \delta(\omega)$                     |
 |                                       |                                                              |
+
+### 证明
+
+> $\delta(t)$的傅立叶变换是1.
+
+$$
+F(\omega) = \int_{-\infty}^{\infty} \delta(t) e^{-j\omega t} dt = \int_{-\infty}^{\infty} \delta(t) dt = 1
+$$
+
+* 用到的性质: $f(t)\delta(t) = f(0)\delta(t)$​.
+
+
+
+
+
+> 1的傅立叶变换是$2\pi \delta(\omega)$
+
+$$
+F(\omega) = \int_{-\infty}^{\infty} e^{-j\omega t} dt = \lim\limits_{N\rightarrow \infty} \int_{-N}^{N} e^{-j\omega t} dt = \lim\limits_{N\rightarrow \infty}\frac{1}{j\omega} (e^{j\omega N} - e^{-j\omega N})
+$$
+
+根据欧拉公式:
+$$
+F(\omega) = \lim\limits_{N\rightarrow \infty} \frac{2sin(\omega N)}{\omega} = 2\pi \delta(\omega)
+$$
+
 
 ## 傅立叶变换的性质
 
