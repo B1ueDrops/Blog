@@ -1163,7 +1163,11 @@ black.2
     let b = a.as_mut().unwrap();
     ```
 
-    
+
+> `Option`的一个经典用法
+
+* 如果在定义`struct`的字段时, 每次使用不想夺取这个字段的所有权, 但是又不想用引用, 可以用`Option<T>`包裹.
+* 用`Option<T>`包裹后, 可以用`as_ref()/as_mut()`使用引用, 可以用`take()`夺走所有权.
 
 ## 异常处理
 
@@ -2207,6 +2211,7 @@ fn main() {
 * 其中, `tx, rx`分别是`mpsc::Sender<T>`和`mpsc::Receiver<T>`类型, 具体类型编译器会推导.
 * 如果需要多个发送者, 只需要将`tx.clone()`即可.
 * 调用`send`时, 原数据如果没有实现`Copy` trait, 会被夺走所有权.
+* 如果`tx`被`drop`之后, `rx.recv()`会返回`Err`.
 
 
 

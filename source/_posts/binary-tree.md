@@ -4,6 +4,8 @@ categories: 算法
 mathjax: true
 ---
 
+[TOC]
+
 
 
 ## 中序遍历

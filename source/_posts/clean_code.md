@@ -3,6 +3,8 @@ title: 代码整洁之道
 categories: 软件工程
 ---
 
+[TOC]
+
 
 
 ## 注释

@@ -1,6 +1,6 @@
 ---
 title: 卡尔曼滤波数学推导
-categories: 信号处理
+categories: 控制基础
 mathjax: true
 ---
 

@@ -4,6 +4,8 @@ categories: 算法
 mathjax: true
 ---
 
+[TOC]
+
 
 
 ## 二分的本质

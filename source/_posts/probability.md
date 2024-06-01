@@ -1,6 +1,6 @@
 ---
 title: 概率论与数理统计
-categories: AI
+categories: 控制基础
 mathjax: true
 ---
 
@@ -137,13 +137,11 @@ $$
   \rho(U, V) = Cov(U, V) = Cov(a^TX, b^TY) = a^T\sum_{12}b
   $$
   
-
 * 现在的问题就是, 在$a^TD[X]a = 1, b^TD[Y]b = 1$的约束条件下, 求$a^T\sum_{12}b$的最大值, 按照拉格朗日乘数法, 构造:
   $$
   L(a, b, \mu, \lambda) = a^T\sum_{12}b - \mu(a^TD[X]a - 1) - \lambda(b^TD[Y]b - 1)
   $$
   
-
 * 对$a, b$求偏导数:
   $$
   \frac{\part L}{\part a} =  \sum_{12}b - \mu D[X]a = 0\\
@@ -168,7 +166,6 @@ $$
   \sum_{12}D[Y]^{-1}\sum_{21}a - \lambda^2 D[X]a = 0
   $$
   
-
 * 然后左侧同乘$D[X]^{-1}$, 可以得到:
   $$
   D[X]^{-1}\sum_{12}D[Y]^{-1}\sum_{21}a - \lambda^2a = 0
