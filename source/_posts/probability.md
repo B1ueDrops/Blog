@@ -6,7 +6,23 @@ mathjax: true
 
 
 
+[TOC]
+
+
+
 # 一元概率论
+
+
+
+## 常见的概率分布
+
+
+
+### 连续
+
+* 正态分布(高斯分布):
+  * 如果随机变量$X \in N(\mu, \sigma^2)$, 那么概率密度函数是$f(x) = \frac{1}{\sqrt{2\pi}\sigma} exp{(-\frac{(x-\mu)^2}{2\sigma^2})}$.
+    * 随机变量$Y = \frac{X - \mu}{\sigma}$服从标准正态分布$N(0, 1)$.
 
 
 

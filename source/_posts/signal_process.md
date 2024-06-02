@@ -4,7 +4,7 @@ categories: 控制基础
 mathjax: true
 ---
 
-
+[TOC]
 
 ## 信号分类/常见信号
 
@@ -501,6 +501,7 @@ f(t) = \sum_{k=-\infty}^{\infty}a_k e^{jk\omega_0 t} \\
 a_k = \frac{1}{T_0}\int_{T_0}f(t)e^{-jk\omega_0 t} dt
 $$
 
+* 傅立叶级数把一个连续的周期函数转换成频域上离散的序列.
 * 其中$f(t)$是周期为$T_0$的周期函数, 并且$w_0 = \frac{2\pi}{T_0}$.
 * 定义函数: $F(\omega) = \int_{T_0} f(t) e^{-j\omega t} dt$.
 
@@ -587,6 +588,8 @@ $$
 
 ## 离散傅立叶变换
 
+* 离散傅立叶变换(DFT)能够将一个离散的序列转换成一个频域上的连续函数.
+
 * 离散傅立叶变换为:
 
 $$
@@ -620,6 +623,84 @@ $$
 
 * 离散傅立叶变换的表达式是: $F(\omega) = \sum_{n=-\infty}^{\infty}x[n]e^{-j\omega n}$.
 * 首先, 计算机不能处理无限, 所以假定, $x[n]$只在$0, 1, ..., N - 1$上有定义.
-  * 此时, 离散傅立叶变换就是: $F(\omega) = \sum_{n=0}^{N-1}x[n]e^{-j\omega n}$
+  * 此时, 离散傅立叶变换就是: $F(\omega) = \sum_{n=0}^{N-1}x[n]e^{-j\omega n}$, 并且$F(\omega)$的周期也是$2\pi$.
 
-* 对于$F(\omega)$, 我只需要知道这个函数在一个周期内$N$个点的值, 就可以知道$F(\omega)$的所有值.
+* $F(\omega)$是一个虚假的连续信号:
+  * 对于$F(\omega)$, 我只需要知道这个函数在一个周期内$N$个点的值, 就可以知道$F(\omega)$的所有值.
+
+
+> 证明:
+
+* 假设我们知道$F(\omega)$在$[-\pi, \pi)$上$N$个不同点的值, 分别是$F(\omega_1), F(\omega_2), ..., F(\omega_{N-1})$​.
+* 那么, $F(\omega_k) = \sum_{n=0}^{N-1}x[n]e^{-j\omega_k n}, k \in [0, N - 1]$实际上是关于$x[0], x[1], ..., x[N-1]$的$N$元一次方程组. 这个方程组用矩阵的形式为:
+
+$$
+\begin{pmatrix}
+F(\omega_0)\\
+F(\omega_1)\\
+...\\
+F(\omega_{N-1})\\
+\end{pmatrix}
+ = 
+\begin{pmatrix}
+1 & e^{-j\omega_0} & ... & e^{-j(N-1)\omega_0}\\
+1 & e^{-j\omega_1} & ... & e^{-j(N-1)\omega_1}\\
+...\\
+1 & e^{-j\omega_{N-1}} & ... & e^{-j(N-1)\omega_{N-1}}\\
+\end{pmatrix}
+\begin{pmatrix}
+x[0]\\
+x[1]\\
+...\\
+x[N-1]
+\end{pmatrix}
+$$
+
+* 中间这个矩阵是范徳蒙矩阵, 只要保证$\omega_0, \omega_1, ..., \omega_{N-1}$是不同的$N$个点, 那么这个矩阵就是可逆的.
+
+* 也就是说, 我如果知道了一个序列中$N$个不同的元素值, 我就知道了频域上$N$个不同的点, 假设频域上不同的$n$个点对应的序列名称重新定义成$a[k]$.
+
+* 用$x[n]$中不同的$N$个点, 求出$a[k]$的时间复杂度可以达到$O(NlogN)$, 这种算法叫做快速傅立叶变换(FFT).
+
+> 证明:
+
+* 首先, 取$\omega_k = \frac{2\pi}{N}k, k \in [0, 1, ..., N-1]$.
+
+$$
+F(\omega_k) = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N}kn}, k \in [0, N-1]
+$$
+
+然后, 证明一个引理:
+$$
+\sum_{k=0}^{N-1} e^{j\frac{2\pi}{N}k(n_1 - n_2)} = \begin{cases} N & n_1 = n_2 \\ 0 & n_1 \neq n_2 \end{cases}
+$$
+
+* 如果$n_1 \neq n_2$, 那么这可以看成一个首项是$1$, 公比是$e^{j\frac{2\pi}{N}(n_1 - n_2)}$的等比数列的前$n$项和, 等于$\frac{1 - e^{2\pi(n_1 - n_2)}}{1 - e^{j\frac{2\pi}{N}(n_1 - n_2)}} = 0$.
+
+* 然后, 证明:
+
+$$
+x[n] = \frac{1}{N}\sum_{k=0}^{N-1}F(\omega_k) e^{j\frac{2\pi}{N}kn}
+$$
+
+$$
+\frac{1}{N}\sum_{k=0}^{N-1}F(\omega_k) e^{j\frac{2\pi}{N}kn} = \frac{1}{N}\sum_{k=0}^{N-1}
+(\sum_{u=0}^{N-1}x[u]e^{-j\frac{2\pi}{N}ku})
+e^{j\frac{2\pi}{N}kn} = 
+\frac{1}{N}\sum_{u=0}^{N-1}
+x[u]
+\sum_{k=0}^{N-1}
+e^{j\frac{2\pi}{N}k(n-u)}
+$$
+
+* 只有当$u = n$时, $e^{j\frac{2\pi}{N}k(n-u)}$才等于$N$, 否则为0, 那么这个式子最终就等于$\frac{1}{N} x[n] \times N = x[n]$.
+
+* 因此, 快速傅立叶变换可以表示成:
+
+$$
+F(\omega_k) = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N}kn}, k \in [0, N-1] \\
+x[n] = \frac{1}{N}\sum_{k=0}^{N-1}F(\omega_k) e^{j\frac{2\pi}{N}kn}
+$$
+
+> 证明: 快速傅立叶变换的时间复杂度是$O(NlogN)$.
+
