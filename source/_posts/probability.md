@@ -144,8 +144,8 @@ mathjax: true
 * 首先计算$D[U]$和$D[V]$:
 
 $$
-D[U] = D[a^TX] = a^TD[X]a = 1 \\
-D[V] = b^TD[Y]b = 1
+D[U] = D[a^TX] = a^TD[X]a = 1\\\\
+D[V] = b^TD[Y]b = 1\\\\
 $$
 
 * 计算$\rho(U, V)$: 
@@ -160,8 +160,8 @@ $$
   
 * 对$a, b$求偏导数:
   $$
-  \frac{\part L}{\part a} =  \sum_{12}b - \mu D[X]a = 0\\
-  \frac{\part L}{\part b} = \sum_{21}a - \lambda D[Y]b = 0
+  \frac{\partial L}{\partial a} =  \sum_{12}b - \mu D[X]a = 0\\\\
+  \frac{\partial L}{\partial b} = \sum_{21}a - \lambda D[Y]b = 0\\\\
   $$
 
 * 将上面式子两边分别同乘$a^T, b^T$, 可以得到:
@@ -172,7 +172,7 @@ $$
 
   * 由此可见, $\lambda = \mu = \rho(U, V)$.
 
-* 对于$\frac{\part L}{\part b} = \sum_{21}a - \lambda D[Y]b = 0$, 两边同时乘$\sum_{12}D[Y]^{-1}$, 可以得到:
+* 对于$\frac{\partial L}{\partial b} = \sum_{21}a - \lambda D[Y]b = 0$, 两边同时乘$\sum_{12}D[Y]^{-1}$, 可以得到:
   $$
   \sum_{12}D[Y]^{-1}\sum_{21}a - \lambda \sum_{12}b = 0
   $$

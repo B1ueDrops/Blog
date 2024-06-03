@@ -426,7 +426,7 @@ $$
 
 > 证明: $\int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = -y^{'}(0)$
 
-$$ 
+$$
 \int_{-\infty}^{\infty} y(t)\delta^{'}(t)dt = \int_{-\infty}^{\infty} y(t)d\delta(t) =y(t)\delta(t) |_{-\infty}^{\infty} - \int_{-\infty}^{\infty} y^{'}(t)\delta(t)dt = -y^{'}(0) 
 $$
 
@@ -583,6 +583,16 @@ $$
   * 如果$f(t)$是实函数, 并且是奇函数, 那么$F(\omega)$是虚函数, 也是奇函数 (只有$sin\omega t$​分量).
   * 如果$f(t)$是实函数, 那么$F(\omega)$实部是偶函数, 虚部是奇函数.
   * 如果$f(t)$是实函数, 并且$F(\omega) = |F(\omega)|e^{j\theta(\omega)}$, 那么$|F(\omega)|$是偶函数, $\theta(\omega)$是奇函数.
+
+
+
+
+
+## 理想低通滤波器
+
+
+
+## 信号的调制与解调
 
 
 
