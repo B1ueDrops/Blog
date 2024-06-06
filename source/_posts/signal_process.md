@@ -672,7 +672,7 @@ $$
 
 * 用$x[n]$中不同的$N$个点, 求出$a[k]$的时间复杂度可以达到$O(NlogN)$, 这种算法叫做快速傅立叶变换(FFT).
 
-> 证明:
+> 证明: 快速傅立叶变换的时间复杂度是$O(nlogn)$.
 
 * 首先, 取$\omega_k = \frac{2\pi}{N}k, k \in [0, 1, ..., N-1]$.
 
@@ -708,9 +708,54 @@ $$
 * 因此, 快速傅立叶变换可以表示成:
 
 $$
-F(\omega_k) = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N}kn}, k \in [0, N-1] \\
+F(\omega_k) = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N}kn}, k \in [0, N-1] \\\\
 x[n] = \frac{1}{N}\sum_{k=0}^{N-1}F(\omega_k) e^{j\frac{2\pi}{N}kn}
 $$
 
 > 证明: 快速傅立叶变换的时间复杂度是$O(NlogN)$.
 
+* 首先, 快速傅立叶变换的表达式是:
+
+$$
+F(\omega_N^{k}) = \sum_{n=0}^{N-1} x[n]e^{-j\frac{2\pi}{N}kn}
+$$
+
+* 然后, 如果要对$F(\omega_N^k)$所有的偶数项进行傅立叶变换 (假设$N$是偶数), 那么表达式为:
+
+$$
+F_2(\omega_{\frac{N}{2}}^{\frac{k}{2}}) = \sum_{n=0}^{\frac{N}{2}-1} x[2n+1]e^{-j\frac{2\pi}{{N}}kn}, k \in [0, \frac{N}{2}-1]
+$$
+
+* 如果对所有的奇数项进行快速傅立叶变换:
+
+$$
+F_1(\omega_{\frac{N}{2}}^{\frac{k}{2}}) = \sum_{n=0}^{\frac{N}{2}-1} x[2n]e^{-j\frac{2\pi}{{N}}kn}, k \in [0, \frac{N}{2}-1]
+$$
+
+* 那么从偶数项和奇数项的傅立叶变换可以组合成原始的傅立叶变换:
+
+$$
+F(\omega_N^k) = F_1(\omega_{\frac{N}{2}}^{k}) + e^{-j\frac{2\pi}{N}k}F_2(\omega_{\frac{N}{2}}^k)
+$$
+
+* 如果$N$是奇数:
+
+  * 奇数项的快速傅立叶变换是:
+
+  $$
+  F_1(\omega_{\frac{N+1}{2}}^{\frac{k}{2}}) = \sum_{n=0}^{\frac{N+1}{2}} x[2n]e^{-j\frac{2\pi}{N + 1} {k} n}, k \in [0, \frac{N+1}{2}-1]
+  $$
+
+  
+  
+  * 偶数项的快速傅立叶变换是:
+
+  $$
+  F_2(\omega_{\frac{N-1}{2}}^{\frac{k}{2}}) = \sum_{n=0}^{\frac{N-1}{2}} x[2n + 1]e^{-j\frac{2\pi}{N-1} {k} n}, k \in [0, \frac{N-1}{2}-1]
+  $$
+  
+  * 从奇数项和偶数项的傅立叶变换合成原始的傅立叶变换:
+  
+  $$
+  F(\omega_N^k) = F_1(\omega_{\frac{N+1}{2}}^{k}) + e^{-j\frac{2\pi}{N}k}F_2(\omega_{\frac{N-1}{2}}^k)
+  $$
