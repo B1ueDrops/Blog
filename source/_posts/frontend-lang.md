@@ -225,7 +225,7 @@ categories: 编程语言
 * 要创建Vue项目: 
 
   ```bash
-  vue ui
+  vue create <项目名字>
   ```
 
 
@@ -236,6 +236,12 @@ categories: 编程语言
     * `@popperjs/core`
     * `bootstrap`
 
+    ```bash
+    vue add router vuex electron-builder
+    
+    npm install @popperjs/core bootstrap
+    ```
+
 * 启动项目:
 
   ```bash
@@ -244,6 +250,9 @@ categories: 编程语言
   
   # 生产环境
   vue build
+  
+  # electron gui
+  npm run electron:serve
   ```
 
 * 路由文件: `src/router/index.js`
@@ -692,4 +701,4 @@ import router from '@/router/index'
   </script>
   ```
 
-  
+
