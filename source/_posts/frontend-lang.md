@@ -233,15 +233,16 @@ categories: 编程语言
 
     * `vue-router`
     * `vuex`
-    * `@popperjs/core`
-    * `bootstrap`
+    * `vuetify`
+    * `electron-builder`: 如果不需要GUI的话不需要选.
 
     ```bash
-    vue add router vuex electron-builder
-    
-    npm install @popperjs/core bootstrap
+    vue add router
+    vue add vuex
+    vue add vuetify
+    vue add electron-builder
     ```
-
+    
 * 启动项目:
 
   ```bash
@@ -261,17 +262,6 @@ categories: 编程语言
   * 将`createWebHashHistory`改成`createWebHistory`, 浏览器地址栏就不会出现`#`.
 
 * 主页面: `src/public/index.html`
-
-
-
-### 使用`bootstrap`
-
-* 下面代码放到`main.js`:
-
-```js
-import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap/dist/js/bootstrap';
-```
 
 ### 组件定义
 
@@ -700,5 +690,4 @@ import router from '@/router/index'
     }
   </script>
   ```
-
 
