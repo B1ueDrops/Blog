@@ -26,15 +26,15 @@ $$
 x(t) = \frac{x(t) + x(-t)}{2} + \frac{x(t) - x(-t)}{2}
 $$
 
-* 信号的能量: $E = \int_{t_0}^{t_1}|x(t)^2|dt$
+* 信号的能量: $E = \int_{t_0}^{t_1}x(t)^2dt$
 
 * 信号的功率: $P = \frac{1}{t_1 - t_0}E$.
 
 * 单位阶跃信号: 
   $$
   u(t) = \begin{cases}
-  1 & x > 0 \\
-  0 & x < 0
+  1 & t > 0 \\
+  0 & t < 0
   \end{cases}
   $$
 
@@ -61,29 +61,68 @@ $$
   $$
 
   * $\int_{-\infty}^{\infty}Sa(t)dt = \pi$.
-  * $\int_{0}^{\infty}Sa(t)dt = \frac{\pi}{2}$.
+  * $\int_{0}^{+\infty}Sa(t)dt = \frac{\pi}{2}$​.
+  * $\int_{0}^{+\infty} \frac{sin(\omega t)}{t} dt = \frac{\pi}{2}, \omega > 0$.
   * $Sa(t)$​是一个偶函数.
 
 
 
 > 证明$\int_{0}^{\infty}Sa(t)dt = \frac{\pi}{2}$
 
-* 令$I(a) = \int_{0}^{\infty}Sa(t)e^{-at} dt$.
+* 令$I(a) = \int_{0}^{+\infty}Sa(t)e^{-at} dt$​.
 
-* 然后用$sin(t) = \frac{e^{jt} - e^{-jt}}{2j}$带入积分, 可以求得:
+* 然后求:
 
-  $I(a) = -arctan(a) + \frac{\pi}{2}$.
+$$
+\frac{dI(a)}{da} = - \int_{0}^{+\infty}sin(t) e^{-at}dt
+$$
 
-* $I(0) = \int_{0}^{\infty}Sa(t)dt = \frac{\pi}{2} = \frac{\pi}{2}$.
 
 
+* 然后用$sin(t) = \frac{e^{jt} - e^{-jt}}{2j}$​带入积分, 可以求得:
+
+$$
+\frac{dI(a)}{da} = \frac{1}{2j} \int_{0}^{+\infty} [e^{-(j+a)t} - e^{-(j-a)t}] dt = \frac{-1}{1 + a^2}
+$$
+
+
+
+* 最终, $I(a) = -arctan(a) + \frac{\pi}{2}$.
+
+* $I(0) = \int_{0}^{+\infty}Sa(t)dt = \frac{\pi}{2} = \frac{\pi}{2}$.
+
+
+
+> 用Python画出$Sa(t)$的图像:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def sample_function(t):
+    return np.where(t == 0, 1, np.sin(t) / t)
+
+
+x = np.linspace(-100, 100, 1000)
+y = sample_function(x)
+
+fig = plt.figure()
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_title('Sample Function')
+ax.set_xlabel('t')
+ax.set_ylabel('y(t)')
+ax.plot(x, y)
+```
+
+![采样函数图像](./signal_process/sample_function.png)
 
 ## 信号的自变量变换
 
 * 假设信号是$x(t)$, 那么信号$x(at + b)$应该如何确定?
   * 变为标准形式: $x(a(t + \frac{b}{a}))$
   * 如果$a < 0$, 左右反转.
-  * 如果$|a| > 0$, 压缩, 如果$|a| < 0$拉伸.
+  * 如果$|a| > 1$, 压缩, 如果$|a| < 1$拉伸.
   * 如果$\frac{b}{a} > 0$, 向左平移, 否则向右平移.
 * 任何信号可以表示成冲激信号与原信号的卷积:
   * $x(t) = \int_{-\infty}^{\infty}x(u)\delta(t-u)du$.
@@ -128,7 +167,7 @@ $$
 
 * 因果系统定义: 输出$y(t)$在输入$x(t)$之后发生.
 
-* 因果系统的判据: $x$括号中的数恒小于$y$括号中的数.
+* 因果系统的判据: $x$括号中的数恒小于等于$y$括号中的数.
 
 
 
@@ -533,6 +572,73 @@ $$
 | $u(t)$                                | $\frac{1}{j\omega} + \pi \delta(\omega)$                     |
 |                                       |                                                              |
 
+> 用Python画出所有信号和傅立叶变换
+
+* $y=e^{-2t} u(t)$​
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+def function(t):
+    return np.where(t >= 0, np.exp(-2 * t), 0)
+
+x = np.linspace(-2, 2, 1000)
+pos_y = function(x[x >= 0])
+neg_y = function(x[x < 0])
+
+# Time domain
+fig = plt.figure()
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_title("Time Domain")
+ax.set_xlabel('t')
+ax.set_ylabel('y(t)')
+ax.grid(True)
+ax.plot(x[x >= 0], pos_y, 'b')
+ax.plot(x[x < 0], neg_y, 'b')
+
+# Freq domain
+y = function(x)
+fft_result = np.abs(np.fft.fft(y))
+dt = x[1] - x[0]
+n = len(x)
+freq = np.fft.fftfreq(n, dt)
+
+fig = plt.figure()
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_title("Freq Domain")
+ax.set_xlabel('t')
+ax.set_ylabel('w')
+ax.grid(True)
+ax.plot(freq, fft_result, 'b')
+```
+
+
+
+| 原信号                                            | 傅立叶变换                                             |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| ![function1](./signal_process/function1_time.png) | ![function1 freq](./signal_process/function1_freq.png) |
+
+* $\frac{sint}{\pi t}$
+
+| 原信号                                                 | 傅立叶变换                                             |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| ![function2 time](./signal_process/function2_time.png) | ![function2 freq](./signal_process/function2_freq.png) |
+
+* 方波:
+
+| 原信号                                                 | 傅立叶变换                                             |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| ![function3 time](./signal_process/function3_time.png) | ![function3 freq](./signal_process/function3_freq.png) |
+
+* $y = cos(5t)$
+
+| 原信号                                                 | 傅立叶变换                                             |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| ![function4 time](./signal_process/function4_time.png) | ![function4 freq](./signal_process/function4_freq.png) |
+
+
+
 ### 证明
 
 > $\delta(t)$的傅立叶变换是1.
@@ -650,8 +756,7 @@ F(\omega_0)\\
 F(\omega_1)\\
 ...\\
 F(\omega_{N-1})\\
-\end{pmatrix}
- = 
+\end{pmatrix}= 
 \begin{pmatrix}
 1 & e^{-j\omega_0} & ... & e^{-j(N-1)\omega_0}\\
 1 & e^{-j\omega_1} & ... & e^{-j(N-1)\omega_1}\\
