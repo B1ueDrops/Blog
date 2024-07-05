@@ -10,15 +10,19 @@ mathjax: true
 
 > Rust的优势?
 
-* **Zero Cost Abstraction: ** Rust引入的一些机制 (例如所有权机制/泛型), 并不会引入额外的运行时开销.
+* **Zero Cost Abstraction:** Rust引入的一些机制 (例如所有权机制/泛型), 并不会引入额外的运行时开销.
+  * C++的template, inline functions也体现了Zero cost abstraction.
+
+* **安全性**: 能够在编译时期, 防止空指针或者dangling pointer等内存问题.
+* **工具链强大**: cargo.
 
 ## `rustc`
 
 * rustc是Rust编译器.
 
-* rustc通过目标三元组(Target Triplet)来描述运行平台, 格式是: `CPU架构-厂商-OS-运行时库`.
+* rustc通过目标三元组(Target Triplet)来描述运行平台, 格式是: `Architecture-Vendor-OS-Library`.
 
-  * 可以通过`rustc --version --verbose`查看:
+  * 可以通过`rustc --version --verbose`查看 (verbose在英文中是冗长的意思):
 
   ```
   rustc 1.76.0 (07dca489a 2024-02-04)
@@ -32,6 +36,7 @@ mathjax: true
 
   * 使用`rustc --print target-list`可以查看这个版本的`rustc`总共可以支持多少个host.
     * 如果想要添加一个平台, 可以用: `rustup target add riscv64gc-unknown-none-elf`
+      * `riscv64gc-unknown-none-elf`就是一个Target Triplet.
 
 
 
@@ -72,7 +77,7 @@ mathjax: true
 
 * 尽量让程序中所有的硬编码值都变成常量, 方便后续维护/提高可读性.
 
-
+常量尽量不要理解成“配置”, 因为可能会有需求说根据不同的配置运行benchmark看性能, 这个时候配置就是可变成分, 并不符合常量的定义.
 
 
 
@@ -92,6 +97,20 @@ mathjax: true
   | 64   | `i64`   | `u64`   |
   | 128  | `i128`  | `u128`  |
   | 架构 | `isize` | `usize` |
+
+* 如何知道`isize`和`usize`到底是多少位?
+
+  * 使用`std::mem::size_of`
+
+  ```rust
+  fn main() {
+    
+    let isize_bits = std::mem::size_of::<isize>() * 8;
+    let usize_bits = std::mem::size_of::<isize>() * 8;
+  }
+  ```
+
+  * 一般下标的数据类型都是`usize`.
 
 * Rust整数的默认类型是`i32`.
 
@@ -124,6 +143,8 @@ mathjax: true
   ```
   
   * 使用0填充, 最小宽度是`m`打印十六进制:
+    * 注意, 这个`m`包含`0b`这个前缀的长度.
+  
   
   ```rust
   println!("{:#0mx}", x);
@@ -131,9 +152,10 @@ mathjax: true
   
 * 整数溢出问题:
 
-  * $n$位无符号数范围: $[0, 2^n - 1]$
-  * $n$位有符号数范围: $[-2^{n-1}, 2^{n-1}-1]$​​
-  * Rust在debug模式下, 遇到整数溢出会`panic`, 在release模式下, 不会`panic`, 直接按照循环溢出处理.
+  * $n$位无符号数范围: $[0, 2^n - 1]$​
+    * 首项是1, 公比是2的等比数列的前$n$项和是$S_n = 2^n - 1$.
+  * $n$位有符号数范围: $[-2^{n-1}, 2^{n-1}-1]$​​​​
+  * Rust在debug模式下, 遇到整数overflow会`panic`, 在release模式下, 不会`panic`, 直接按照循环溢出处理.
 
 
 
@@ -154,7 +176,7 @@ mathjax: true
 
 * 基本类型转换: `as`
   * 例如: `let a = 3.2 as u8;`
-  * 注意整数之间转换需要注意范围.
+  * 注意整数之间转换需要注意范围, 尽量要保证小转大.
   * 类型转换永远是显式的, Rust永远不会偷偷地将一种类型转换为另一种类型.
 
 
@@ -169,7 +191,7 @@ mathjax: true
 
   * 由于Unicode值最多用4个字节进行编码, 因此, Rust中的字符类型占用4个字节.
 
-  * 如果某个字符的Unicode值用不了4个字节, 那么可以用`u8`来存储:
+  * 如果某个字符的Unicode值占用内存比4个字节小, 那么可以用`u8`来存储:
 
     ```rust
     // a是u8类型
@@ -199,6 +221,8 @@ mathjax: true
   * 这个类型用来占位, 不占用任何内存.
   * 本质上就是一个空的元组.
   * `main`函数和`println!`的返回值是`()`.
+  
+  * 在Rust中, 所有没有返回值的元素, 其实本质上的返回值都是Unit Type.
 
 
 
@@ -228,7 +252,7 @@ mathjax: true
   * 语句会返回`()`类型, 最后的表达式是函数返回的结果.
   * 如果要在函数中间强制返回结果, 可以使用`return`.
 
-* 函数返回`()`可以代表函数没有返回值, 但是没有返回值的函数在rust中叫做diverge function:
+* 函数返回`()`可以代表函数没有返回值, 但是真正没有返回值的函数在rust中叫做diverge function:
 
   ```rust
   fn dead_end() -> ! {
@@ -257,7 +281,7 @@ mathjax: true
   * 一个值只能拥有一个所有者.
   * 当所有者离开作用域时, 值会被释放.
 
-* Rust中, 当一个变量赋值/当作函数参数传递时, 如果对应类型没有实现`Copy` trait, 则会发生所有权的转移.
+* Rust中, 当一个变量赋值/当作函数参数传递/当作函数返回值传递时, 如果对应类型没有实现`Copy` trait, 则会发生所有权的转移.
 
   ```rust
   let a = String::from("haha");
@@ -274,6 +298,17 @@ mathjax: true
     * 所有元素都实现了`Copy trait`的元组.
     * 不可变引用`&T`.
   * 所有权的转移会涉及到变量地址的改变.
+
+    * 如果要打印一个变量的内存地址, 可以使用: `println!("Memory address of x: {:p}", &x);`
+
+    ```rust
+    fn main() {
+        let a = String::from("haha");
+        println!("{:p}", &a);
+        let b = a;
+        println!("{:p}", &b);
+    }
+    ```
 
 * 引用: 引用变量可以看作对原变量值的租借(borrowing), 租借不会引起所有权的转变, 分为两种类型:
 
@@ -388,7 +423,7 @@ fn main() {
 
   * 字符串字面值`"hahaha"`被硬编码在二进制文件中, 并且不可变, `&str`就是对这个不可变的值的引用.
 
-  * `&str`类型不可以用索引进行访问.
+  * `&str`类型不可以用索引进行访问 (`String`也不能).
 
   * 对`&str`取切片引用, 得到的还是`&str`类型:
 
@@ -414,7 +449,7 @@ fn main() {
 
     * `String`类型也不可以用索引进行访问.
     * `String`类型可以取切片, 切片的类型是`&str`.
-    * `String`类型取切片时, <font color=red>一定注意, 索引的边界要在字符的边界上</font>.
+    * `String`类型取切片时, <font color=red>一定注意, 索引的边界要在UTF-8编码后字节的边界上</font>.
 
     ```rust
     let a = String::from("中国人");
@@ -472,7 +507,16 @@ fn main() {
 
 * 结构体的可变性: 如果结构体变量被设置为`mut`, 那么其中的每个字段都是可变.
 
-* 元组结构体: 只有`struct`名字, 没有字段名字的结构体:
+* 结构体的权限: 结构体中的成员变量默认是private, 如果需要在其他`mod`使用需要变成`pub`:
+
+  ```rust
+  pub struct Student {
+    pub name: String,
+    pub age: i32
+  }
+  ```
+
+* 元组结构体: 只有`struct`名字, 没有成员变量名字的结构体:
 
 ```rust
 struct Color(i32, i32, i32);
@@ -519,7 +563,7 @@ black.2
     ```rust
     let a = IpAddr::IPv4(String::from("haha"));
     
-    if IpAddr::IPv4(s) = a {
+    if let IpAddr::IPv4(s) = a {
       println!("{}", s);
     }
     ```
@@ -579,7 +623,7 @@ black.2
   let a = vec![1, 2, 3, 4];
   
   for i in 0..a.len() {
-    let b = a[i]
+    let b = a[i];
   }
   ```
 
@@ -592,7 +636,6 @@ black.2
     for item in collection {
       
     }
-    
     // 等价于
     for item in collection.into_iter() {
       
@@ -602,9 +645,9 @@ black.2
       
     }
     ```
-
+    
   * 如果要用元素的不可变借用:
-
+  
     ```rust
     // item为&T类型
     for item in &collection {
@@ -616,9 +659,9 @@ black.2
       
     }
     ```
-
+  
   * 如果要用元素的可变借用:
-
+  
     ```rust
     // item为&mut T类型
     for item in &mut collection {
@@ -630,7 +673,7 @@ black.2
       
     }
     ```
-
+  
 * `for`循环遍历的性能问题:
 
   * 用迭代器遍历性能大于用索引, 因为索引访问需要引入判断数组越界访问.
@@ -653,7 +696,8 @@ black.2
 
 ### `match`表达式
 
-* `match`表达式:
+* `match`表达式: 注意`match`表达式最终返回的是一个值.
+    
     ```rust
     match VALUE {
         PATTERN => EXPRESSION,
@@ -661,9 +705,9 @@ black.2
         _ => EXPRESSION,
     }
     ```
-
+    
     * 一个例子:
-
+    
       ```rust
       // 例子
       enum Coin {
@@ -681,9 +725,9 @@ black.2
         }
       }
       ```
-
+    
     * 用`match`来解构枚举值:
-
+    
       ```rust
       enum Option<T> {
         Some(T),
@@ -726,7 +770,7 @@ black.2
 
 * 解决这个问题有两种方式:
 
-  * 对这个变量的引用进行模式匹配:
+  * 对这个变量的引用进行模式匹配: 对原变量使用引用, 模式匹配后得到的变量也是引用类型.
 
     ```rust
     fn main() {
@@ -766,7 +810,7 @@ black.2
 
 
 
-* `if let`表达式: 只关心一种匹配情况的`match`:
+* `if let`表达式: 只关心一种匹配情况的`match`, 最终返回的也是一个值.
 
     ```rust
     let c = if let Some(x) = a {
@@ -841,9 +885,9 @@ black.2
 
 ## 泛型
 
-* 泛型可以在函数, 结构体, 枚举, 方法中使用.
+* 泛型可以在函数, 结构体, 枚举, 方法中使用 (英语是Generics).
 
-* 泛型需要在函数名/结构体名/枚举名/方法名后面声明泛型参数`T`, 然后再使用:
+* 泛型需要在函数名/方法名/结构体名/枚举名后面声明泛型参数`T`, 然后再使用:
 
   * 函数:
 
@@ -921,12 +965,11 @@ black.2
   }
   ```
 
-
-
 ### 孤儿规则
 
 * 如果你要为一个类型`T`实现一个Trait, 那么Trait和`T`至少有一个需要定义在当前作用域.
   * 不能为外部的类型实现外部的Trait.
+  * 英文叫Orphan Rule (OR).
 
 
 
@@ -1055,10 +1098,10 @@ black.2
 
 * 不是所有的trait都可以有特征对象, 需要满足对象安全(object safety)条件:
 
+  * trait中不能有`Self: Sized`约束.
   * trait中的方法没有泛型参数`T`.
   * trait的返回值不能是`Self`.
-
-> 为什么要满足对象安全条件, 才能拥有特征对象?
+  
 
 
 
@@ -1214,7 +1257,7 @@ black.2
 
 ### `Result<T, E>`与`?`
 
-* `Result<T, E>`:
+* `Result<T, E>`: 如果一个操作可能会出现异常, 那么这个操作就会返回`Result<T, E>`类型.
 
   ```rust
   enum Result<T, E> {
@@ -1286,6 +1329,8 @@ black.2
 
 ### `Error`与自定义异常
 
+* 自定义异常之后, 你就可以把你自定义的异常类型放到`Result<T, E>`中的`E`这里.
+
 * 如果要自定义异常, 需要实现`std::error::Error`, 其中需要关心的方法是`source`方法:
 
   ```rust
@@ -1316,16 +1361,17 @@ black.2
     // 实现Display
     impl std::fmt::Display for ChildError {
       fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ChildError is here!")
+        // write!(f, "{}", 你的字符串), 这个和println!使用方法差不多
+        write!(f, "ChildError is here!");
       }
     }
     
-    // 实现Error, 没有子Error, 不用覆盖source
+    // 实现Error, ChildError如果没有子Error, 就不用覆盖source
     impl std::error::Error for ChildError {}
     ```
-
+  
   * 自定义异常`MyError`, 子异常是`ChildError`:
-
+  
     ```rust
     #[derive(Debug)]
     struct MyError {
@@ -1478,7 +1524,7 @@ black.2
     //...
     ```
 
-  * 然后, 假设一个方法可能返回`Option`, 那么就用`ok_or`方法, 这个方法可以把对应的`Option`变成`Result`, 就可以使用`?`.
+  * 然后, 假设一个方法可能返回`Option`, 那么就用`ok_or`方法, 如果这个`Option`是`None`, 那么这个方法可以把对应的`Option`变成`Result`, 就可以使用`?`.
 
     ```rust
     let a = gen_option().ok_or(NoneError)?;
@@ -1532,12 +1578,12 @@ black.2
 
 * 当`Vec<T>`离开作用域时, 会被清理掉, 但是其中的元素也会被清理掉.
 
-  * 如果其他的地方有`Vec`中元素的索引, 就会发生问题.
+  * 如果其他的地方有`Vec`中元素的引用, 就会发生问题, 需要格外注意.
 
 * 访问`Vec`中元素的两种方式:
 
-  * 索引: 如果索引超出范围, 程序就会`panic`.
-  * `get方法`: 返回值是`Option<T>`, 如果越界会返回`None`.
+  * 索引: 如果索引超出范围, 程序就会`panic`, 不安全.
+  * `get方法`: 返回值是`Option<T>`, 如果越界会返回`None`, 比较安全 .
   
 * `Vec<T>`的`length`与`capacity`:
 
@@ -1713,6 +1759,11 @@ black.2
 
 
 
+> `{:?}`和`{:#?}`的区别?
+
+* `{:?}`是单行输出, 一般信息比较紧凑.
+* `{:#?}`是多行输出, 一般信息比较多, 比较美观.
+
 ### `Display`
 
 * `Display`这个trait一般用来更加美化地输出一个类型信息:
@@ -1735,6 +1786,7 @@ black.2
   ```
   
   * 实现`Display` trait之后, 可以对一个对象调用`to_string()`方法, 生成`String` 来进行打印.
+    * 也可以用`{}`占位符进行打印.
 
 ### `Debug`
 
@@ -1768,12 +1820,12 @@ black.2
 
 ## 闭包
 
-* 闭包是一种可以使用调用者作用域变量的匿名函数.
+* 闭包(closure)是一种可以使用调用者捕获当前作用域变量的匿名函数, 本质上是一种类型.
 
   ```rust
-  |param1, param2, param3, ...| {
+  |param1: type1, param2: type2, param3: type3, ...| {
     Statement1;
-    Statement2;
+    Statement2; // Statement中可以直接使用当前作用域的变量
     //...
     Expression
   }
@@ -1891,7 +1943,7 @@ black.2
 
   * 一个类型为`T`的对象, 如果实现了`Deref<Target=U>`, 那么
     * 在使用`T`类型的对象时, 可以直接调用`U`类型的方法.
-    * 在使用`&T/&mut T`类型或者`Box<T>`类型的引用时, 就会被自动转换成`&U`.
+    * 在使用`&T/&mut T`类型或者`Box<T>`类型的引用时, 可以根据需要被自动转换成`&U`.
 
 
   ```rust
@@ -2073,7 +2125,6 @@ black.2
 ### `Send/Sync`
 
 * 如果一个类型`T`实现了`Send`特征, 那么这个类型可以在线程之间传递所有权.
-  * 也就是说, 一个值, 如果有办法让多个线程都能读/写到 (不保证多个线程有值的引用.), 那么对应类型就实现了`Send`.
 * 如果一个类型`T`实现了`Sync`特征, 那么这个类型可以在线程之间, 通过引用进行共享.
 * 特征约束: 如果`&T`实现了`Send`特征, 那么`T`就实现了`Sync`特征.
 * Rust中, 绝大部分类型都实现了`Send/Sync` trait, 可以通过`#[derive()]`进行自动实现.
@@ -2308,9 +2359,13 @@ fn main() -> std::io::Result<()> {
   
   // 接收
   for stream in listener.incoming() {
+    stream = stream.unwrap();
     // stream是reader和writer
     let mut stream = stream.unwrap();
     handle_connection(&mut stream);
+    let mut buffer= [0; 1024];
+    // 将数据读取到buffer, 调用这个方法之后, 上面的buffer类型会被自动推断为[u8; 1024]
+    stream.read(&mut buffer).unwrap();
   }
   ```
 
@@ -2321,6 +2376,8 @@ fn main() -> std::io::Result<()> {
   ```rust
   let mut stream = TcpStream::connect("127.0.0.1:9999").unwrap();
   // stream也是reader/writer
+  // 发送一个response: String
+  stream.write_all(response.as_bytes()).unwrap();
   ```
 
 
@@ -2362,6 +2419,38 @@ fn main() -> std::io::Result<()> {
   * 每一个引用参数都会获得自己的生命周期参数`'a`.
   * 如果只有一个输入生命周期(函数的引用参数/结构体的引用字段), 那么这个引用参数`'a`就会自动被标注到所有的输出生命周期中.
   * 如果有多个输入生命周期, 但是有一个是`&self/&mut self`, 那么`&self/&mut self`的生命周期会被标注到所有的输出生命周期中.
+  
+  * 如果出现了其他情况, 就必须手动标注生命周期.
+
+
+
+### 生命周期代码举例
+
+* 观察下面的代码:
+
+```rust
+#[derive(Debug)]
+struct Foo;
+
+impl Foo {
+    // 这个函数使用了不可变引用, 啥也没干
+    fn method1(&self) {
+
+    }
+    // 这个函数使用了可变引用, 解引用又返回了不可变引用
+    fn method2(&mut self) -> &Self {
+        &*self
+    }
+}
+
+fn main() {
+
+    let mut foo = Foo;
+    let a = Foo.method2();
+    foo.method1();
+    println!("{:?}", a);
+}
+```
 
 
 
@@ -2552,6 +2641,19 @@ mod tests {
 ```
 
 * 写好之后, 直接使用`cargo test`就可以进行测试.
+
+* **更加friendly的 `assert_eq`**:
+
+  * 如果使用原始的`assert_eq`, 如果你对比的是两个数组, 数组中有很多元素, 那么它会直接把所有的数组元素打出来, 非常不直观.
+
+  * 可以使用第三方库:
+
+    ```toml
+    pretty_assertions = "1.0"
+    ```
+
+    然后: `use pretty_assertions:assert_eq;`, 这种方式会以`diff`色彩的方式显示.
+
 
 
 

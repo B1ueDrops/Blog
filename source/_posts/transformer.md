@@ -1,5 +1,5 @@
 ---
-title: 简单理解Transformer
+title: 理解Transformer
 categories: AI
 mathjax: true
 ---
@@ -61,7 +61,6 @@ mathjax: true
   \end{bmatrix}
   $$
   
-
 * 对于一个$\vec{Q_i}$来说, 为了避免后面的token对其语义产生影响, 需要用$\vec{K_j}, j \leqslant i$, 来进行点乘, 其余的值需要设置成$-\infin$(softmax中, $-\infin$可以被映射成0), 这个机制叫做**Masking**.
 
 $$
@@ -89,4 +88,8 @@ $$
   \vec{E_i} = \vec{E_i} + \Delta \vec{E_i}
   $$
   
+
+
+
+---
 

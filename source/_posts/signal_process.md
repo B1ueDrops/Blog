@@ -669,7 +669,7 @@ $$
 
 * 线性: $af_1(t) + bf_2(t)$的傅立叶变换是$aF_1(\omega) + bF_2(\omega)$.
 * 时移性质: $f(t - t_0)$的傅立叶变换是$F(\omega)e^{j\omega t_0}$.
-* 频移性质: $f(t)e^{j\omega t_0}$的傅立叶变换是$F(\omega - \omega_0)$.
+* 频移性质: $f(t)e^{j\omega_0 t}$的傅立叶变换是$F(\omega - \omega_0)$.
 
 * 时域微分性质: $\frac{df(t)}{dt}$的傅立叶变换是$j\omega F(\omega)$​
 * 频域微分性质: $tx(t)$的傅立叶变换是$j\frac{dF(\omega)}{d\omega}$.
@@ -696,11 +696,21 @@ $$
 
 ## 理想低通滤波器
 
-
+* 将一个信号$x(t)$与采样函数$\frac{sin(\omega_c t)}{\pi t}$进行卷积, 等价于频域上乘上一个$[-\omega_c, \omega_c]$的方波, 就可以只保留$[-\omega_c, \omega_c]$频段的信号, 这种操作叫做低通滤波(low-pass filter).
+  * $\omega_c$叫做截止频率.
+* 高保真音响的$\omega_c = 22150$Hz.
 
 ## 信号的调制与解调
 
+通信系统如果要传输某个信号$x(t)$, 就需要对这个信号进行调制(modulation)和解调(demodulation).
 
+* 首先: $y(t) = x(t)cos(\omega_c t)$, 其中$\omega_c$​叫做载波(carrier).
+  * 根据欧拉公式: $y(t) = \frac{1}{2}x(t)e^{j\omega_c t} + \frac{1}{2}x(t)e^{-j\omega_c t}$.
+  * 根据频移性质, $x(t)e^{j\omega_0 t}$的傅立叶变换是$X(\omega - \omega_0)$, 对于原信号$X(\omega)$, $Y(\omega) = \frac{1}{2}X(\omega - \omega_c) + \frac{1}{2}X(\omega + \omega_c)$​
+    * 也就相当于把原始的信号向左向右平移了$\omega_c$个单位.
+  * 这个过程叫做调制(modulation).
+* 解调: 接收到$y(t)$之后, 令$w(t) = y(t)cos(\omega_c t) = x(t) cos^2(\omega_c t) = \frac{1}{2}x(t) + \frac{1}{2}x(t)cos(2\omega_c t)$.
+  * 使用这种方法解调之后, 可以用低通滤波器滤掉$\frac{1}{2}x(t) cos(2\omega_c t)$, 最终可以得到$\frac{1}{2}x (t)$.
 
 ## 离散傅立叶变换
 
