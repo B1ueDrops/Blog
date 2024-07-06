@@ -1,6 +1,6 @@
 ---
 title: 理解Transformer
-categories: AI
+categories: 深度学习
 mathjax: true
 ---
 

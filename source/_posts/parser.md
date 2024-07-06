@@ -37,19 +37,96 @@ categories: 编程语言
 
 ### 消除二义性
 
-二义性没有通用的消除方法.
+> 为什么要消除二义性?
+
+* 如果文法具有二义性, 自顶向下分析算法中, 预测表`M`中一个表项会有两个对应的生成式, 无法保证正确运行.
+
+
+
+二义性没有通用的消除方法, 下面是几个例子:
 
 * 四则运算表达式
+
+假设四则运算的文法如下:
+
+```
+E -> E + E | E * E | id
+```
+
+那么`a + b * c`就有两颗AST对应.
+
+改写:
+
+```
+E -> E + T | T
+T -> T * F | F
+F -> id
+```
+
+* 规定`*`的优先级高于`+`, 也就是归约为`+`操作时, 必须先通过`*`相关的生成式规约成`T`.
 
 
 
 * `if-else`
 
+假设`if-else`语句的文法如下:
+
+```
+stmt -> if Exp then stmt
+			| if Exp then stmt else stmt
+```
+
+那么对于一个语句: `if E1 then if E2 then S1 else S2`, 就会出现两颗语法树与之对应:
+
+![if-else语句的二义性](./parser/image-20240706190447429.png)
+
+如果要消除二义性, 只需要人为规定: `then`和`else`之间的语句必须是一个完全匹配好的`if else`结构, 文法如下:
+
+```
+stmt -> matched_stmt | open_stmt
+
+matched_stmt -> if Exp then matched_stmt else matched_stmt
+
+open_stmt -> if Exp then stmt | if Exp then matched_stmt else open_stmt
+```
+
 
 
 ### 消除左递归
 
+* 自顶向下分析无法处理含有左递归的文法, 因为会陷入无限循环, 因此要消除左递归.
 
+* **消除立即左递归: **
+
+  * 立即左递归: 例如$A \rightarrow A\alpha$.
+  * 消除算法: 
+    * 假设一个立即左递归形式为: $A \rightarrow A\alpha_1\ | ... |\ A\alpha_m |\ \beta_1\ |\ ...\ |\ \beta_n$.
+    * 那么可以转成以下形式:
+      * $A \rightarrow \beta_1 A' | ... | \beta_n A'$​
+      * $A' \rightarrow \alpha_1 A'\ |\ ...\ |\ \alpha_m A'\ |\  \epsilon$​
+
+* 通用的消除左递归的算法:
+
+  * 有些情况下, 左递归不是一步就能退出来的, 可以通过多步推导得到左递归的生成式.
+
+  * 通用的左递归消除算法:
+
+    * 首先要保证文法中不含有环, 也就是$A \rightarrow A$.
+    * 假设一个文法中的所有非终结符是$A_1, A_2, ..., A_n$.
+
+    ```rust
+    for i in 1..(n+1) {
+    	for j in 1..i {
+        if Ai -> Aj b这种形式的生成式存在 {
+          对于任何Aj -> c1 | c2 | c3 | ... | ck
+          将Ai的生成式变为Ai -> c1 b | c2 b | c3 b | ... | ck b
+        }
+      }
+      消除Ai的立即左递归
+    }
+    ```
+
+    
 
 ## 自顶向下分析
 
@@ -75,7 +152,7 @@ categories: 编程语言
 * $FIRST(A)$就定义为: 对于非终结符$A$​, 它有可能最终推导出的所有句子中, 第一个符号的集合.
   * 如果存在生成式$A \rightarrow \epsilon$, 那么$\epsilon$也在$FIRST(A)$中.
 * $FIRST$集的使用方法: 
-  * 假设$A$有两个生成式: $A \rightarrow \alpha | \beta$, 并且$FIRST(\alpha)\ \bigcap\ FIRST(\beta) = \empty$.
+  * 假设$A$有两个生成式: $A \rightarrow \alpha | \beta$, 并且$FIRST(\alpha)\ \bigcap\ FIRST(\beta) = \emptyset$.
   * 如果下一个符号是$a$, 如果$a \in FIRST(\alpha)$, 那么就可以选择$A \rightarrow \alpha$这个生成式.
 
 * 求$FIRST(A)$的算法:
