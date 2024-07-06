@@ -1,5 +1,5 @@
 ---
-title: 金融量化分析基础
+title: 金融量化分析模型
 categories: 金融知识
 mathjax: true
 ---
