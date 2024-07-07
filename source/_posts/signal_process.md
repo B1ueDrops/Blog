@@ -480,8 +480,9 @@ $$
   * 齐次性: $<\lambda x, y> = \lambda <x, y>$
   * 叠加性: $<x + y, z> = <x, z> + <y, z>$
   * 非负性: $<x, x> \geqslant 0$ 当且仅当$x = 0$时等号成立.
+  
 * 函数的正交运算:
-  * $f(t)$和$g(t)$的内积$<f(t),g(t)>$定义为: $\int_{a}^{b} f(t)\bar{g(t)}dt$.
+  * $f(t)$和$g(t)$的内积$<f(t),g(t)>$定义为: $\int_{a}^{b} f(t)\bar{g(t)}dt$​.
 
 * 正交函数族:
 
@@ -530,29 +531,49 @@ $$
 
 
 
-
 ## 傅立叶变换
 
-* 傅立叶级数的表达式是:
+* 对于无穷维空间中的一个向量$(v_1, v_2, ..., v_{\infty})$.
 
-$$
-f(t) = \sum_{k=-\infty}^{\infty}a_k e^{jk\omega_0 t} \\
-a_k = \frac{1}{T_0}\int_{T_0}f(t)e^{-jk\omega_0 t} dt
-$$
+  * 注意, 这里下标虽然是$1, 2, 3, 4$, 但是实际的下标是按实数进行分布.
+  * 这一个向量都可以唯一映射到二维空间中的一个曲线.
+  * 如果无穷维空间对内积操作是完备的, 那么这个无穷维空间就叫做希尔伯特空间.
 
-* 傅立叶级数把一个连续的周期函数转换成频域上离散的序列.
-* 其中$f(t)$是周期为$T_0$的周期函数, 并且$w_0 = \frac{2\pi}{T_0}$.
-* 定义函数: $F(\omega) = \int_{T_0} f(t) e^{-j\omega t} dt$.
+* 对于函数$f(t)$, 它可以对应希尔伯特空间上的一个点/向量.
 
-* 那么$f(t) = \sum_{k=-\infty}^{\infty} \frac{\omega_0}{2\pi} F(k\omega_0) e^{jk\omega_0t}$
-  * 当$\omega_0 \rightarrow 0$时, $f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty}F(\omega) e^{j\omega t} d\omega$.
-  * 同样, $F(\omega) = \int_{-\infty}^{\infty} f(t)e^{-j\omega t} dt$.
+* 我可以选一组函数$d_{\omega}(t), \omega \in R$, 这组函数互相正交, 然后将$f(t)$进行正交分解.
 
-那么对于一个非周期函数, 傅立叶变换/反变换就是:
-$$
-F(\omega) = \int_{-\infty}^{\infty}  f(t) e^{-j\omega t} dt \\
-f(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty}F(\omega) e^{j\omega t} dt
-$$
+* 假设我选择的函数是$e^{j\omega t}, \omega \in R$.
+
+  * 对于两个的$\omega_1, \omega_2$:
+
+  $$
+  \int_{-\infty}^{\infty} e^{j(\omega_1 - \omega_2)t} dt = \int_{-\infty}^{\infty} e^{j\Delta \omega t} dt = \lim\limits_{T\rightarrow \infty} \frac{1}{j\Delta \omega} (e^{j\Delta \omega T}  - e^{-j\Delta \omega T}) = \lim\limits_{T\rightarrow \infty} \frac{1}{j\Delta \omega} (e^{j\Delta \omega T}  - e^{-j\Delta \omega T}) = \\ \lim\limits_{T\rightarrow \infty} \frac{1}{j\Delta \omega} (2jsin\Delta \omega T) = \lim\limits_{T\rightarrow \infty} \frac{2sin\Delta \omega T}{\Delta \omega} = 2\pi \delta(\Delta \omega)
+  $$
+
+  * 如果$\omega_1 \neq \omega_2$, 那么上述积分等于$2\pi$​.
+  * 如果$\omega_1 = \omega_2$​​, 那么上述积分等于0.
+  
+* 下面将函数$f(t)$在$\frac{1}{2\pi}e^{j\omega t}$上进行正交分解:
+
+  * 首先, $f(t)$正交分解的形式是:
+    $$
+    f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} F(\omega) e^{j\omega t} d\omega
+    $$
+    
+  * 如果要计算$F(\omega)$​, 只需要计算$f(t)$​和$e^{j\omega t}$​的内积, 这个内积应该等于$F(\omega)$​, 因为不相等的$\omega$​内积都会等于0, 因此:
+    
+    $$
+    \int_{-\infty}^{\infty} f(t) e^{-j\omega t} dt = F(\omega)
+    $$
+    
+  * 因此, 傅立叶变换的表达式就是:
+    $$
+    F(\omega) = \int_{-\infty}^{\infty} f(t) e^{-j\omega t} dt \\
+    f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} F(\omega) e^{j\omega t} d\omega
+    $$
+    
+
 
 
 
