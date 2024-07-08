@@ -1,5 +1,5 @@
 ---
-title: 二叉树/二叉搜索树全系列
+title: 二叉树系列
 categories: 算法
 mathjax: true
 ---
