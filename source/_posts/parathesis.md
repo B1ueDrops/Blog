@@ -89,7 +89,7 @@ int main() {
 
   * 横轴是数组下标, 纵轴是计数器`cnt`的值.
 
-  ![parathesis-visual](parathesis.png)
+  ![parathesis-visual](./parathesis/parathesis.png)
 
   * 按照上面所说的合法括号序列的等价条件, 一个合法的括号序列对应的折线必须满足两个条件:
     * 起点和终点在同一高度.
