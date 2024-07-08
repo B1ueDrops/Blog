@@ -1,5 +1,5 @@
 ---
-title: 背包问题的模板总结
+title: 背包问题
 categories: 算法
 mathjax: true
 ---

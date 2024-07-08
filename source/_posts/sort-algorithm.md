@@ -1,8 +1,10 @@
 ---
-title: 基础排序算法和应用
+title: 排序算法
 categories: 算法
 mathjax: true
 ---
+
+[toc]
 
 
 
@@ -217,3 +219,27 @@ int main()
 
 
 
+## 调整数组顺序使奇数位于偶数前面
+
+> https://www.acwing.com/problem/content/description/30/
+
+```cpp
+class Solution {
+public:
+    void reOrderArray(vector<int> &array) {
+         
+         int n = array.size();
+         
+         if (!n) return ;
+         
+         int i = -1, j = n;
+         
+         while (i < j)
+         {
+             while (array[++ i] % 2);
+             while (array[-- j] % 2 == 0);
+             if (i < j) swap(array[i], array[j]);
+         }
+    }
+};
+```

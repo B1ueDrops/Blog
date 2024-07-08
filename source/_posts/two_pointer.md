@@ -1,8 +1,12 @@
 ---
-title: 双指针系列
+title: 双指针
 categories: 算法
 mathjax: true
 ---
+
+
+
+[toc]
 
 
 
@@ -77,6 +81,188 @@ public:
 ```
 
 
+
+## 三数之和系列
+
+### 常规三数之和
+
+> https://leetcode.cn/problems/3sum/
+
+算法是排序+双指针算法.
+
+将数组排序后, 枚举每一个数$c$, 维护两个指针$l, r$, 两个指针分别指向头和尾, 计算$c + nums[l] + nums[r]$的大小
+
+* 如果大于`target`就将`r--`
+* 如果小于`target`就将`l++`
+
+时间复杂度为$O(n^2)$
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ans;
+        
+        sort(nums.begin(), nums.end());
+
+        for (int i = 0; i < nums.size(); i ++) {
+          // 如果当前枚举的数和上一个枚举的数相同, 跳过
+            if (i != 0 && nums[i] == nums[i - 1]) continue;
+
+            int l = i + 1, r = nums.size() - 1;
+            while (l < r) {
+                int sum = nums[i] + nums[l] + nums[r];
+                if (sum > 0) {
+                    r --;
+                    continue;
+                }
+                if (sum < 0) {
+                    l ++;
+                    continue;
+                }
+                if (sum == 0) {
+                    ans.push_back({ nums[i], nums[l], nums[r] });
+                }
+              // 去重
+                do { l ++; } while (l < r && nums[l] == nums[l - 1]);
+                do { r --; } while (l < r && nums[r] == nums[r + 1]);
+            }
+        }
+        return ans;
+    }
+};
+
+```
+
+
+
+### 常规四数之和
+
+> https://leetcode.cn/problems/4sum/
+
+和三数之和思路一样, 只是枚举的是选定的两个数, 时间复杂度是$O(n^3)$
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+
+        typedef long long LL;
+
+        vector<vector<int>> ans;
+
+        sort(nums.begin(), nums.end());
+
+        for (int i = 0; i < nums.size(); i ++) {
+
+            if (i != 0 && nums[i] == nums[i - 1]) continue;
+
+            for (int j = i + 1; j < nums.size(); j ++) {
+
+                if (j != i + 1 && nums[j] == nums[j - 1]) continue;
+
+                int l = j + 1, r = nums.size() - 1;
+
+                while (l < r) {
+                    LL sum = (LL)nums[i] + (LL)nums[j] + (LL)nums[l] + (LL)nums[r];
+
+                    if (sum < target) {
+                        l ++;
+                        continue;
+                    }
+                    if (sum > target) {
+                        r --;
+                        continue;
+                    }
+                    ans.push_back({ nums[i], nums[j], nums[l], nums[r]});
+
+                    do { l ++; } while (l < r && nums[l] == nums[l - 1]);
+                    do { r --; } while (l < r && nums[r] == nums[r + 1] );
+                }
+            }
+        }
+        return ans;
+    }
+};
+```
+
+
+
+### 最接近的三数之和
+
+> https://leetcode.cn/problems/3sum-closest
+
+和三数之和一样, 只需要在遍历时维护一个最接近`target`的值即可.
+
+```cpp
+class Solution {
+public:
+    int threeSumClosest(vector<int>& nums, int target) {
+
+        int ans = 0x3f3f3f3f;
+        sort(nums.begin(), nums.end());
+
+
+        for (int i = 0; i < nums.size(); i ++) {
+
+            if (i != 0 && nums[i] == nums[i - 1]) continue;
+
+            int l = i + 1, r = nums.size() - 1;
+
+            while (l < r) {
+                int sum = nums[i] + nums[l] + nums[r];
+                
+                if (abs(sum - target) < abs(ans - target)) ans = sum;
+
+                if (sum < target) {
+                    l ++;
+                    continue;
+                }
+                if (sum > target) {
+                    r --;
+                    continue;
+                }
+                do { l ++ ;} while (l < r && nums[l] == nums[l - 1]);
+                do { r --;} while (l < r && nums[r] == nums[r + 1]);
+            }
+        }
+
+        return ans;
+    }
+};
+```
+
+
+
+### 数组元素的目标和
+
+> https://www.acwing.com/problem/content/802/
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 100010;
+
+int n, m, x;
+int a[N], b[N];
+
+int main()
+{
+    
+    cin >> n >> m >> x;
+    for (int i = 0; i < n; i ++) cin >> a[i];
+    for (int i = 0; i < m; i ++) cin >> b[i];
+    /* b数组从后遍历, a数组从前遍历 */
+    for (int i = 0, j = m - 1; i < n; i ++) {
+        while (j >= 0 && a[i] + b[j] > x) j --;
+        if (a[i] + b[j] == x) printf("%d %d\n", i, j);
+    }
+    
+    return 0;
+}
+```
 
 ## 三数之和
 
@@ -216,3 +402,33 @@ int main() {
 }
 ```
 
+## 外观数列
+
+> https://leetcode.cn/problems/count-and-say/description/
+
+典型的双指针算法.
+
+```cpp
+class Solution {
+public:
+    string countAndSay(int n) {
+        if (n == 1) return "1";
+        string prev = countAndSay(n - 1);
+
+        vector<pair<int, int>> group;
+
+        string res = "";
+
+        for (int i = 0; i < prev.size(); i ++) {
+            int j = i + 1;
+            while (j < prev.size() && prev[j] == prev[i]) j ++;
+            int cnt = j - i;
+            res += cnt + '0';
+            res += prev[i];
+            i = j - 1;
+        }
+
+        return res;
+    }
+};
+```

@@ -1,10 +1,10 @@
 ---
-title: 冷门算法/模拟题
+title: 其他算法/模拟题
 categories: 算法
 mathjax: true
 ---
 
-
+[toc]
 
 
 
@@ -480,62 +480,7 @@ int main()
 
 
 
-## 模拟散列表
 
-> https://www.acwing.com/problem/content/842/
-
-拉链法: 将要存储的元素$x$, 哈希之后的下标是$k$, 如果有冲突, 就在数组的基础上, 拉成一个链表.
-
-```cpp
-#include <iostream>
-#include <cstring>
-
-using namespace std;
-
-const int N = 100003;
-
-int n;
-int h[N], e[N], ne[N], idx;
-
-void insert(int x)
-{
-    int k = (x % N + N) % N;
-    e[idx] = x;
-    ne[idx] = h[k];
-    h[k] = idx ++;
-}
-
-bool find(int x)
-{
-    int k = (x % N + N) % N;
-
-    for (int i = h[k]; i != -1; i = ne[i])
-        if (e[i] == x) return true;
-        
-    return false;
-}
-
-int main()
-{
-    cin >> n;
-    memset(h, -1, sizeof h);
-    
-    string op;
-    int x;
-    
-    while (n --)
-    {
-        cin >> op >> x;
-        if (op == "I") insert(x);
-        else
-        {
-            if (find(x)) puts("Yes");
-            else puts("No");
-        }
-    }
-    return 0;
-}
-```
 
 
 
@@ -835,3 +780,286 @@ public:
 };
 ```
 
+
+
+## 缺失的第一个整数
+
+
+
+> https://leetcode.cn/problems/first-missing-positive/
+
+假设$n$是`nums`数组的大小.
+
+首先,  没有出现过的最小的正整数一定在$[0, n]$范围内.
+
+然后, 我可以把数组中的元素进行归位, 使得`nums[i] = i`, 那么如果数组中存在一个位置`k`, 使得`nums[k] != k`, 那么这个`k`就是缺失的第一个整数.
+
+```cpp
+class Solution {
+public:
+    int firstMissingPositive(vector<int>& nums) {
+        int n = nums.size();
+        
+        /* 注意要实际修改数组中的元素要加引用 */
+        /* 这里减是为了把nums[i]映射到下标 */
+        /* 边界情况, 如果x是INT_MIN, 那么不能减 */
+        for (auto &x : nums) 
+            if (x != INT_MIN) x --;
+
+        for (int i = 0; i < n; i ++) {
+            while (nums[i] >= 0 && nums[i] < n && nums[nums[i]] != nums[i]) 
+                swap(nums[i], nums[nums[i]]);
+
+        }
+        for (int i = 0; i < n; i ++) 
+            if (nums[i] != i) return i + 1;
+        
+        return n + 1;
+    }
+};
+```
+
+
+
+## 旋转图像
+
+> https://leetcode.cn/problems/rotate-image/
+
+代码:
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        
+        for (int i = 0; i < n; i ++) {
+            for (int j = 0; j < i; j ++) {
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }
+        for (int i = 0; i < n; i ++) {
+            for (int j = 0, k = n - 1; j < k; j ++, k --) {
+                swap(matrix[i][j], matrix[i][k]);
+            }
+        }
+    }
+};
+```
+
+
+
+### 矩阵旋转操作总结
+
+* 顺时针90度: 主对角线(左上到右下)翻转, 然后按中间线左右反转.
+* 逆时针90度: 主对角线(左上到右下)翻转, 然后按中间线上下翻转.
+* 180度: 主对角线翻转,  副对角线翻转.
+
+主对角线翻转写法:
+
+```cpp
+for (int i = 0; i < n; i ++) {
+  for (int j = i + 1; j < n; j ++) {
+    swap(matrix[i][j], matrix[j][i]);
+  }
+}
+```
+
+副对角线翻转写法:
+
+```cpp
+for (int i = 0; i < n; i ++) {
+  for (int j = 0; j < n - 1 - i; j ++) {
+    swap(matrix[i][j], matrix[j][i]);
+  }
+}
+```
+
+中间线左右翻转.
+
+```cpp
+for (int i = 0; i < n; i ++ )
+   for (int j = 0, k = n - 1; j < k; j ++, k -- )
+    swap(matrix[i][j], matrix[i][k]);
+```
+
+
+
+中间线上下翻转:
+
+```cpp
+for (int i = 0, k = n - 1; i < k; i ++, k --) {
+  for (int j = 0; j < n; j ++) {
+    swap(matrix[i][j], matrix[k][j]);
+  }
+}
+```
+
+
+
+## 替换空格
+
+> https://www.acwing.com/problem/content/17/
+
+原地算法
+
+```cpp
+class Solution {
+public:
+    string replaceSpaces(string &str) {
+        
+        int len = 0;
+        
+        for (auto c: str) {
+            if (c == ' ') len += 3;
+            else len ++;
+        }
+        
+        int l = str.size() - 1;
+        str.resize(len);
+        
+        for (int i = l, j = len - 1; i >= 0; i --) {
+            if (str[i] == ' ') {
+                str[j --] = '0';
+                str[j --] = '2';
+                str[j --] = '%';
+            }
+            else str[j --] = str[i];
+        }
+        
+        return str;
+    }
+};
+```
+
+## 翻转单词顺序
+
+> https://www.acwing.com/problem/content/73/
+
+翻转整个字符串后, 再反转每个单词即可.
+
+```cpp
+class Solution {
+public:
+    string reverseWords(string s) {
+        
+        reverse(s.begin(), s.end());
+        for (int i = 0; i < s.size(); i ++) {
+            int j = i + 1;
+            while (j < s.size() && s[j] != ' ') j ++;
+            reverse(s.begin() + i, s.begin() + j);
+            i = j;
+        }
+        
+        return s;
+    }
+};
+```
+
+## 左旋转字符串
+
+> https://www.acwing.com/problem/content/74/
+
+先翻转整个字符串, 然后分别翻转左旋部分和非左旋部分即可.
+
+```cpp
+class Solution {
+public:
+    string leftRotateString(string str, int n) {
+        reverse(str.begin(), str.end());
+        reverse(str.begin(), str.begin() + str.size() - n);
+        reverse(str.begin() + str.size() - n, str.end());
+        return str;
+    }
+};
+```
+
+
+
+## 字符串最长公共前缀
+
+> https://leetcode.cn/problems/longest-common-prefix/
+
+```cpp
+class Solution {
+public:
+    string longestCommonPrefix(vector<string>& strs) {
+        string res;
+        if (strs.empty()) return res;
+
+        for (int i = 0; ; i ++) {
+            if (i >= strs[0].size()) return res;
+            char c = strs[0][i];
+            for (auto &str: strs) {
+                if (i >= str.size() || str[i] != c) return res;
+            }
+            res += c;
+        }
+        return res;
+    }
+};
+```
+
+## 二进制中1的个数
+
+> https://www.acwing.com/problem/content/description/803/
+>
+> https://leetcode.cn/problems/number-of-1-bits/
+
+时间复杂度是$O(nlogn)$, 其中$n$是二进制位数.
+
+注意, 这个方法对于负数同样适用.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 100010;
+
+int n;
+int a[N];
+
+/* 统计x二进制表示中1的个数 */
+int count(int x) {
+    
+    int cnt = 0;
+    while (x) {
+        x -= x & -x;
+        cnt ++;
+    }
+    return cnt;
+}
+
+int main()
+{
+    cin >> n;
+    for (int i = 0; i < n; i++) cin >> a[i];
+    for (int i = 0; i < n; i++) cout << count(a[i]) << ' ';
+    
+    return 0;
+}
+```
+
+
+
+
+
+## 对齐地址
+
+这不是一个算法题, 一般系统有这样一个要求, 给定一个地址`addr`, 求这个地址按照`n`字节对齐 (这个`n`一般是2的整数次幂)后的地址.
+
+假设`n`是2的整数次幂, 那么可以用如下函数求:
+
+```c
+static inline uint32_t align(uint32_t addr, int n) {
+  return (addr + n - 1) & ~(n - 1);
+}
+```
+
+证明:
+
+* 首先证明: `a & ~(n - 1) = a - a % n`
+  * 首先, `n - 1`的二进制一定是有`log(n)`个全1, 前面是全0, 一取反就是前面全是1, 后面`log(n)`是全0, 然后一取与, 就把`a`的后面`log(n)`位全变成0, 前面位保留.
+  * `a % n`的结果就是`a`的二进制表示后面`log(n)`位, 然后再用`a`一减, 效果等价.
+* 因此, `(addr + n - 1) & ~(n - 1) = addr + n - 1 - (addr + n - 1) % (n - 1) = addr + (n - 1) - addr % (n - 1)`, 最终得到的表达式本质上就是返回后的地址.
