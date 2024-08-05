@@ -1,5 +1,5 @@
 ---
-title: 应用层
+title: HTTP协议的一些细节
 categories: 计算机网络
 ---
 
@@ -37,6 +37,10 @@ categories: 计算机网络
 
 
 
+### HTTP请求报文
+
+
+
 
 * 常见的HTTP请求报文中, `request-headers`:
 
@@ -46,7 +50,10 @@ categories: 计算机网络
 | `Cookie`            | 之前服务器通过Set-Cookie告诉客户端的Cookie                   |
 | `Accept`            | 自己能够接受的, 服务端传来的文件类型, 例如`Accept: text/plain` |
 | `If-Modified-Since` | 这个是个日期, 如果请求的资源在这个日期后被修改, 就返回200 OK+资源, 否则返回304 Not Modified, 并且数据可以从缓存读取,  只可以用在`GET/HEAD`请求. |
+| `Host`              | HTTP请求的域名/IP地址:端口号                                 |
 |                     |                                                              |
+
+### HTTP响应报文
 
 * 常见的HTTP响应报文中, `response-headers`:
 
