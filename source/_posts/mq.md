@@ -57,3 +57,37 @@ categories: 软件工程
   * 决定之后, 通过ZooKeeper, Producer可以获取Partition对应Broker的IP地址.
   * Broker接收Topic, 将消息写入本地磁盘.
   * Consumer根据自身能力, 通过拉取(pull)的方式消费Partition中的消息.
+
+
+
+## Kafka高可用
+
+
+
+### Partition的备份
+
+* Kafka会将一个Partition存成多个消息副本(Replica).
+  * 多个Replica中有一个Leader和若干个Follower.
+    * 生产者发送消息, 消费者消费消息都是从Leader Partition中.
+    * Follower会周期性地向Leader请求消息复制.
+  * Kafka会尽可能地将不同Replica存在不同的Broker上, 防止一个Broker宕机造成Partition完全不可用.
+
+> 如果Producer向Partition中写入消息, 是写入Leader就算成功(异步), 还是所有Follower完全数据一致(同步)才算成功?
+
+* Kafka采用了ISP (In-Sync Replica)策略, 异步和同步折中.
+* Leader维护所有Follower的表格.
+* 如果Follower长时间没有向Leader同步消息, 就踢出表格.
+  * Leader会动态更新ISP表格, 并同步到ZooKeeper.
+* 表格中的Follower全部同步完成之后, 才认为Partition写入成功.
+
+
+
+### 故障恢复
+
+* Kafka集群中, 会选取一个Broker作为Controller角色, 负责Partition Leader的选举.
+* 流程:
+  * Partition Leader所在的Broker宕机, 与ZooKeeper断连.
+  * Zookeeper删除这个Broker节点, 并通知Controller.
+  * Controller向ZooKeeper查询这个宕机的Broker中有哪些Partition Leader.
+  * 之后, 对于每个Partition Leader, 从ISR中选一个Partition Follower作为Leader, 然后通知到对应的Broker.
+
