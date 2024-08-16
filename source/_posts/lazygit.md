@@ -1,6 +1,6 @@
 ---
 title: 试用LazyGit进行版本控制
-categories: 工具/环境
+categories: 开发工具
 ---
 
 > 在一个pane中使用`?`可以查看cheetsheet.
