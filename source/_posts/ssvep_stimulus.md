@@ -1,6 +1,6 @@
 ---
 title: SSVEP刺激设计
-categories: 科研
+categories: 脑机接口
 mathjax: true
 ---
 

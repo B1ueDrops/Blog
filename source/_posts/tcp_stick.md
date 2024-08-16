@@ -1,6 +1,6 @@
 ---
 title: 如何解决TCP粘包问题
-categories: 计算机网络
+categories: 后端技术
 ---
 
 

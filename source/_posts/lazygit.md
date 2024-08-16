@@ -1,5 +1,5 @@
 ---
-title: Git/Lazygit版本控制
+title: 试用LazyGit进行版本控制
 categories: 工具/环境
 ---
 

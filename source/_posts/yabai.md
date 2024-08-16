@@ -1,6 +1,6 @@
 ---
 title: yabai窗口管理器键位配置
-categories: 工具/环境
+categories: 开发工具
 ---
 
 

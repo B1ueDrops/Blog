@@ -1,6 +1,6 @@
 ---
 title: DNS-客户端连接到机房的技术
-categories: 软件工程
+categories: 后端技术
 mathjax: true
 ---
 

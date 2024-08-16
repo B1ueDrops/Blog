@@ -1,6 +1,6 @@
 ---
 title: 消息中间件技术
-categories: 软件工程
+categories: 后端技术
 ---
 
 

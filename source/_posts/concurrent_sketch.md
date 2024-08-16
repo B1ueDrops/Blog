@@ -1,6 +1,6 @@
 ---
 title: 并发编程的概述
-categories: UNIX编程
+categories: 操作系统
 ---
 
 

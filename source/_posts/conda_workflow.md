@@ -1,6 +1,6 @@
 ---
 title: conda的工作流
-categories: 工具/环境
+categories: 开发工具
 ---
 
 

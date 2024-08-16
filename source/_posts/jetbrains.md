@@ -1,6 +1,6 @@
 ---
 title: Jetbrains系列IDE的使用
-categories: 工具/环境
+categories: 开发工具
 ---
 
 

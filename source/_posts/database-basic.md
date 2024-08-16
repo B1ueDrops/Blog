@@ -1,6 +1,6 @@
 ---
 title: PostgreSQL数据库教程
-categories: 软件工程
+categories: 后端技术
 ---
 
 

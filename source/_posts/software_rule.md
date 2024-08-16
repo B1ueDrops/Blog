@@ -1,6 +1,6 @@
 ---
 title: 面向对象设计的基本原则
-categories: 软件工程
+categories: 后端技术
 ---
 
 

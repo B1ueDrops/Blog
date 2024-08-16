@@ -1,6 +1,6 @@
 ---
 title: 行为型的设计模式
-categories: 软件工程
+categories: 后端技术
 ---
 
 [TOC]

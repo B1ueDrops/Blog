@@ -1,6 +1,6 @@
 ---
 title: Linux上的进程控制
-categories: UNIX编程
+categories: 操作系统
 ---
 
 

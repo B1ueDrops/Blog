@@ -1,6 +1,6 @@
 ---
 title: 服务发现架构设计
-categories: 软件工程
+categories: 后端技术
 ---
 
 

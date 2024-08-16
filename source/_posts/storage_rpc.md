@@ -1,6 +1,6 @@
 ---
 title: 存储微服务的架构
-categories: 软件工程
+categories: 后端技术
 mathjax: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: LVS/Nginx-服务器调度的技术
-categories: 软件工程
+categories: 后端技术
 mathjax: true
 ---
 
