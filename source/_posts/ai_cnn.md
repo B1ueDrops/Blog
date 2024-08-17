@@ -1,6 +1,6 @@
 ---
-title: CNN的基本原理
-categories: 深度学习
+title: 对CNN的基本理解
+categories: AI加速
 mathjax: true
 ---
 
