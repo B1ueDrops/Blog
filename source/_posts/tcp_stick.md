@@ -33,7 +33,7 @@ categories: 后端技术
   * 首先, 第一次接受的buffer需要根据前面定长的数据大小来接受.
   * 然后, 根据数据大小来拼数据.
 
-> TCP客户端代码:
+> TCP客户端与服务端代码:
 
 ```python
 import socket

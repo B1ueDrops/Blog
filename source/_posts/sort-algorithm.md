@@ -12,7 +12,7 @@ mathjax: true
 
 > https://www.acwing.com/problem/content/787/
 
-快速排序的时间复杂度是$O(nlogn)$, 空间复杂度是$O(1)$.
+快速排序的平均时间复杂度是$O(nlogn)$, 最坏时间复杂度是$O(n^2)$, 空间复杂度是$O(logn)$.
 
 ```cpp
 #include <iostream>
