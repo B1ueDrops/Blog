@@ -5,8 +5,6 @@ categories: 编程语言
 
 
 
-
-
 ## 数据类型
 
 ### 整数
@@ -27,8 +25,8 @@ categories: 编程语言
   
   Student s(string("haha"), 1);
   Student &stu = s;
-  // 用引用操作变量和用指针一样
-  cout << s->print() << endl;
+  // 操作引用操作变量和操作原变量接口相同
+  cout << s.print() << endl;
   ```
 
   * <font color=red>**引用变量必须初始化 ! 编译器会在编译层面保证这一点.**</font>
@@ -69,6 +67,14 @@ categories: 编程语言
   * 具体执行哪个函数是在编译时完成.
 
 ## 动态内存管理
+
+### `new`和`delete`
+
+* `delete`:
+  * 如果`new`的时候是`Student *a = new Student();`, 那么就用`delete a;`
+  * 如果`new`的时候是`Student *stus = new Student()[];`, 那么就用`delete [] a;`
+
+### 常见问题
 
 > `malloc`和`new`的区别?
 
@@ -214,6 +220,7 @@ categories: 编程语言
   * <font color=red>注意: 成员函数分为两类:</font>
 
     * 不修改成员变量: 在函数后面加上`const`, 例如: `void print() const;`
+      * 在`const`修饰的函数体内部, `this`指针是常量指针.
     * 修改成员变量: 不用加`const`.
 
 * 创建类的对象:
@@ -477,6 +484,10 @@ categories: 编程语言
 
 
 
+## 模板
+
+
+
 ## RAII
 
 * RAII的全称是Resource Acquisition is Initialization. 它是C++中资源管理的一些思想:
@@ -537,6 +548,202 @@ categories: 编程语言
 
 
 ## 左值与右值
+
+* **左值**: 可以理解成是一个`Named Object`, 可以取地址.
+  * 例如变量名.
+* **右值**: 可以理解为`Anonymous Object`, 是临时产生的值, 不可以取地址.
+  * 类型的字面值常量: `10, 20..`
+  * 表达式: `x + y`
+  * 传值返回的函数 (不是传引用): `min(a, b)`.
+  * 如果用`&10, &(x + y), 或者&min(a, b)`会出现编译报错.
+
+
+
+### 左值/右值引用
+
+* 左值引用就是对左值取引用, 目的是**避免对象拷贝**:
+
+  * `int &a = b;`
+
+* 右值引用是C++11后面的标准, 可以对右值取引用:
+
+  * 格式是: 
+
+    ```cpp
+    int &&a = 1;
+    ```
+
+    * 注意, 这里的`a`是`int &`类型, 但是`std::move(a)`是`int &&`类型, `1`也是`int &&`类型.
+    * `std::move`位于`<utility>`中, 可以将一个左值/左值引用转换为右值引用.
+  
+* 一些规律: 
+
+  * `const`左值引用可以引用右值:
+
+  ```cpp
+  const int &a = 1; //通过
+  int &a = 1; //编译错误
+```
+
+> 为什么会有右值引用?
+
+* 假设要设计一个`String`类, 代码如下:
+
+```cpp
+class String {
+
+private:
+	char * data;
+	size_t size;
+
+public:
+	String(const char *str) {
+		this->size = strlen(str);
+		this->data = new char[this->size];
+		strcpy(this->data, str);
+	}
+  
+	~String() {
+		delete [] this->data;
+	}
+  
+	String& operator=(const String& str) {
+		delete [] this->data;
+		this->size = str.size;
+		this->data = new char[this->size];
+		strcpy(this->data, str.data);
+		return *this;
+	}
+  
+};
+
+```
+
+* 那么在使用时, 这个类会出现问题, 例如如下代码:
+
+  ```cpp
+  int main() {
+    
+    String a("haha");
+    a = String("heihei");
+    
+    return 0;
+  }
+  ```
+
+  * `a = String("heihei")`这行代码, 需要调用`=`运算符:
+
+    *  `String("heihei")`是一个右值, 系统会创建一个`String`类型的临时变量`temp`接收.
+    * 接收后, 临时变量的左值引用会传到`=`函数中, 然后按照一定逻辑对临时变量进行深拷贝.
+    * 然后调用析构函数销毁临时变量.
+    * <font color=red>**这里最大的问题是, 我有了临时变量我还要拷贝一次, 就不能把系统给我的临时变量直接当作最终结果返回吗? **</font>
+      * 也就是说, 我们不再根据右值做拷贝, 而是把右值生命周期延长, 直接作为我返回的变量, 来避免深拷贝.
+
+  * 解决方案就是: 新加一个`=`的重载, 参数是右值引用:
+
+    ```cpp
+    String &operator=(String && str) {
+      delete [] this->data;
+      
+      // 直接拿右值中的值
+      this->data = str.data;
+      this->size = str.size;
+      
+      // 防止右值析构函数把str.data释放了
+      str.data = nullptr;
+      str.size = 0;
+      
+    }
+    ```
+
+    
+
+### 移动构造函数
+
+* 和上面的`=`一样, 构造函数也有接收右值的形态, 这种构造函数叫做**移动构造函数**:
+
+  ```cpp
+  String(String && str) {
+    this->data = str.data;
+    this->size = str.size;
+    
+    str.data = nullptr;
+    str.size = 0;
+  }
+  ```
+
+* 因此, 如果函数参数为`const T &`, 默认进行拷贝, 如果是`T&&`, 默认进行移动.
+
+
+
+### 引用折叠/万能引用/完美转发
+
+* 引用折叠一般发生在模板参数`T`的推导上, 规则如下:
+  * `T&`左值引用, 再取一次左值引用`&`, 还是`T&`.
+  * `T&`左值引用, 再去一次右值引用`&&`, 还是`T&`.
+  * **`T&&`右值引用, 再取一次左值引用`&`, 是`T&`.**
+  * `T&&`右值引用, 再去一次右值引用`&&`, 还是`T&&`.
+
+* 因此, 根据引用折叠的规律, 在函数模板中, `T &&`类型叫做万能引用.
+
+  * `T &&`接收左值, 会被推导为左值引用.
+  * 接收右值, 需要配合完美转发, 才会被推导为右值引用.
+
+* 例如如下代码:
+
+  ```cpp
+  void func(int & t);
+  void func(const int & t);
+  void func(int && t);
+  
+  template<typename T>
+  void f(T &&t) {
+    // std::forward叫做完美转发
+    func(std::forward<T>(t));
+  }
+  ```
+
+  * 使用万能引用和完美转发, 可以根据引用的具体类型来调用不同的函数.
+
+> 为什么需要完美转发?
+
+* 如果没有完美转发, 代码如下:
+
+  ```cpp
+  void func(int & t);
+  void func(const int & t);
+  void func(int && t);
+  
+  template<typename T>
+  void f(T &&t) {
+    // std::forward叫做完美转发
+    func(t);
+  }
+  ```
+
+* 此时, 如果调用函数:
+
+  ```cpp
+  int main() {
+    
+    int a = 1;
+    int &b = a;
+    const int &c = a;
+    
+    f(b); // T推导为int &
+    f(c); // T推导为const int &
+    
+    f(10); // T推导为int &
+  
+    return 0;
+  }
+  ```
+
+  * 注意, 调用`f(10)`之后, 本来预期调用`func(int &&t)`, 但是却会调用`func(int &t)`, 这是因为: `t`的类型本身就是一个`T&`.
+    * 因此, 为了解决这个矛盾, 就使用完美转发.
+    * 也就是说, `f(10)`中传递10, 只能让你到`f(T && t)`这一层, 到了这里, 就失去了右值引用这个属性, 想要进一步保持, 可以用`std::forward` .
+
+
 
 
 
