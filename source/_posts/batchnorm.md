@@ -1,39 +1,12 @@
 ---
-title: BatchNorm的相关问题
+title: Welford算法计算方差
 categories: AI加速
 mathjax: true
 ---
 
 
 
-
-
-## BatchNorm的原理
-
-* **Internal Covariate Shift**
-
-  * 在机器学习系统中, 有一个重要的假设就是: 训练集和测试集是独立同分布的.
-  * 但是, 在神经网络中, 每一层接收的输入分布都是会变化的, 每一层神经网络就需要调整参数适应这些变化, 导致神经网络收敛缓慢, 这个现象叫Internal Covariate Shift.
-  * 通过在每一层网络前面加上一层BatchNorm, 可以将数据拉回$N(0, 1)$的分布, 从而加速收敛, 并且可以提高模型的泛化性.
-
-* **BatchNorm公式:** 对于一个Batch的数据$X$
-  $$
-  \hat{X} = \frac{X - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
-  Y = \gamma \hat{X} + \beta
-  $$
-
-  * 其中, $\epsilon$是为了防止方差过小, 导致除0.
-  * $\gamma, \beta$是两个可学习的参数, 解释为: 在进行分布规范化之后, 模型自己决定是否要恢复特征的原始分布.
-
-  
-
-
-
-## BatchNorm中方差计算优化
-
 * 假设有一堆数据$x_i, i\in [1, n]$, 现在要计算方差$\sigma_x^2$.
-
-
 
 ### Two-pass的方差计算
 
