@@ -19,44 +19,83 @@ mathjax: true
   * 在Tensor喂到模型前, 需要`x = x.to(device)`.
   * 模型需要`model = model.to(device)`.
 
-## Tensor预处理
-
-> 获取Tensor的维度信息:
-
-* `output.shape`: 返回元组.
-* `output.size()`: 返回`torch.Size`对象.
-
-一般两者可以互换使用, `torch.Size`兼容元组操作.
+## Tensor预处理与计算
 
 
 
-> 生成随机Tensor:
+### `torch`自带的函数
 
-* 生成特定维度的随机Tensor:
-  * `torch.randn(a, b, c, d)`: 用于生成一个维度是`(a, b, c, d)`的, 服从$N(0, 1)$的张量.
-  * `torch.rand(a, b, c, d)`: 生成的数据服从`[0, 1)`的均匀分布.
+* 获取维度: `x.shape`
+* 生成$N(0, 1)$, 形状是`(a, b, c, d)`的随机张量: `torch.randn(a, b, c, d)`
+* 删除大小是1的维度: `x = x.squeeze()`
+* 在下标为`n`的维度前面加上大小是1的维度: `x = x.unsqueeze(n)`
+
+### `rearrange`
+
+* `rearrange`用于调整Tensor的维度顺序, 或者组合/拆分某些维度:
+
+  ```python
+  from einops import rearrange
+  ```
+
+* 下面假设张量`x`的维度是`(b, c, h, w)`:
+
+  * 交换维度:
+
+    ```python
+    x = rearrange(x, 'b c h w -> b h w c')
+    ```
+
+  * 组合维度:
+
+    ```python
+    x = rearrange(x, 'b c h w -> b c (h w)')
+    ```
+
+  * 拆分维度:
+
+    ```python
+    x = rearrange(x, 'b e (h n) -> b h e n', h = xxx)
+    ```
+
+* 如果要将`rearrange`作为模型的一个层:
+
+  ```python
+  from einops.layers.torch import Rearrange
+  
+  Rearrange('b e h w -> b (h w) e') # layer
+  ```
+
+  
+
+### `torch.einsum`
+
+* `einsum`的计算模型: 例如`C = einsum('ik, kj -> ij', A, B)`:
+
+  * 翻译成Python的循环是:
+
+    ```python
+    for i in range(A.size(0)):
+      for j in range(B.size(1)):
+        
+        total = 0
+        for k in range(A.size(1)):
+          total += A[i][k] * B[k][j]
+        
+        C[i][j] = total
+    ```
+
+  * 理解方法:
+
+    * 首先, 看左侧比右侧多了哪些下标, 在这里是`k`.
+    * 然后, 想象有一个指针, 在`k`这个维度从上向下扫描, 其他下标固定, 两个矩阵的元素对应相乘求和.
+    * 之后, 将得到的值累加到固定的下标, 在这里是`C[i][j]`.
 
 
 
-> 将Feature map转为全连接层的输入:
-
-* `x.view(x.size(0), -1)`:
-  * 例如`x`是一个维度为`(B, C, H, W)`的Tensor, 那么经过这个操作可以得到`(B, C * H * W)`的Tensor.
 
 
 
-> 增加/删除一个新维度:
-
-* `x = x.unsqueeze(0)`: 在第0维度前面加上一个维度.
-  * 假设Tensor维度是`(3, 4)`, 经过`unsqueeze(0)`变成`(1, 3, 4)`.
-  * `unsqueeze(-1)`在最后一个位置增加新维度.
-* `x = x.squeeze()`: 删除所有大小是1的维度.
-
-
-
-> 维度交换:
-
-`x = x.permute(0, 2, 1, 3)`: 将原来维度编号是`(0, 1, 2, 3)`的Tensor变成`(0, 2, 1, 3)`.
 
 
 
@@ -71,7 +110,7 @@ import torch.nn as nn
 class SimpleModel(nn.Module):
   
   def __init__(self):
-    super(SimpleModel, self).__init__()
+    super().__init__()
     #...
    
  	def forward(self):
@@ -82,13 +121,19 @@ class SimpleModel(nn.Module):
 
 
 
+#### `nn.Parameter`
+
+
+
+
+
 #### `nn.Linear`
 
 * API的全名是: `nn.Linear(in_features, out_features, bias=True)`
 
-  * 首先, 输入的Tensor的维度必须是`(batch_size, in_features)`形式.
+  * 首先, 输入的Tensor的维度必须是`(batch_size, *, in_features)`形式, `*`表示可以有中间维度, 但是不会被处理.
 
-  * 输入`(batch_size, in_features)`的Tensor, 输出`(batch_size, out_features)`的Tensor.
+  * 输入`(batch_size, *, in_features)`的Tensor, 输出`(batch_size, *, out_features)`的Tensor.
 
 * `nn.Linear`代表的是一种线性变换:
   
@@ -183,7 +228,30 @@ $$
 
   
 
+#### 残差连接
 
+* 梯度消失问题: 当神经网络层数过多时, 反向传播会导致梯度变小, 神经网络会收敛缓慢.
+
+* 解决方案: 残差连接 (输出和输入拼接, 作为下一个block的输入)
+
+  ```python
+  class ResidualAdd(nn.Module):
+  	def __init__(self, fn):
+  		super().__init__()
+  		self.fn = fn
+  
+  	def forward(self, x, **kwargs):
+  		res = x
+  		x = self.fn(x, **kwargs)
+  		x += res
+  		return x
+  ```
+
+* 更加本质的理解: 
+
+  * 如果一个模型套上了残差连接模块, 那么就相当于这个模型学习的是相对原输入$x$的增量$\Delta x$.
+  * $x + \Delta x$就是残差模型的输出.
+  
 
 ## 训练评估指标
 
@@ -197,6 +265,4 @@ $$
 * **F1 Score**: : `2 * (Recall * Accuracy) / (Recall + Accuracy)`.
 
 
-
-## 现成的机器学习训练/测试脚本
 
