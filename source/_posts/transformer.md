@@ -45,7 +45,6 @@ mathjax: true
   \end{bmatrix} = QK^T
   $$
   
-
 * 之后, 要根据这个邻接矩阵, 去做消息传递, 就需要把节点$E_i$周围的边权与这个节点本身的特征信息进行综合.
 
   * 首先把边权映射成概率分布, 方便作为权重: $softmax(\frac{QK^T}{\sqrt{e}})$, $softmax$是对这个矩阵的每一行单独进行.
@@ -117,6 +116,10 @@ class MultiHeadAttention(nn.Module):
 
   <img src="./transformer/image-20240901194923544.png" alt="Transformer架构图" style="zoom: 40%;" />
 
+
+
+### `CrossAttention`
+
 * Transformer Encoder-Decoder的工作流程:
   * 输入序列, 首先经过多次`MultiHeadAttention`, 经过多次消息传递, 最终可以得到$K, V$.
     * 得到的$K$和$V$, 能够提供更多关于序列的信息.
@@ -126,3 +129,13 @@ class MultiHeadAttention(nn.Module):
     * 也就是借助“先验”的知识来协助新图的建立.
     * 这种机制叫做`Cross Attention`.
   * 迭代多次Decoder后, 可以将生成的新图$E'$, 映射到所有token的概率分布, 从而生成新序列.
+
+
+
+### `FeedForward`
+
+* 作用: Transformer中的`MultiHeadAttention`本质上是线性变换, `FeedForward`负责引入非线性部分.
+* 架构:
+  * 线性层: 将`(N, n, e)`映射到`(N, n, e * ratio)`.
+  * 激活函数: 可以是`ReLU`或者`GELU`.
+  * 线性层: 将`(N, n, e * ratio)`映射到`(N, n, e)`.

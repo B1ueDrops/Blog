@@ -1,5 +1,5 @@
 ---
-title: 前端语言使用日记
+title: Javascript原理与实战
 categories: 编程语言
 ---
 

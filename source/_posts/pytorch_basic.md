@@ -176,11 +176,10 @@ class SimpleModel(nn.Module):
 
 #### `nn.BatchNorm2d`
 
-* **Internal Covariate Shift**
+> 对`BatchNorm`的理解
 
-  * 在机器学习系统中, 有一个重要的假设就是: 训练集和测试集是独立同分布的.
-  * 但是, 在神经网络中, 每一层接收的输入分布都是会变化的, 每一层神经网络就需要调整参数适应这些变化, 导致神经网络收敛缓慢, 这个现象叫Internal Covariate Shift.
-  * 通过在每一层网络前面加上一层BatchNorm, 可以将数据拉回$N(0, 1)$的分布, 从而加速收敛, 并且可以提高模型的泛化性.
+* 图片经过`nn.Conv2d`之后, 会得到`(N, C, H, W)`的一个张量, 其中每一个`C`都对应着一个feature map.
+  * `BatchNorm`的过程, 就是固定一个`C`, 然后将`(N, H, W)`的所有数据变成$N(0, 1)$的分布.
 
 * **BatchNorm公式:** 对于一个Batch的数据$X$:
   $$
@@ -197,6 +196,20 @@ class SimpleModel(nn.Module):
   * 输入输出的Tensor的维度都是`(N, C, H, W)`.
 
 * BatchNorm的位置: 一般是`Conv2d -> BatchNorm2d -> ReLU`.
+
+
+
+#### `nn.LayerNorm`
+
+> 对`LayerNorm`的理解
+
+* 语言数据经过几层`MultiHeadAttention`之后, 会得到`(N, n, e)`的一个张量, 其中`(n, e)`就是Embedding Matrix的维度.
+* `LayerNorm`是固定`N`, 然后把对应的`(e, n)`数据变成$N(0, 1)$的分布.
+
+
+
+* `nn.LayerNorm(normalized_shape)`
+  * 假设输入的张量尺寸是`(N, C, H, W)`, 那么`normalized_shape`就是`(C, H, W)`.
 
 
 

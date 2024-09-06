@@ -1,6 +1,7 @@
 ---
-title: Parser的知识合集
+title: 编译原理-Parser的知识合集
 categories: 编程语言
+mathjax: true
 ---
 
 

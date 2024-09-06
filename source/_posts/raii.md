@@ -1,5 +1,5 @@
 ---
-title: RAII的概念
+title: 资源管理中RAII的概念
 categories: 编程语言
 ---
 

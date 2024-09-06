@@ -1,5 +1,5 @@
 ---
-title: Rust使用日记
+title: Rust原理与实战
 categories: 编程语言
 mathjax: true
 ---
@@ -697,7 +697,7 @@ black.2
 ### `match`表达式
 
 * `match`表达式: 注意`match`表达式最终返回的是一个值.
-    
+  
     ```rust
     match VALUE {
         PATTERN => EXPRESSION,
@@ -2508,9 +2508,133 @@ async fn main() {
 
 
 
-### `Future`
+### 异步运行时的原理
+
+#### `Future trait`
+
+```rust
+trait SimpleFuture {
+    type Output;
+    fn poll(&mut self, wake: fn()) -> Poll<Self::Output>;
+}
+enum Poll<T> {
+    Ready(T),
+    Pending,
+}
+```
+
+* 其中`Output`是Future执行后返回值类型.
+* `poll`方法是Executor调用, 来让`Future`执行的, 它有两种可能的返回结果:
+  * `Ready(T)`: 表示Future执行完成了, 并且正确返回了结果.
+  * `Pending`: Future无法在此次轮询中完成, 但是Executor给了他一个`wake`方法, 这个方法的语义是:
+    * `Future`将来能执行的时候, 会调用`wake`, 唤醒Executor.
+    * Executor被唤醒后, 再次调用这个`Future`的`poll`方法重新执行.
+
+依照这个API模型, 我们可以构建多个`Future`并发运行, 和多个`Future`链式运行这两种模型:
+
+并发运行的代码如下:
+
+```rust
+trait SimpleFuture {
+    type Output;
+    fn poll(&mut self, wake: fn()) -> Poll<Self::Output>;
+}
+
+enum Poll<T> {
+    Ready(T),
+    Pending,
+}
+
+// 存储两个并发异步Future的结构体
+pub struct Join<FutureA, FutureB> {
+    // 这里类型设置成Option, 是因为后面要用take把值拿走, 让成员编程NULL
+    // 以便后面不再调用poll轮询
+    a: Option<FutureA>,
+    b: Option<FutureB>
+}
+
+impl<FutureA, FutureB> SimpleFuture for Join<FutureA, FutureB> 
+where
+    FutureA: SimpleFuture<Output=()>,
+    FutureB: SimpleFuture<Output=()>,
+{
+    type Output = ();
+    // a的poll只要不能完, 就直接退出跳到b, 这就是并发poll
+    // 有一个没完, 那么就用wake注册, 等着这个poll还会被调用
+    fn poll(&mut self, wake: fn()) -> Poll<Self::Output> {
+        // 从a中取出Future
+        if let Some(a) = &mut self.a {
+            // 对a中的Future调用poll, 如果成功就用take把a变成None
+            if let Poll::Ready(()) = a.poll(wake) {
+                self.a.take();
+            }
+        }
+        // 从b中取出Future
+        if let Some(b) = &mut self.b {
+            if let Poll::Ready(()) = b.poll(wake) {
+                self.b.take();
+            }
+        }
+        // 如果a, b完了, 就可以了
+        if self.a.is_none() && self.b.is_none() {
+            Poll::Ready(())
+        }
+        else {
+            Poll::Pending
+        }
+    }
+}
+
+```
+
+链式运行的实例代码如下:
+
+```rust
+pub struct AndThenFut<FutureA, FutureB> {
+    first: Option<FutureA>,
+    second: FutureB,
+}
+
+impl<FutureA, FutureB> SimpleFuture for AndThenFut<FutureA, FutureB>
+where
+    FutureA: SimpleFuture<Output = ()>,
+    FutureB: SimpleFuture<Output = ()>,
+{
+    type Output = ();
+    fn poll(&mut self, wake: fn()) -> Poll<Self::Output> {
+        if let Some(first) = &mut self.first {
+            match first.poll(wake) {
+                // 我们已经完成了第一个 Future， 可以将它移除， 然后准备开始运行第二个
+                Poll::Ready(()) => self.first.take(),
+                // 第一个Future完不成直接退, 不会跳到第二个Future, 这样就能实现第二个Future等待第一个Future完成后执行
+                Poll::Pending => return Poll::Pending,
+            };
+        }
+
+        // 运行到这里，说明第一个Future已经完成，尝试去完成第二个
+        self.second.poll(wake)
+    }
+}
+```
 
 
+
+#### `Executor`
+
+* Executor负责执行Future, 它可以是单线程, 也可以是多线程.
+* 具体的原理:
+
+![rust executor原理](./practical-rust/rust-async.png)
+
+* Spawner负责包装Future, 生成Task, 并传输给Executor.
+
+* Executor提取Future, 尝试调用`poll(waker)`.
+
+  * 如果`Future`当时没有`ready`, 那么在他`ready`之后会调用`wake`方法, 让自己重新被发送给Executor.
+
+  * 注意: Executor可能是多线程, 那么`Future`需要加`Mutex`.
+
+* 结合IO多路复用(`epoll`)等机制, 如果返回`Poll::Pending`, 可以将`wake`函数传递到OS级别的I/O多路复用, 这样I/O好了之后, 就可以直接调用`wake`函数让`Future`可以执行.
 
 ### `Pin/Unpin`
 
@@ -2832,3 +2956,383 @@ println!("{:p}", ptr);
 
 ### `Constrained`
 
+
+
+## Code Example
+
+
+
+### LeetCode算法
+
+
+#### 两数之和
+
+```rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
+
+        let mut hash: HashMap<i32, i32> = HashMap::new();
+
+        for (i, v) in nums.iter().enumerate() {
+            if let Some(index) = hash.get(&(target - *v)) {
+                return vec![i as i32, index.to_owned()];
+            }
+            hash.insert(v.to_owned(), i as i32);
+        }
+        return vec![];
+    }
+}
+```
+
+
+
+#### 字母异位词分组
+
+```rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn group_anagrams(strs: Vec<String>) -> Vec<Vec<String>> {
+        
+        let mut hash: HashMap<String, Vec<String>> = HashMap::new();
+        for str in &strs {
+            let mut cv: Vec<char> = str.chars().collect();
+            cv.sort();
+            let os = cv.iter().collect::<String>();
+            let vec: Vec<String> = Vec::new();
+            let mut val = hash.entry(os).or_insert(vec);
+            val.push(str.to_owned());
+        }
+
+        let mut ans: Vec<Vec<String>> = Vec::new();
+        for vec in hash.values() {
+            ans.push(vec.to_owned());
+        }
+        return ans;
+    }
+}
+```
+
+
+
+#### 最长连续序列
+
+```rust
+use std::cmp::max;
+use std::collections::HashSet;
+
+impl Solution {
+    pub fn longest_consecutive(nums: Vec<i32>) -> i32 {
+        
+        let mut hash: HashSet<i32> = HashSet::new();
+        for x in nums {
+            hash.insert(x.to_owned());
+        }
+        let mut ans: i32 = 0;
+        for x in &nums {
+            if !hash.contains(&(*x - 1)) {
+                let mut y = x.to_owned();
+                while hash.contains(&(y + 1)) {
+                    y = y + 1;
+                }
+                ans = max(ans, y - x + 1);
+            }
+        }
+        return ans;
+    }
+}
+```
+
+
+
+#### 无重复字符的最长子串
+
+```rust
+use std::cmp::max;
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn length_of_longest_substring(s: String) -> i32 {
+        
+        let mut hash: HashMap<char, i32> = HashMap::new();
+        let mut j: usize = 0;
+    
+        let mut ans: usize = 0;
+
+        for (i, c) in s.chars().enumerate() {
+            if hash.get(&c).is_none() {
+                hash.insert(c, 1);
+            } else {
+                *hash.entry(c).or_insert(0) += 1;
+            }
+            while j < i {
+                let ith_char = s.chars().nth(i).unwrap();
+                let ith_char_cnt = hash.get(&ith_char).unwrap();
+                if *ith_char_cnt <= 1 {
+                    break;
+                }
+
+                let jth_char = s.chars().nth(j).unwrap();
+                *hash.entry(jth_char).or_insert(0) -= 1;
+                j = j + 1;
+            }
+            ans = max(ans, i - j + 1);
+        }
+        ans as i32
+    }
+}
+```
+
+
+
+#### 移动零
+
+```rust
+impl Solution {
+    pub fn move_zeroes(nums: &mut Vec<i32>) {
+        let mut k = 0;
+        for i in 0..nums.len() {
+            if nums[i] != 0 {
+                nums[k] = nums[i];
+                k = k + 1;
+            }
+        }
+        while k < nums.len() {
+            nums[k] = 0;
+            k = k + 1;
+        }
+    }
+}
+```
+
+
+
+#### 盛水最多的容器
+
+```rust
+use std::cmp::{ min, max };
+
+impl Solution {
+    pub fn max_area(height: Vec<i32>) -> i32 {
+
+        let mut res = 0;
+        let mut i = 0 as usize;
+        let mut j = height.len() - 1;
+
+        while i < j {
+            res = max(res, min(height[i], height[j]) * (j - i) as i32);
+            if height[i] < height[j] {
+                i = i + 1;
+            }
+            else {
+                j = j - 1;
+            }
+        }
+        res
+    }
+}
+```
+
+
+
+#### 三数之和
+
+```rust
+impl Solution {
+    pub fn three_sum(nums: Vec<i32>) -> Vec<Vec<i32>> {
+
+        let n = nums.len();
+        let mut res: Vec<Vec<i32>> = vec![];
+        let mut nums = nums;
+        nums.sort();
+
+        for i in 0..nums.len() {
+            if i != 0 && nums[i] == nums[i - 1] {
+                continue;
+            }
+            let mut j = i + 1;
+            let mut k = n - 1;
+
+            while j < k {
+                let t = nums[i] + nums[j] + nums[k];
+                if t > 0 {
+                    k = k - 1;
+                    continue;
+                }
+                else if t < 0 {
+                    j = j + 1;
+                    continue;
+                }
+                else {
+                    res.push(vec![nums[i], nums[j], nums[k]]);
+                }
+                j = j + 1;
+                k = k - 1;
+                while j < k && nums[j] == nums[j - 1] {
+                    j = j + 1;
+                }
+                while j < k && nums[k] == nums[k + 1] {
+                    k = k - 1;
+                }
+            }
+        }
+        res
+    }
+}
+```
+
+
+
+#### 两数相加
+
+```rust
+impl Solution {
+    pub fn add_two_numbers(l1: Option<Box<ListNode>>, l2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+
+        let mut head = Some(Box::new(ListNode::new(-1)));
+        let mut cur = &mut head;
+        let mut t = 0;
+        let mut cur1 = &l1;
+        let mut cur2 = &l2;
+
+        while cur1.is_some() || cur2.is_some() || t != 0 {
+            if cur1.is_some() {
+                t = t + cur1.as_ref().unwrap().val;
+                cur1 = &cur1.as_ref().unwrap().next;
+            }
+            if cur2.is_some() {
+                t = t + cur2.as_ref().unwrap().val;
+                cur2 = &cur2.as_ref().unwrap().next;
+            }
+            let next_node = ListNode::new(t % 10);
+            t = t / 10;
+            cur.as_mut().unwrap().next = Some(Box::new(next_node));
+            cur = &mut cur.as_mut().unwrap().next;
+        }
+
+        head.unwrap().next
+    }
+}
+```
+### 线程池
+
+#### 一些预备知识
+
+* `JoinHandle<T>`类型:
+  * 使用`let handle = thread::spawn(|| {})`的返回值是`JoinHandle<T>`类型, 其中`T`是线程的返回值类型.
+  * 可以通过`handle.join()`获取线程的返回值, 返回值类型是`Result<T, E>`.
+
+#### 线程池的设计
+
+* 工作线程结构体`Worker`:
+  * 字段: 需要有一个`id`和一个封装的线程对象.
+    * 线程对象
+  * 方法: 需要有一个构造方法, 参数有`id`以及消息队列接收者的引用`rx`.
+    * `rx`需要在多个工作线程之间共享, 因此类型需要是`Arc<Mutex<T>>`类型.
+    * 构造方法中创建线程, 持续尝试获取`rx`的互斥锁, 获取成功后执行任务.
+* 线程池对象`ThreadPool`:
+  * 字段: 
+    * 需要有一个`Vec`存储所有的`Workers`.
+    * 需要有一个`tx`用来发送任务.
+  * 方法:
+    * 构造方法: 初始化线程池, 参数就一个线程池中线程个数就行.
+    * 执行任务: 注意, 任务这个闭包需要实现`FnOnce() + Send + 'static`
+      * `'static`是因为任务不知道什么时候结束, 生命周期不确定.
+  * 实现`drop`:
+    * 首先需要`drop`掉`sender`, 这样工作线程调用`rx.recv()`时就会出现`Err`, 自动退出.
+    * 然后遍历工作线程, 调用`join()`, 保证工作线程获取结果, 全部退出销毁后, 线程池再销毁.
+
+
+
+#### 线程池的源代码
+
+```rust
+use std::thread;
+use std::sync::{Arc, Mutex, mpsc};
+
+// Job是一个闭包类型
+type Job = Box<dyn FnOnce() + Send + 'static>;
+
+struct Worker {
+    // 工作线程的id
+    id: usize,
+    // 实际的OS线程
+    thread: Option<thread::JoinHandle<()>>
+}
+
+impl Worker {
+    // 每一个Worker有一个接收端, 接收线程池发送的Job
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
+        // 每一个Worker持续尝试获取receiver的lock, 获取后尝试执行job
+        let thread = thread::spawn(move || loop {
+            let message = receiver.lock().unwrap().recv();
+            match message {
+                Ok(job) => {
+                    println!("Worker {id} got a job; executing");
+                    job();
+                }
+                Err(_) => {
+                    // 线程池drop后
+                    println!("Worker {id} disconnected, shutting down");
+                    break;
+                }
+            }
+        });
+        Worker { id, thread: Some(thread) }
+    }
+}
+
+pub struct ThreadPool {
+    // 线程池中所有的工作线程
+    workers: Vec<Worker>,
+    // 工作线程从线程池中获取Job
+    sender: Option<mpsc::Sender<Job>>, 
+}
+
+impl ThreadPool {
+
+    pub fn new(size: usize) -> Self {
+        assert!(size > 0);
+        
+        // 线程池通过channel给Worker分配任务
+        let (tx, rx) = mpsc::channel();
+
+        // 让每一个Worker都能持有rx
+        let rx = Arc::new(Mutex::new(rx));
+
+        // 创建所有的Worker线程
+        let mut workers = Vec::with_capacity(size);
+
+        // 把receiver的copy发送给Worker
+        for id in 0..size {
+            workers.push(Worker::new(id, Arc::clone(&rx)));
+        }
+
+        ThreadPool { workers, sender: Some(tx) }
+    }
+
+    // 执行时, 根据闭包创建Job, 然后通过channel发送
+    pub fn execute<F>(&self, f: F) where F: FnOnce() + Send + 'static {
+        let job = Box::new(f);
+        // 注意unwrap会拿走所有权, 需要用as_ref转成引用
+        self.sender.as_ref().unwrap().send(job).unwrap();
+    }
+}
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        // drop sender, 这样所有worker线程的channel都会报错
+        drop(self.sender.take());
+        // 对所有的线程调用join, 等待所有工作线程结束后再结束
+        for worker in &mut self.workers {
+            println!("Shutting down worker {}", worker.id);
+            // take方法可以拿走Option中值的所有权
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+        }
+    }
+}
+```
