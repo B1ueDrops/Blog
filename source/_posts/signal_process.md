@@ -717,11 +717,7 @@ $$
 
 
 
-## 理想低通滤波器
 
-* 将一个信号$x(t)$与采样函数$\frac{sin(\omega_c t)}{\pi t}$进行卷积, 等价于频域上乘上一个$[-\omega_c, \omega_c]$的方波, 就可以只保留$[-\omega_c, \omega_c]$频段的信号, 这种操作叫做低通滤波(low-pass filter).
-  * $\omega_c$叫做截止频率.
-* 高保真音响的$\omega_c = 22150$Hz.
 
 ## 信号的调制与解调
 
@@ -897,3 +893,23 @@ $$
   $$
   F(\omega_N^k) = F_1(\omega_{\frac{N+1}{2}}^{k}) + e^{-j\frac{2\pi}{N}k}F_2(\omega_{\frac{N-1}{2}}^k)
   $$
+
+
+
+
+
+## Nyquist采样定理
+
+* Nyquist采样定理: 假设一个信号$x(t)$是一个带限信号 (频域内只在$[-\omega_M, \omega_M]$处有值), 如果我的采样频率$\omega_S > 2\omega_M$, 那么我就可以根据采样点唯一恢复原始信号.
+
+
+
+## 滤波器的设计
+
+
+
+### 理想低通滤波器
+
+* 将一个信号$x(t)$与采样函数$\frac{sin(\omega_c t)}{\pi t}$进行卷积, 等价于频域上乘上一个$[-\omega_c, \omega_c]$的方波, 就可以只保留$[-\omega_c, \omega_c]$频段的信号, 这种操作叫做低通滤波(low-pass filter).
+  * $\omega_c$叫做截止频率.
+* 高保真音响的$\omega_c = 22150$Hz.
