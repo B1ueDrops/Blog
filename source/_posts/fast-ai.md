@@ -1,6 +1,6 @@
 ---
-title: AI推理加速的理解
-categories: AI加速
+title: 推理加速相关的评价指标
+categories: AI技术
 ---
 
 

@@ -1,6 +1,6 @@
 ---
-title: 模型与Tensor的量化方法
-categories: AI加速
+title: 模型量化技术
+categories: AI技术
 mathjax: true
 ---
 

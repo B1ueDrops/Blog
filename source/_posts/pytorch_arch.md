@@ -1,6 +1,6 @@
 ---
-title: Pytorch的整体架构
-categories: AI加速
+title: Pytorch的前后端架构
+categories: AI技术
 mathjax: true
 ---
 

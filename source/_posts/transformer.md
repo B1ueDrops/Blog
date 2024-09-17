@@ -1,6 +1,6 @@
 ---
-title: 对Transformer架构的理解
-categories: AI加速
+title: Transformer的工作原理
+categories: AI技术
 mathjax: true
 ---
 

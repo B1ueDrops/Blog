@@ -1,6 +1,6 @@
 ---
 title: Pytorch构建模型的基础知识
-categories: AI加速
+categories: AI技术
 mathjax: true
 ---
 
