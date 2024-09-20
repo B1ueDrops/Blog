@@ -274,6 +274,8 @@ $$
 * **FN (False Negative)**: 模型预测错了, 本身是目标类, 但是预测为不是目标类..
 * **召回率 (Recall):** `TP / (TP + FN)`
   * 召回率是所有目标类样本中, 模型有多大比例能识别出来.
+  * 在医院中, 召回率又叫灵敏度(Sensitivity), 表示某种疾病所有阳性的人群中, 医院有多少比例能检测出来.
+    * 还有一个指标叫特异性(Specificity), 表示所有阴性的人群中, 医院判断是阴性的比例.
 * **准确率 (Accuracy): **`(TP + TN) / (TP + TN + FP + FN)`.
 * **F1 Score**: : `2 * (Recall * Accuracy) / (Recall + Accuracy)`.
 

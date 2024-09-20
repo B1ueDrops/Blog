@@ -56,6 +56,8 @@ categories: 编程语言
 * 指针, 本质上是一种所有权的量化, 它代表所有权本身, 这个所有权会由一个变量承载.
 * 引用, 本质上是对所有权的租借, 它可以让多个变量承载同一个所有权.
 
+
+
 ## 函数
 
 ### 函数重载
@@ -562,6 +564,47 @@ gcc选项`-mrelax`使能链接器松弛优化, `-mno-relax`关闭松弛优化.
     ```
     
     * `=`的默认实现和拷贝构造函数一致.
+
+
+
+#### `explicit`
+
+* 场景: 如果构造函数只有一个参数, 那么会有如下问题:
+
+  * 假设有一个类和一个函数
+
+    ```cpp
+    class Student {
+    public:
+      Student(int a) {}
+    }
+    
+    void f(Student stu) {}
+    ```
+
+  * 那么如果构造函数前面没有用`explicit`, 那么以下语句可以通过编译:
+
+    ```cpp
+    int a = 1;
+    f(1);
+    ```
+
+  * 此时, `a`被隐式转换为`Student`, 但是这种行为一般不允许. 加上`explicit`即可:
+
+    ```cpp
+    class Student {
+    public:
+      explicit Student(int a) {}
+    }
+    
+    void f(Student stu) {}
+    ```
+
+    
+
+* 因此, 如果类中构造函数只有一个参数, 前面都需要加上`explicit`
+
+
 
 
 

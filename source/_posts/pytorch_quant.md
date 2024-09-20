@@ -1,207 +1,286 @@
 ---
-title: 模型量化技术
+title: 模型量化的理论和实战
 categories: AI技术
 mathjax: true
 ---
-
-[toc]
-
-## 模型量化的概念
-
-* 模型量化本质上是一个**离散化**算法, 它可以将模型数据从`float`类型映射到`int8/uint8`类型.
-  * 可以对模型的`Weight`进行量化.
-  * 可以对模型的输入输出进行离散化(输入输出叫做`Activation`).
-
-
-
-> 为什么模型的`Weight`和`Activation`可以进行离散化?
-
-* 因为`Weight`和`Activation`在某一个范围内的分布较集中, 并且较离散.
-
-
-
-
-
-* **模型量化的Trade off:**
-  * 优势: 收益较大, 例如大模型.
-    * 尺寸变小.
-    * 推理速度变快.
-    * 运算的Throughput变高: CPU/GPU有整数运算加速指令.
-    * 功耗变低.
-  * 缺点: 准确率降低.
-
-
-
-## 模型量化算法
-
-* 算法思路: 将集合中的某个浮点数, 距离集合中浮点数的最大值与最小值的距离, 映射到整数范围.
-* 缺陷:
-  * 如果数据分布较集中, 那么众多浮点数可能会映射到同一个整数, 精度影响大.
-
-
-<font color=red>**因此, 在模型量化之前, 要充分已知原始数据的分布情况, 并且让量化的最大值喝最小值贴近分布集中的区域.**</font>
-
-### 数据校准
-
-* 数据校准(Calibration) 会对要量化的数据(`Weight`和`Activation`) 的分布进行统计, 然后画出分布图.
-  * 这个分布图用来确定量化的最大值和最小值, 这里面也有一个Tradeoff:
-    * 量化范围越大, 则因为`round`操作, 范围内的更多不一样的浮点数会被映射到同一个整数, 也就是Rounding Error增多.
-    * 量化范围越小, 则不在最大值和最小值范围内的浮点数都会被`clip`为边界值, 也就是Clip Error增多.
-
-### 量化粒度
-
-* Per Tensor: 每个Tensor之间的量化独立.
-
-* Per Channel: 对Tensor内部, Channel之间的量化也是独立的.
-
-* 注意: Activation一般不采用Per Channel的量化, 因为计算过后无法dequantize.
-
-### 量化分类
-
-* 均匀量化 (scale quant): 量化是线性映射, 适用于分布数据均匀, 没有太多异常值的模型.
-
-  * 非均匀量化: 一般用于大模型 (数据分布不均匀).
-
-* 对称量化 (sym quant): 浮点数的0会映射到整数的0.
-
-  * 非对称量化:
-
-    * 假设确定的上界为$T$, 那么量化算法可以表示为:
-      $$
-      W_i = \frac{i_{max}}{T} \times W_{f} + z
-      $$
-
-      * 其中`z`是zero point, 也就是浮点数的0.0映射到整数的哪里.
-
-
-
-### 量化的等价性
-
-
-
-
-### 一些细节
-
-* 对于`Weight`量化, 一般对称量化, 对于`Activation`, 一般用非对称量化:
-
-  * 证明: 假设Weight和Activation都使用非对称量化, 在进行反量化的时候:
-    $$
-    S_{W}(W_{int8} - z_{W}) S_{x}(x_{int8} - z_{x}) = \\
-    S_{W}S_{x}W_{int8}x_{int8} - S_{w}z_{W}S_{x}x_{int8} - S_{W}S_{x}z_{x}W_{int8} + S_{W}z_{w}S_{x}z_{x}
-    $$
-
-    * 其中, $S_x, z_{w}, S_{x}, z_{x}$都是可以被提前算出来的.
-    * $W_{int8}x_{int8}$是对称量化的结果.
-    * 但是第二项依赖于$x_{int8}$, 也就是量化后推理的输入, 如果要进行反量化, 那么我就需要保存这个结果, 并且需要额外的计算.
-    * 因此, 可以选择让$z_{W} = 0$, 让第二项消失, 反量化的时候就可以少算一项, 而且可以不用保留任何推理输入.
-
-* 量化后的整数类型有两种选择, 分别是`int8`和`uint8`.
-  * 还有`ReLU`的模型会考虑到`uint8`.
-  * 或者需要看CPU/GPU是否对`int8 * uint8`有特殊支持.
 
 
 
 ## Pytorch模型量化
 
+### 量化后端
 
+* 首先, 需要明确模型需要跑在什么架构上, 然后指定后端:
+
+  ```python
+  # x86架构
+  torch.backends.quantized.engine = 'x86'
+  # ARM架构
+  torch.backends.quantized.engine = 'qnnpack'
+  ```
 
 ### 量化分类
 
-* Pytorch中, 根据什么时候开始量化, 可以分为以下类型:
-  * Post Training Quantization (PTQ): 在训练结束之后再开始量化, 模型训练时不知道有量化这回事.
-  * Quantization-Aware Training (QAT): 模型训练时, 会考虑到自己的输入/输出是`int`类型, 并进行特殊优化.
-* 根据Pytorch的执行模式, 量化也可以分为三种模式:
-  * Eager Mode Quantization.
-  * FX Graph Mode Quantization.
-  * Pytorch 2 Export Quantization.
+* 量化大体上可以分为两类:
 
-### 量化后端
+  * Post Training Quant: 训练结束后, 将模型进行量化.
+  * Quant-Aware Training: 量化参数会作为可学习参数, 让模型进行训练.
 
-可以通过`torch.backends.quantized.supported_engines`查看. 一般来说分为三种引擎:
+* Pytorch中, 有两种执行模式, 分别是Eager Mode和FX Graph Mode, 两种执行模式下量化的实现方式不同.
 
-* `fbgemm`: `x86`机器上的引擎.
-* `qnnpack`: `ARM`机器上的引擎, 可适配移动端.
-* `TensorRT/cuDNN`: GPU上的引擎.
+  * 如果需要用FX Graph Mode, 模型需要满足`symbolic traceable`, 判定条件是下面的代码不会出现异常:
+
+    ```python
+    import torch
+    traced_model = torch.fx.symbolic_trace(model)
+    ```
+
+    * `einops`中的`Rearrange, rearrange`操作不满足`symbolic traceable`, 可以用`torch`的原生操作`permute`或者`view`代替.
+    * 一般来说, 不含控制流的模型都可以满足`symbolic traceable`, 例如CV类模型.
+
+### Observer
+
+* Observer是一种算法, 用于根据观测到的浮点数据调整量化参数.
+
+  * pytorch中是: `torch.ao.quantization.observer`.
+
+* Observer是一个类, 其中常用的参数是:
+
+  * `dtype`: 量化的数据类型, 默认是`torch.quint8`.
+
+  * `quant_min`: 指定量化后数据的最小值, 默认是`None`, 表示使用0.
+
+  * `quant_max`: 指定量化后数据的最大值, 默认是`None`, 表示使用255 (`torch.quint8`的最大值).
+
+  * `qscheme`: 用来指定量化的类型和粒度, 常用的有如下几个:
+
+    * `torch.per_tensor_affine`
+    * `torch.per_channel_affine`
+    * `torch.per_tensor_symmetric`
+    * `torch.per_channel_symmetric`
+
+  * `reduce_range`: 是一个`bool`值, 如果是`True`, 那么会在原来的量化范围下进行缩减, 具体看下表:
+
+    | 类型                   | `quant_min` | `quant_max` |
+    | ---------------------- | ----------- | ----------- |
+    | `qint8`                | -128        | 127         |
+    | `qint8 reduced range`  | -64         | 63          |
+    | `quint8`               | 0           | 255         |
+    | `quint8 reduced range` | 0           | 127         |
+
+    
+
+* Activation常用的Observer:
+
+  * Activation一般使用`torch.quint8`类型.
+  * Activation一般采用`torch.per_tensor_affine`量化.
+  * `HistogramObserver`: 会采用一个直方图记录Activation的分布情况, 并且根据分布情况计算出最合适的`scale`和`zero point`.
+
+* Weights常用的Observer:
+
+  * Weights一般使用`torch.int8`类型.
+  * Activation一般采用`torch.per_channel_symmetric`量化.
+  * Weights可以直接采用封装好的Observer: `torch.ao.quantization.default_fused_per_channel_wt_fake_quant`来调试.
 
 
 
-### FX Graph Mode Quantization
 
-* 首先, 需要检测模型是否满足`symbolic traceable`, 只有满足条件才能继续.
+### FakeQuantize
+
+* `FakeQuantize`是一个模块, 用来模拟量化和反量化的操作:
+
+  * 这个模块在: `torch.ao.quantization.fake_quantize`中.
+
+  * 这个模块的运算是:
+
+    ```txt
+    x_out = ( 
+    	clamp( 
+    		round( x / scale + zero_point ), quant_min, quant_max
+    	) - zero_point
+    ) * scale
+    ```
+
+* `FakeQuantize`也是一个类, 最常用的参数是`observer`, 用来指定需要用到的`Observer`类.
+
+### QConfig/QConfigMapping
+
+* `QConfig`用来配置Activation和Weights所用到的FakeQuantize类.
+
+  * `QConfig`在`torch.ao.quantization`中.
+  * `QConfig`有`weight`和`activation`两个参数, 用来指定对应的FakeQuantize类.
+
+* `QConfigMapping`用来将模型不同模块映射到不同的`QConfig`.
 
   ```python
-  import torch
-  
-  # 调用这个函数, 如果没有异常, 就是symbolic traceable
-  traced_model = torch.fx.symbolic_trace(model)
+  # 对模型所有模块用一个QConfig
+  qconfig_mapping = QConfigMapping().set_global(global_qconfig)
   ```
 
-* 
 
+### Post Training Quant
 
-
-
+#### FX Graph Mode
 
 ```python
-import copy
-
 import torch
-import torch.nn as nn
-import torch.nn.init as init
-from torch.quantization import quantize_fx
+from tqdm import tqdm
+from torchinfo import summary
+from torch.ao.quantization import QConfig, QConfigMapping
+from torch.ao.quantization.fake_quantize import FakeQuantize
+from torch.ao.quantization.observer import HistogramObserver
+from torch.ao.quantization.quantize_fx import prepare_fx, convert_fx
+from torch.profiler import profile, record_function, ProfilerActivity
 
-if __name__ == "__main__":
 
-	# Define Simple Model
-	net = nn.Sequential(
-		nn.Linear(784, 256),
-		nn.ReLU(),
-		nn.Linear(256, 10)
-	)
+def calibration(dataset, model):
+	logger.info('FX static calibration...')
+	with torch.inference_mode():
+    # 选取一些典型的input, 放到这里进行推理
+		for i in tqdm(range(20)):
+			data, target = dataset.signal_list[i], dataset.target_list[i]
+			data = data.unsqueeze(0)
+			output = model(data)
 
-	# Init parameter
-	for layer in net:
-		if isinstance(layer, nn.Linear):
-			init.xavier_uniform_(layer.weight)
-			if layer.bias is not None:
-				init.zeros_(layer.bias)
+# 测试模型性能
+def evaluate_performance(model):
+	torch.set_num_threads(1)
+	example_input = torch.randn(1, 8, 500)
+	with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
+		with record_function("model_inference"):
+			model(example_input)
+  # 函数会打印模型的CPU time
+	print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
-	# Quantize
-	net.eval()
-	# 用于prepare_fx中确定输入tensor的shape
-	example_input = torch.randn(1, 784)
-	torch.backends.quantized.engine = 'qnnpack'
-	qconfig_dict = {"": torch.quantization.default_dynamic_qconfig}
-  
-  # 输入example_input的原因是: Pytorch需要构建FX Graph
-	prepared_net = quantize_fx.prepare_fx(net, qconfig_dict, example_input)
-	quantized_net = quantize_fx.convert_fx(prepared_net)
 
-	# Inference
-	quantized_net.eval()
-	input_data = torch.randn(1, 784)
-	with torch.no_grad():
-		output = net(input_data)
-		q_output = quantized_net(input_data)
-		print(output)
-		print(q_output)
+# 指定量化的后端
+torch.backends.quantized.engine = 'qnnpack'
 
+# Activation的量化配置
+act_fake_quant = FakeQuantize.with_args(observer=HistogramObserver.with_args(
+	reduce_range=False,
+	dtype=torch.quint8, quant_min=0, quant_max=255,
+	qscheme=torch.per_tensor_affine,
+))
+
+# Weight的量化配置
+wt_fake_quant = torch.ao.quantization.default_fused_per_channel_wt_fake_quant
+
+# 构建QConfigMapping
+global_qconfig = QConfig(
+	activation=act_fake_quant, weight=wt_fake_quant
+)
+qconfig_mapping = QConfigMapping().set_global(global_qconfig)
+
+example_input = torch.randn(1, 8, 500)
+fake_quant_model = prepare_fx(model, qconfig_mapping, (example_input,))
+
+dataset = Benchmark()
+
+# Calibration确定量化参数
+calibration(dataset, fake_quant_model)
+
+# 将Fake Quantized模型转换为真实的int8模型
+quant_model = convert_fx(fake_quant_model)
+torch.save(quant_model.state_dict(), 'model/fx_static_model.pth')
+
+logger.info('Evaluating PTQ FX Mode Static Quant...')
+
+# 测试量化后模型的准确率和推理时间
+evaluate_performance(quant_model)
+evaluate_accuracy(quant_model, dataset)
+
+```
+
+
+
+#### Eager Mode
+
+
+
+### Quant-Aware Training
+
+#### FX Graph Mode
+
+```python
+import torch
+from tqdm import tqdm
+from torchinfo import summary
+from torch.ao.quantization import QConfig, QConfigMapping
+from torch.ao.quantization.quantize_fx import prepare_fx, convert_fx, prepare_qat_fx
+from torch.profiler import profile, record_function, ProfilerActivity
+from torch.ao.quantization.observer import HistogramObserver, PerChannelMinMaxObserver
+from torch.ao.quantization._learnable_fake_quantize import _LearnableFakeQuantize as LearnableFakeQuantize
+
+
+# 设置后端
+torch.backends.quantized.engine = 'qnnpack'
+# 利用
+act_learnable = lambda range: LearnableFakeQuantize.with_args(
+		observer=HistogramObserver,
+		quant_min=0,
+		quant_max=255,
+		dtype=torch.quint8,
+		qscheme=torch.per_tensor_affine,
+		scale=range / 255.0,
+		zero_point=0.0,
+		use_grad_scaling=True,
+)
+# Weight中如果有Conv2d, 那么这个模块就有channel, 用per channel
+wt_learnable = lambda channels: LearnableFakeQuantize.with_args(
+		observer=PerChannelMinMaxObserver,
+		quant_min=-128,
+		quant_max=127,
+		dtype=torch.qint8,
+		qscheme=torch.per_channel_symmetric,
+		scale=0.1,
+		zero_point=0.0,
+		use_grad_scaling=True,
+		channel_len=channels,
+)
+
+# 全局的一些量化配置
+act_fake_quant = LearnableFakeQuantize.with_args(observer=HistogramObserver.with_args(
+	reduce_range=False,
+	dtype=torch.quint8, quant_min=0, quant_max=255,
+	qscheme=torch.per_tensor_affine,
+))
+wt_fake_quant = torch.ao.quantization.default_fused_per_channel_wt_fake_quant
+global_qconfig = QConfig(
+	activation=act_fake_quant, weight=wt_fake_quant
+)
+qconfig_mapping = QConfigMapping().set_global(global_qconfig)
+
+# 给卷积模块设置activation和weight的LearnableFakeQuantize
+for name, module in model.named_modules():
+	if hasattr(module, 'out_channels'):
+		qconfig = torch.quantization.QConfig(
+			activation=act_learnable(range=2),
+			weight=wt_learnable(channels=module.out_channels)
+		)
+		qconfig_mapping.set_module_name(name, qconfig)
+
+example_input = torch.randn(1, 8, 500)
+qat_model = prepare_qat_fx(model, qconfig_mapping, (example_input,))
+
+# Training on qat_model
+trainer = Trainer(qat_model)
+qat_model = trainer.start_train()
+
+# Convert it to true model
+quant_model = convert_fx(qat_model)
+logger.info('Saving Quant Model...')
+torch.save(quant_model.state_dict(), 'model/qat_model.pth')
+
+dataset = Benchmark()
+logger.info('Evaluating QAT Quant...')
+evaluate_performance(quant_model)
+evaluate_accuracy(quant_model, dataset)
 ```
 
 
 
 
 
-
-
-### 量化方式选择标准
-
-> Static Quant vs. Dynamic Quant ?
-
-* 这个主要看模型数据的特性:
-  * Dynamic Quant适合数据具有控制流特性的模型, 例如语言, NLP模型及其对应的算子(`nn.RNN`, `nn.LSTM`等).
-  * Static Quant适合数据不具有控制流特性, 但是分布较稳定的模型, 例如图片, CV类模型(`nn.Conv`).
-    * 这个也解释了为什么`nn.Conv`不能用Dynamic Quant.
-
-
+#### Eager Mode
 
