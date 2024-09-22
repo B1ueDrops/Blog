@@ -1,6 +1,6 @@
 ---
-title: 用两个指标深度理解数据增广
-categories: AI技术
+title: 理解数据增广的本质
+categories: AI-HPC
 mathjax: true
 ---
 

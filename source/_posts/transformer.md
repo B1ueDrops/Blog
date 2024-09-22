@@ -1,6 +1,6 @@
 ---
 title: Transformer的工作原理
-categories: AI技术
+categories: AI-HPC
 mathjax: true
 ---
 

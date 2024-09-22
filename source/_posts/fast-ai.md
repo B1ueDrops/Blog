@@ -1,6 +1,6 @@
 ---
 title: 推理加速相关的评价指标
-categories: AI技术
+categories: AI-HPC
 ---
 
 

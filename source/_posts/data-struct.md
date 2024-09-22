@@ -1,5 +1,5 @@
 ---
-title: 数据结构
+title: 数据结构系列
 categories: 算法
 mathjax: true
 ---
@@ -8,53 +8,7 @@ mathjax: true
 
 ## 栈/单调栈
 
-### 用数组模拟栈
-
-> https://www.acwing.com/problem/content/description/
-
-```cpp
-#include <iostream>
-
-using namespace std;
-
-const int N = 100010;
-
-int tt = -1;
-int stk[N];
-
-int main() {
-
-    int m;
-    cin >> m;
-
-    while (m --) {
-
-        string op;
-        cin >> op;
-
-        if (op == "push") {
-            int x;
-            cin >> x;
-            stk[++ tt] = x;
-        }
-        else if (op == "pop") {
-            -- tt;
-        }
-        else if (op == "empty") {
-            if (tt < 0) puts("YES");
-            else puts("NO");
-        }
-        else {
-            printf("%d\n", stk[tt]);
-        }
-    }
-    return 0;
-}
-```
-
-
-
-### 表达式求值
+### 用栈计算表达式
 
 > https://www.acwing.com/problem/content/description/3305/
 >
@@ -136,7 +90,7 @@ int main()
 }
 ```
 
-### 包含min函数的栈
+### 单调栈
 
 > https://www.acwing.com/problem/content/90/
 
@@ -185,45 +139,45 @@ public:
 
 ## 队列
 
-### 单调队列模板
+
+
+### 单调队列
 
 > https://www.acwing.com/problem/content/156/
+
+* 单调队列需要满足如下几个性质:
+  * 插入元素后, 其中的元素从队头弹出的顺序按照某个函数递增/递减.
+* 
 
 ```cpp
 #include <iostream>
 
 using namespace std;
-
-const int N = 1000010;
-
-int n, k;
+const int N = 100010;
+int n, k, a[N];
 int hh = 0, tt = -1;
-int a[N], q[N];
+int q[N];
 
 int main() {
 
-    cin >> n >> k;
-    for (int i = 0; i < n; i ++) cin >> a[i];
+	cin >> n >> k;
+	for (int i = 0; i < n; i ++) cin >> a[i];
 
-    // min value
-    for (int i = 0; i < n; i ++) {
-        if (i - k + 1 > q[hh]) hh ++;
-        while (hh <= tt && a[q[tt]] >= a[i]) tt --;
-        q[ ++ tt ] = i;
-        if (i - k + 1 >= 0) printf("%d ", a[q[hh]]);
-    }
-
-    puts("");
-    hh = 0, tt = -1;
-
-    // max value
-    for (int i = 0; i < n; i ++) {
-        if (i - k + 1 > q[hh]) hh ++;
-        while (hh <= tt && a[q[tt]] <= a[i]) tt --;
-        q[ ++ tt ] = i;
-        if (i - k + 1 >= 0) printf("%d ", a[q[hh]]);
-    }
-    return 0;
+	for (int i = 0; i < n; i ++) {
+		if (i - k + 1 > q[hh]) hh ++;
+		while (hh <= tt && a[i] <= a[q[tt]]) tt --;
+		q[ ++ tt] = i;
+		if (i - k + 1 >= 0) cout << a[q[hh]] << ' ';
+	}
+	hh = 0, tt = -1;
+	cout << endl;
+	for (int i = 0; i < n; i ++) {
+		if (i - k + 1 > q[hh]) hh ++;
+		while (hh <= tt && a[i] >= a[q[tt]]) tt --;
+		q[ ++ tt] = i;
+		if (i - k + 1 >= 0) cout << a[q[hh]] << ' ';
+	}
+	return 0;
 }
 ```
 

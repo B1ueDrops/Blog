@@ -1,6 +1,6 @@
 ---
 title: Pytorch的前后端架构
-categories: AI技术
+categories: AI-HPC
 mathjax: true
 ---
 

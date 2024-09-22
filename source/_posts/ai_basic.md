@@ -1,6 +1,6 @@
 ---
-title: Pytorch构建模型的基础知识
-categories: AI技术
+title: 构建AI模型理论与实战
+categories: AI-HPC
 mathjax: true
 ---
 

@@ -1,8 +1,16 @@
 ---
 title: 模型量化的理论和实战
-categories: AI技术
+categories: AI-HPC
 mathjax: true
 ---
+
+
+
+## 模型量化的理论基础
+
+
+
+
 
 
 
@@ -284,3 +292,32 @@ evaluate_accuracy(quant_model, dataset)
 
 #### Eager Mode
 
+
+
+## Pytorch量化的一些问题
+
+> 在卷积等操作中, 会出现相乘再相加这种情况, 如果若干个`int8`相乘相加, 可能会爆`int8`, 怎么办?
+
+* 用`int32`来存储中间结果.
+* 最后再通过`Requantize`这个操作, 将`int32`转为`int8`.
+
+
+
+> 量化涉及到哪些计算图层面的优化?
+
+* 在可量化的算子序列前后插入了`Quantize`和`Dequantize`模块.
+* 可量化的算子序列中, 有可能会出现算子融合.
+
+
+
+> 量化后的`int8`模型总会带来推理速度的提升吗?
+
+* 不一定, `Quantize`和`Dequantize`模块插入过多, 会对量化造成影响.
+* 如果可量化的算子比较分散, 那么`Quantize`和`Dequantize`会过多, 可能推理速度会下降.
+
+
+
+> 量化后的`int8`模型的精度下降太多, 可能有哪些原因? 怎么改进?
+
+* Calibration的数据集不够具有代表性.
+* 某些浮点算子不应该被量化, 例如`softmax`函数.

@@ -1,6 +1,6 @@
 ---
 title: 理解程序运行的时间
-categories: AI技术
+categories: AI-HPC
 mathjax: true
 ---
 

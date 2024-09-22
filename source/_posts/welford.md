@@ -1,6 +1,6 @@
 ---
 title: Welford算法计算方差
-categories: AI技术
+categories: AI-HPC
 mathjax: true
 ---
 
