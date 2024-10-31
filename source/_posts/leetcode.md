@@ -887,6 +887,41 @@ public:
 
 
 
+## 72. *编辑距离(medium)
+
+> https://leetcode.cn/problems/edit-distance/description/
+
+* 假设`f[i][j]`表示从`word1[1:i]`转换为`word2[1:j]`的最小编辑次数, 针对`word1[i]`的操作, 状态转移分为三种情况:
+  * 增加`word1[i]`: 那么就要求`word[1:i]`和`word2[1:j-1]`匹配.
+  * 删除`word1[i]`: 要求`word[1:i-1]`和`word2[1:j]`匹配
+  * 替换`word1[i]`: 要求`word[1:i-1]`和`word2[1:j-1]`匹配, 并且`word1[i] == word2[j]`.
+    * 如果`word1[i] == word2[j]`, 那么就可以直接从`f[i - 1][j - 1]`转移.
+* 注意初始化`f[i][0]`和`f[0][i]`为`i`.
+
+```cpp
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int n = word1.size(), m = word2.size();
+        word1 = ' ' + word1;
+        word2 = ' ' + word2;
+        vector<vector<int>> f(n + 1, vector<int>(m + 1, 0));
+        for (int i = 0; i <= n; i ++) f[i][0] = i;
+        for (int i = 0; i <= m; i ++) f[0][i] = i;
+
+        for (int i = 1; i <= n; i ++)
+            for (int j = 1; j <= m; j ++) {
+                f[i][j] = min(f[i - 1][j] + 1, f[i][j - 1] + 1);
+                if (word1[i] != word2[j]) f[i][j] = min(f[i][j], f[i - 1][j - 1] + 1);
+                else f[i][j] = min(f[i][j], f[i - 1][j - 1]);
+            }
+        return f[n][m];
+    }
+};
+```
+
+
+
 
 
 ## 73. *矩阵置零(medium)
@@ -2406,6 +2441,35 @@ public:
         int n = up.size() + down.size();
         if (n % 2) return down.top();
         else return (up.top() + down.top()) / 2.0;
+    }
+};
+```
+
+
+
+## 300. *最长递增子序列(medium)
+
+* 最长上升子序列模型.
+* 注意一点, `q`数组的长度要初始化成`n + 1`, 因为最长上升子序列的长度最小值就是1, 没有0, 避免出现下标问题 (因为长度值要作为下标).
+
+```cpp
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> q(n + 1);
+        int len = 0;
+        for (int i = 0; i < n; i ++) {
+            int l = 0, r = len;
+            while (l < r) {
+                int mid = l + (r - l) / 2 + 1;
+                if (q[mid] < nums[i]) l = mid;
+                else r = mid - 1;
+            }
+            len = max(len, r + 1);
+            q[r + 1] = nums[i];
+        }
+        return len;
     }
 };
 ```
