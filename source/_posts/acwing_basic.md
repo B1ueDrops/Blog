@@ -4,9 +4,233 @@ categories: 算法
 mathjax: true
 ---
 
+[toc]
+
+
+
 
 
 ## 动态规划
+
+### 背包问题
+
+#### 01背包问题
+
+> https://www.acwing.com/problem/content/2/
+
+01背包问题是指一个背包只能是选/不选.
+
+状态表示: $f(i, j)$: 只考虑前$i$个物品, 总体积是$j$的情况下, 总重量的最大值.
+
+状态计算:
+
+* 不选第$i$个物品: $f(i, j) = f(i - 1, j)$
+* 选第$i$个物品: $f(i, j) = f(i - 1, j - v[i]) + w[i]$
+
+那么状态转移是: $f(i, j) = max(f(i-1, j), f(i-1, j-v[i]) + w[i])$
+
+初始化: $f(0, 0) = 0$.
+
+时间复杂度是$O(nm)$, 其中$n$是物品个数, $m$是物品体积.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 1010;
+
+int n, m, f[N];
+
+int main() {
+    
+    cin >> n >> m;
+    for (int i = 1; i <= n; i ++) {
+        int v, w;
+        cin >> v >> w;
+        for (int j = m; j >= v; j --)
+            f[j] = max(f[j], f[j - v] + w);
+    }
+    cout << f[m] << endl;
+    return 0;
+}
+```
+
+
+
+#### 完全背包问题
+
+> https://www.acwing.com/problem/content/3/
+
+完全背包问题是指, 一个背包可以选任意多个.
+
+状态表示: $f(i, j)$, 只从前$i$个物品中选, 总体积不超过$j$的方案的集合.
+
+状态计算:
+
+* 不选: $f(i-1, j)$
+* 选一个: $f(i-1, j-v) + w$
+* 选两个: $f(i-1, j-2v) + 2w$
+* ....
+
+$f(i, j)$就是上述所有状态取一个max.
+
+优化: 观察如下两个等式:
+
+```
+f[i][j] =   max(f[i-1][j], f[i-1][j-v]+w, f[i-1][j-2v]+2w, ...)
+f[i][j-v] = max(           f[i-1][j-v],   f[i-1][j-2v]+w,  ...)
+```
+
+因此, $f(i, j) = max(f(i-1, j), f(i, j - v)+w)$
+
+时间复杂度还是$O(nm)$.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 1010;
+
+int n, m, f[N];
+
+int main() {
+    
+    int n, m;
+    cin >> n >> m;
+    for (int i = 1; i <= n; i ++) {
+        int v, w;
+        cin >> v >> w;
+        for (int j = v; j <= m; j ++)
+            f[j] = max(f[j], f[j - v] + w);
+    }
+    cout << f[m] << endl;
+    return 0;
+}
+```
+
+
+
+#### 多重背包问题
+
+> https://www.acwing.com/problem/content/4/
+
+* 朴素做法: 枚举物品, 体积和每个物品选的次数.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 110;
+
+int n, m, f[N][N];
+
+int main() {
+    
+    cin >> n >> m;
+    for (int i = 1; i <= n; i ++) {
+        int v, w, s;
+        cin >> v >> w >> s;
+        for (int j = 0; j <= m; j ++) {
+            for (int k = 0; k <= s && k * v <= j; k ++)
+                f[i][j] = max(f[i][j], f[i - 1][j - k * v] + k * w);
+        }
+    }
+    cout << f[n][m] << endl;
+    return 0;
+}
+```
+
+
+
+#### 多重背包问题II
+
+> https://www.acwing.com/problem/content/5/
+
+对于一个具体的背包, 假设它的个数是$s$.
+
+那么, 这个$s$可以被不同的2的整数次幂进行表示, 也就是说$s = c_0 \times 2^{0} + c_1 \times 2^1 + ...$, 其中系数$c_0, c_1, ... \in \{0, 1\}$
+
+那么, 我如果把这$s$个背包, 按照每2的整数幂进行一次打包, 那么完全背包问题就转化为了01背包问题.
+
+时间复杂度是$O(nmlog(s))$
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 3010;
+
+int n, m, f[N];
+
+int main() {
+    
+    cin >> n >> m;
+    for (int i = 1; i <= n; i ++) {
+        int v, w, s;
+        cin >> v >> w >> s;
+        for (int k = 1; k <= s; k *= 2) {
+            for (int j = m; j >= k * v; j --)
+                f[j] = max(f[j], f[j - k * v] + k * w);
+            s -= k;
+        }
+        if (s) {
+            for (int j = m; j >= s * v; j --)
+                f[j] = max(f[j], f[j - s * v] + s * w);
+        }
+    }
+    cout << f[m] << endl;
+    return 0;
+}
+```
+
+
+
+#### 分组背包问题
+
+> https://www.acwing.com/problem/content/description/9/
+
+在分组背包问题中, 不再有$n$个物品, 而是有$n$组物品, 每组物品中只能选择一个物品.
+
+本质上和01背包问题没有区别, 只是需要枚举一下$n$组物品中, 每一组需要选哪一个.
+
+时间复杂度是$O(nms)$, 其中`s`是一个组中的物品个数.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 110;
+
+int n, m;
+int v[N][N], w[N][N], s[N];
+int f[N];
+
+int main()
+{
+    cin >> n >> m;
+    
+    for (int i = 1; i <= n; i ++)
+    {
+      	// s[i]表示第i组一共有多少个物体
+        cin >> s[i];
+        for (int j = 0; j < s[i]; j ++)
+            cin >> v[i][j] >> w[i][j];
+    }
+    
+    for (int i = 1; i <= n; i ++)
+    {
+        for (int j = m; j >= 0; j --)
+        {
+            // 注意, 这里k一定要从0开始
+            for (int k = 0; k < s[i]; k ++)
+            {
+                if (j >= v[i][k])
+                    f[j] = max(f[j], f[j - v[i][k]] + w[i][k]);
+            }
+        }
+    }
+    
+    cout << f[m] << endl;
+    return 0;
+}
+```
 
 
 
@@ -87,6 +311,8 @@ int main() {
     return 0;
 }
 ```
+
+
 
 
 
