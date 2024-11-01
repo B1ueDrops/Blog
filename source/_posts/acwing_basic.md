@@ -314,6 +314,42 @@ int main() {
 
 
 
+#### 最长公共子序列
+
+> https://www.acwing.com/problem/content/description/899/
+
+* 设`f[i][j]`表示`a[1:i]`, `b[1:j]`中所有公共子序列中长度的最大值.
+* 那么`f[i][j]`可以由两种状态转移:
+  * `a[i] == b[j]`, 那么`f[i][j] = f[i - 1][j - 1] + 1`.
+  * `a[i] != b[j]`, 那么`f[i][j] = max(f[i - 1][j], f[i][j - 1])`.
+    * 这种情况就是子序列中选`a[i]`还是选`b[j]`, 这两部分可能有重叠, 但是对于最大值来讲无妨.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 1010;
+
+int n, m, f[N][N];
+char a[N], b[N];
+
+int main() {
+    
+    cin >> n >> m >> a + 1 >> b + 1;
+    
+    for (int i = 1; i <= n; i ++)
+        for (int j = 1; j <= m; j ++) {
+            if (a[i] == b[j])
+                f[i][j] = f[i - 1][j - 1] + 1;
+            else
+                f[i][j] = max(f[i - 1][j], f[i][j - 1]);
+        }
+    cout << f[n][m] << endl;
+    return 0;
+}
+```
+
+
+
 
 
 #### 最短编辑距离

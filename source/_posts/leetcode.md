@@ -864,6 +864,62 @@ public:
 
 
 
+## 62. *不同路径(medium)
+
+> https://leetcode.cn/problems/word-break/
+
+* 注意这里是问的路径数量, 而不是路径长度, 状态转移方程是: `f[i][j] += f[i - 1][j]`.
+
+```cpp
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        vector<vector<int>> f(m, vector<int>(n, 0));
+        for (int i = 0; i < m; i ++) {
+            for (int j = 0; j < n; j ++) {
+                if (!i && !j) f[i][j] = 1;
+                else {
+                    if (i) f[i][j] += f[i - 1][j];
+                    if (j) f[i][j] += f[i][j - 1];
+                }
+            }
+        }
+        return f[m - 1][n - 1];
+    }
+};
+```
+
+
+
+## 64. *最小路径和(medium)
+
+* 注意: 如果DP要求最小值, 需要把`f`中的所有值都设置成最大 (除了初始位置).
+
+```cpp
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int n = grid.size(), m = grid[0].size();
+        vector<vector<int>> f(n, vector<int>(m, 0x3f3f3f3f));
+
+        for (int i = 0; i < n; i ++) {
+            for (int j = 0; j < m; j ++) {
+                if (!i && !j) f[i][j] = grid[i][j];
+                else {
+                    if (i) f[i][j] = min(f[i][j], f[i - 1][j] + grid[i][j]);
+                    if (j) f[i][j] = min(f[i][j], f[i][j - 1] + grid[i][j]);
+                }
+            }
+        }
+        return f[n - 1][m - 1];
+    }
+};
+```
+
+
+
+
+
 ## 70. *爬楼梯 (easy)
 
 * 注意: 需要考虑Fib数列的值是否会爆`int`.
@@ -977,7 +1033,7 @@ public:
 
 
 
-## 74. 搜索二维矩阵
+## 74. *搜索二维矩阵(medium)
 
 * 二维矩阵和一维数组没有什么区别, 一位数组的下标`idx`分别除以/模矩阵列数就是在矩阵中的坐标`(idx / m, idx % m)`.
 
@@ -995,6 +1051,31 @@ public:
             else r = mid;
         }
         return matrix[l / m][l % m] == target;
+    }
+};
+```
+
+
+
+## 75. *颜色分类(medium)
+
+* 维护三个指针`i, j, k`:
+  * `[0, i]`处, 保证元素全是0.
+  * `[i+1, j]`处, 保证元素全是1.
+  * `[k, nums.size() - 1]`处, 保证元素全是2.
+
+```cpp
+class Solution {
+public:
+    void sortColors(vector<int>& nums) {
+        int i = 0, j = 0, k = nums.size() - 1;
+        while (j <= k) {
+          	// 如果新元素是0, 那么需要交换到[0, i]领域
+          	// 注意, nums[i]一定是1, 因为j一定遍历过i的领域, 如果是2早就交换到后面了.
+            if (nums[j] == 0) swap(nums[i ++], nums[j ++]);
+            else if (nums[j] == 1) j ++;
+            else if (nums[j] == 2) swap(nums[j], nums[k --]);
+        }
     }
 };
 ```
@@ -1577,6 +1658,62 @@ public:
 
 
 
+## 136. *只出现一次的数字(easy)
+
+* 直接对数组中所有元素进行异或就可以.
+
+```cpp
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+       int ans = 0;
+       for (auto x: nums) ans = ans ^ x;
+       return ans; 
+    }
+};
+```
+
+
+
+## 139. *单词拆分(medium)
+
+* 设`f[i]`表示以`s[i]`结尾, 是否存在划分方式.
+* 那么假设`k < i`, 并且`s[k:i]`是在字典中出现的, 那么`f[i] = f[k - 1]`.
+  * 如果要判断`s[k:i]`是否在字典中出现过, 可以用字符串哈希, 做到$O(1)$的时间复杂度.
+
+```cpp
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        const int P = 131;
+        typedef unsigned long long ULL;
+        unordered_set<ULL> hash;
+
+        for (auto &word: wordDict) {
+            ULL h = 0;
+            for (auto c : word) h = h * P + c;
+            hash.insert(h);
+        }
+        int n = s.size();
+        vector<bool> f(n + 1);
+        s = ' ' + s;
+        f[0] = true;
+        for (int i = 0; i < n; i ++) {
+            if (!f[i]) continue;
+            ULL h = 0;
+          // 枚举f[i]能更新到哪个位置
+            for (int j = i + 1; j <= n; j ++) {
+                h = h * P + s[j];
+                if (hash.count(h)) f[j] = true;
+            }
+        }
+        return f[n];
+    }
+};
+```
+
+
+
 
 
 ## 138. *随机链表的复制
@@ -1653,14 +1790,6 @@ public:
   * 然后快指针和慢指针同时向后移动一次, 最终相遇点就是环的入口.
 
 ```cpp
-/**
- * Definition for singly-linked list.
- * struct ListNode {
- *     int val;
- *     ListNode *next;
- *     ListNode(int x) : val(x), next(NULL) {}
- * };
- */
 class Solution {
 public:
     ListNode *detectCycle(ListNode *head) {
@@ -1808,6 +1937,84 @@ public:
 
 
 
+## 148. *排序链表(medium)
+
+> https://leetcode.cn/problems/sort-list/
+
+* 如果要求空间复杂度是常数, 那么只能用非递归的归并排序.
+
+```cpp
+class Solution {
+public:
+    ListNode* sortList(ListNode* head) {
+       // 统计链表节点数目
+       int n = 0;
+       for (auto p = head; p ; p = p->next) n ++;
+
+       // 第一层枚举两个归并区间中每个区间的长度
+       // 一共做n-1层, 最终合并到n个元素
+       for (int i = 1; i < n; i *= 2) {
+            auto dummy = new ListNode(-1), cur = dummy;
+            // 第二层以枚举由所有的两个归并区间
+            for (int j = 1; j <= n; j += i * 2) {
+                // head存储归并区间开头
+                auto p = head, q = p;
+                // 把q放到下一个归并区间开头, 归并区间长度很可能不足i
+                for (int k = 0; k < i && q; k ++) q = q->next;
+                // o存储下一个归并区间的开头, 方便更新head
+                auto o = q;
+                for (int k = 0; k < i && o; k ++) o = o->next;
+                int l = 0, r = 0;
+                while (l < i && r < i && p && q)
+                    if (p->val <= q->val) cur = cur->next = p, p = p->next, l ++;
+                    else cur = cur->next = q, q = q->next, r ++;
+                while (l < i && p) cur = cur->next = p, p = p->next, l ++;
+                while (r < i && q) cur = cur->next = q, q = q->next, r ++;
+                head = o;
+            }
+            // 做完一层, 最后的节点next是NULL
+            cur->next = NULL;
+            head = dummy->next;
+       }
+       return head;
+    }
+};
+
+```
+
+
+
+
+
+## 152. *乘积最大子数组(medium)
+
+> https://leetcode.cn/problems/maximum-product-subarray/
+
+* 设`f[i]`, `g[i]`分别表示以`i`结尾的, 连续子数组乘积的最大值和最小值.
+  * 存储最小值的原因是因为乘法具有负负得正的特性.
+* 那么`f[i] = max(nums[i], f[i - 1] * nums[i], g[i - 1] * nums[i])`.
+* 并且`g[i] = min(nums[i], f[i - 1] * nums[i], g[i - 1] * nums[i])`
+
+```cpp
+class Solution {
+public:
+    int maxProduct(vector<int>& nums) {
+        int ans = nums[0], f = nums[0], g = nums[0];
+        for (int i = 1; i < nums.size(); i ++) {
+            int fp = f, gp = g;
+            f = max(nums[i], max(nums[i] * fp, nums[i] * gp));
+            g = min(nums[i], min(nums[i] * fp, nums[i] * gp));
+            ans = max(ans, f);
+        }
+        return ans;
+    }
+};
+```
+
+
+
+
+
 ## 153. *寻找旋转排序数组中的最小值(medium)
 
 * 假设数组的第一个元素是`nums[0]`.
@@ -1883,14 +2090,6 @@ public:
   * 当两个指针相同时, 如果不为NULL, 那么就是相遇点, 否则就不是.
 
 ```cpp
-/**
- * Definition for singly-linked list.
- * struct ListNode {
- *     int val;
- *     ListNode *next;
- *     ListNode(int x) : val(x), next(NULL) {}
- * };
- */
 class Solution {
 public:
     ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
@@ -1906,6 +2105,28 @@ public:
         return cur1;
     }
 };
+```
+
+
+
+## 169. *多数元素(easy)
+
+* 摩尔投票算法: 使用$O(n)$时间复杂度, $O(1)$的空间复杂度, 找到一个数组中的众数:
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int r = 0, c = 0;
+        for (auto x : nums) {
+            if (!c) r = x;
+            if (r == x) c ++;
+            else c --;
+        }
+        return r;
+    }
+};
+
 ```
 
 
@@ -2384,6 +2605,29 @@ public:
 
 
 
+## 279. *完全平方数(medium)
+
+> https://leetcode.cn/problems/perfect-squares/
+
+* 设`f[i]`表示能够拼凑出`i`的方案中, 完全平方数个数的最小值.
+
+```cpp
+class Solution {
+public:
+    int numSquares(int x) {
+        int n = sqrt(x);
+        vector<int> f(x + 1, 0x3f3f3f3f);
+        f[0] = 0;
+        for (int i = 1; i <= x; i ++) {
+            for (int j = 1; j * j <= i; j ++) {
+                f[i] = min(f[i], f[i - j * j] + 1);
+            }
+        }
+        return f[x];
+    }
+};
+```
+
 
 
 ## 283. *移动0(medium)
@@ -2400,6 +2644,37 @@ public:
     }
 };
 ```
+
+
+
+## 287. *寻找重复数(medium)
+
+* 这个题等价于环型链表找环入口问题.
+* 对于一个`i`, 从`i`向`nums[i]`连一条边.
+* 如果有重复数, 一定存在环:
+  * 首先, 环入口入度为2, 因为`nums[i]`会出现两次, 但是下标不同.
+  * 其次, 环入口出度为1, 因为`nums[i]`在下标范围.
+
+```cpp
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        int p = nums[0], q = nums[nums[0]];
+        while (p != q) {
+            p = nums[p];
+            q = nums[nums[q]];
+        }
+        p = 0;
+        while (p != q) {
+            p = nums[p];
+            q = nums[q];
+        }
+        return p;
+    }
+};
+```
+
+
 
 
 
@@ -2476,6 +2751,34 @@ public:
 
 
 
+## 322. *零钱兑换(medium)
+
+> https://leetcode.cn/problems/coin-change/
+
+* 设`f[i][j]`表示从前`i`个硬币中选, 正好能凑成`amount`的方案中, 最少的硬币数量.
+* 然后用完全背包问题即可解决.
+
+```cpp
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        int n = coins.size(), m = amount;
+        vector<int> f(m + 1, 0x3f3f3f3f);
+        f[0] = 0;
+
+        for (int i = 0; i < n; i ++) {
+            for (int j = coins[i]; j <= m; j ++) {
+                f[j] = min(f[j], f[j - coins[i]] + 1);
+            }
+        }
+        int ans = f[amount] == 0x3f3f3f3f ? -1 : f[amount];
+        return ans;
+    }
+};
+```
+
+
+
 
 
 ## 347. *前k个高频元素(medium)
@@ -2546,6 +2849,37 @@ public:
     }
 };
 ```
+
+
+
+## 416. *分割等和子集
+
+* 这个题本质上是一个背包问题:
+  * 每一个物品的体积就是`a[i]`.
+  * 总体积是数组和`sum / 2`.
+  * 最终的结果是是否可以满足选的物品体积之和等于`sum / 2`.
+
+```cpp
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int sum = 0, n = nums.size();
+        for (auto x : nums) sum += x;
+        if (sum % 2) return false;
+        sum /= 2;
+
+        vector<int> f(sum + 1);
+        f[0] = 1;
+        for (auto x : nums)
+            for (int j = sum; j >= x; j --) {
+                f[j] |= f[j - x];
+            }
+        return f[sum];
+    }
+};
+```
+
+
 
 
 
@@ -2771,6 +3105,39 @@ public:
                 if (grid[i][j] == 1)
                     return -1;
         return res;
+    }
+};
+```
+
+
+
+## 1143. *最长公共子序列(medium)
+
+> https://leetcode.cn/problems/longest-common-subsequence/description/
+
+* 设`f[i][j]`表示`a[1:i]`, `b[1:j]`中所有公共子序列中长度的最大值.
+* 那么`f[i][j]`可以由两种状态转移:
+  * `a[i] == b[j]`, 那么`f[i][j] = f[i - 1][j - 1] + 1`.
+  * `a[i] != b[j]`, 那么`f[i][j] = max(f[i - 1][j], f[i][j - 1])`.
+    * 这种情况就是子序列中选`a[i]`还是选`b[j]`, 这两部分可能有重叠, 但是对于最大值来讲无妨.
+
+```cpp
+class Solution {
+public:
+    int longestCommonSubsequence(string text1, string text2) {
+        int n = text1.size(), m = text2.size();
+        text1 = ' ' + text1;
+        text2 = ' ' + text2;
+        vector<vector<int>> f(n + 1, vector<int>(m + 1));
+
+        for (int i = 1; i <= n; i ++)
+            for (int j = 1; j <= m; j++) {
+                if (text1[i] == text2[j])
+                    f[i][j] = f[i - 1][j - 1] + 1;
+                else
+                    f[i][j] = max(f[i - 1][j], f[i][j - 1]);
+            }
+        return f[n][m];
     }
 };
 ```
