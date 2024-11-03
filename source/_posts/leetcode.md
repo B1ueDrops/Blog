@@ -9,30 +9,28 @@ categories: 算法
 
 
 
-
 ## 1. *两数之和(easy)
 
-* 哈希表算法
+> https://leetcode.cn/problems/two-sum/
 
-  * 思路: 要遍历一次数组, 判断`target`减去当前值是否在数组中. 遍历时, 用哈希表把之前数组的值的信息保存在哈希表就可以.
+* 最无脑的做法: 遍历两个数的所有可能性, 判断和是否是`target`.
+
+* 如果要优化成$O(n)$的做法, 就需要扫描一边, 扫描的过程中用之前积累的先验知识做.
+
+  * 扫描的时候, 把之前遍历的数据存储到哈希表中, 每次扫描到一个数, 就判断`target - nums[i]`是否在哈希表中.
   * 时间复杂度: $O(n)$
 
   ```cpp
   class Solution {
   public:
       vector<int> twoSum(vector<int>& nums, int target) {
-        vector<int> ans;
-        unordered_map<int, int> hash;
-  
-        for (int i = 0; i < nums.size(); i ++) {
-          if (hash.count(target - nums[i])) {
-              ans.push_back(i);
-              ans.push_back(hash[target - nums[i]]);
-              return ans;
-          }
-          hash[nums[i]] = i;
-        }
-        return ans;
+         vector<int> ans;
+         unordered_map<int, int> hash;
+         for (int i = 0; i < nums.size(); i ++) {
+              if (hash.count(target - nums[i])) return {hash[target - nums[i]], i};
+              hash[nums[i]] = i;
+         }
+         return ans;
       }
   };
   ```
@@ -41,19 +39,20 @@ categories: 算法
 
 ## 2. *两数相加 (easy)
 
-* 两个数位相加后, `t % 10`就是数位的值, 进位的值就是`t / 10`.
+> https://leetcode.cn/problems/add-two-numbers/
+
+* 数位从后向前枚举, 两个数位相加后, `t % 10`就是数位的值, 进位的值就是`t / 10`.
 
 ```cpp
 class Solution {
 public:
     ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
-        auto dummy = new ListNode(-1);
-        auto cur = dummy;
+        auto dummy = new ListNode(-1), cur = dummy;
         int t = 0;
         while (l1 || l2 || t) {
             if (l1) t += l1->val, l1 = l1->next;
             if (l2) t += l2->val, l2 = l2->next;
-            cur = cur->next = new ListNode(t % 10); 
+            cur = cur->next = new ListNode(t % 10);
             t /= 10;
         }
         return dummy->next;
@@ -65,22 +64,25 @@ public:
 
 ## 3. *无重复字符的最长子串(medium)
 
-* 注意: 子串要求元素连续, 子序列不要求连续.
-* 用一个哈希表维护从前到后, 元素出现的次数.
-* 从前到后遍历, 如果发现`hash[s[i]] > 1`, 说明出现了重复字符, 然后就把指针`j`向前移动, 直到没有重复字符, 最后统计子串的长度.
+> https://leetcode.cn/problems/longest-substring-without-repeating-characters/
+
+* 双指针算法的一个pattern在于, 当我遍历时, 移动一个指针`i`时, 我可以借助题目中的某些性质, 让另一个指针`j`不必走某些位置.
+* 在这个题中, 从前到后遍历字符串, 并且统计每一个字符出现的次数`hash[s[i]]`:
+  * 如果`hash[s[i]] > 1`, 证明`[j, i]`范围内的子串出现了重复, 这个时候`j`需要向前移动, 直到`hash[s[i]] == 1`.
+
 
 ```cpp
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-       int res = 0;
-       unordered_map<int, int> hash;
-       for (int i = 0, j = 0; i < s.size(); i ++) {
+        int ans = 0;
+        unordered_map<int, int> hash;
+        for (int i = 0, j = 0; i < s.size(); i ++) {
             hash[s[i]] ++;
             while (j < i && hash[s[i]] > 1) hash[s[j ++]] --;
-            res = max(res, i - j + 1);
-       }
-       return res;
+            ans = max(ans, i - j + 1);
+        }
+        return ans;
     }
 };
 ```
@@ -91,55 +93,60 @@ public:
 
 ## 11. *盛水最多的容器(medium)
 
-* 双指针:
+> https://leetcode.cn/problems/container-with-most-water/
 
-  * 思路: 假设两根棍子`i, j`, 它们之间的盛水量就是`min(height[i], height[j]) * (j - i)`, 只需要枚举`i, j`即可.
-  * 如果`height[i] < height[j]`, 那么只需要`i++`即可, 因为只有棍子变大, 盛水量才能更多, 因此不需要用$O(n^2)$枚举i, j.
+* 思路: 假设两根棍子`i, j`, 它们之间的盛水量就是`min(height[i], height[j]) * (j - i)`.
+* 最无脑的做法: 枚举所有可能的`i, j`.
+* 如果我要让盛水量最大, 我应该移动短板, 也就是当`height[i] <= height[j]`时, 我应该让`i++`才有机会让水量变大.
 
-  ```cpp
-  class Solution {
-  public:
-      int maxArea(vector<int>& height) {
-          int res = 0;
-          for (int i = 0, j = height.size() - 1; i < j; ) {
-              res = max(res, min(height[i], height[j]) * (j - i));
-              if (height[i] < height[j]) i ++;
-              else j --;
-          }
-          return res;
-      }
-  };
-  ```
+```cpp
+class Solution {
+public:
+    int maxArea(vector<int>& h) {
+        int res = 0;
+        for (int i = 0, j = h.size() - 1; i < j; ) {
+            res = max(res, min(h[i], h[j]) * (j - i));
+            if (h[i] <= h[j]) i ++;
+            else j --;
+        }
+        return res;
+    }
+};
+```
 
 
 
 ## 15. *三数之和(medium)
 
-* 双指针.
-* 思路: 首先把数组排序(不要忘), 然后枚举第一个数, 再从后面根据双指针枚举第二个和第三个数.
-* 枚举第二/第三个数时, 数组具有单调性, 第二个指针在前, 第三个指针在后, 根据`nums[i] + nums[l] + nums[r]`和`target`的大小关系前后调整指针即可.
+> https://leetcode.cn/problems/3sum/
+
+* 首先将数组排序.
+* 之后, 从前到后, 枚举数组中的第一个数`nums[i]`.
+  * 然后, 从`i + 1`和`nums.size() - 1`分别枚举第二个数和第三个数, 然后根据三个数的加和调整指针.
+
+* 注意: 数组中可能有重复元素, 需要在枚举每一个指针的过程中去掉重复.
 
 ```cpp
 class Solution {
 public:
     vector<vector<int>> threeSum(vector<int>& nums) {
-       vector<vector<int>> ans;
-       sort(nums.begin(), nums.end());
-       for (int i = 0; i < nums.size(); i ++) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> res;
+        for (int i = 0; i < nums.size(); i ++) {
             if (i && nums[i] == nums[i - 1]) continue;
-            int l = i + 1, r = nums.size() - 1;
-            while (l < r) {
-                int sum = nums[i] + nums[l] + nums[r];
-                if (sum == 0) {
-                    ans.push_back({nums[i], nums[l], nums[r]});
-                    do { l ++; } while (l < r && nums[l] == nums[l - 1]);
-                    do { r --; } while (l < r && nums[r] == nums[r + 1]);
+            int j = i + 1, k = nums.size() - 1;
+            while (j < k) {
+                int sum = nums[i] + nums[j] + nums[k];
+                if (sum < 0) j ++;
+                else if (sum > 0) k --;
+                else {
+                    res.push_back({nums[i], nums[j], nums[k]});
+                    do {j ++;} while (j < k && nums[j] == nums[j - 1]);
+                    do {k --;} while (j < k && nums[k] == nums[k + 1]);
                 }
-                else if (sum < 0) l ++;
-                else r --;
             }
-       }
-       return ans;
+        }
+        return res;
     }
 };
 ```
@@ -148,94 +155,97 @@ public:
 
 ## 17. *电话号码的字母组合(medium)
 
-* 枚举每一个数字对应的字符集选哪一个字符即可.
+> https://leetcode.cn/problems/letter-combinations-of-a-phone-number/
+
+* 搜索顺序是: 对于每一个坑位, 枚举这个坑位上能够放置的所有可能性, 放置之后, 就递归到下一个位置, 注意恢复现场.
+* 注意: 如果输入是空字符串的话, 需要在搜索的时候特判一下, 不要把空的`path`放到`ans`中.
 
 ```cpp
 class Solution {
 public:
-    string str[10] = {
-        "", "", "abc",
-        "def", "ghi", "jkl",
-        "mno", "pqrs", "tuv",
-        "wxyz"
-    };
+    string path;
     vector<string> ans;
-    string path = "";
+    string books[10] = {
+        "", "", "abc", "def",
+        "ghi", "jkl", "mno",
+        "pqrs", "tuv", "wxyz"
+    };
     vector<string> letterCombinations(string digits) {
-        if (digits.size() == 0) return ans;
         dfs(digits, 0);
-        return ans;
+        return ans;    
     }
-    void dfs(string digits, int u) {
-        if (u == digits.size()) {
+    void dfs(string &digits, int u) {
+        if (digits.size() && u == digits.size()) {
             ans.push_back(path);
             return ;
         }
-        for (auto c: str[digits[u] - '0']) {
-            path.push_back(c);
+        for (auto c: books[digits[u] - '0']) {
+            path += c;
             dfs(digits, u + 1);
             path.pop_back();
         }
     }
 };
-
 ```
-
-
 
 
 
 ## 19. *删除链表的倒数第n个节点(medium)
 
-* 首先, 链表头可能被删除, 需要虚拟头节点.
+> https://leetcode.cn/problems/remove-nth-node-from-end-of-list/
 
-* 假设链表一共有`N`个节点:
-  * 倒数第n个节点, 就是正数第`N - n + 1`个节点, 那么从虚拟头节点跳到这里, 需要跳`N - n + 1`次.
-  * 但是我要删除这个节点, 需要跳到这个节点的前一个节点, 就需要从虚拟头节点跳`N - n`次.
-* 如果需要遍历一次, 那么就需要搞两个指针.
-  * 加上虚拟头节点, 一共能跳`N`次.
-  * 先让一个指针跳`n`次, 然后再让另一个指针开始动, 直到前一个指针跳到最后一个节点.
+* 由于链表头节点可能被删除, 因此需要虚拟头节点.
+
+* 准备两个快慢指针, 初始放在dummy, 快指针从dummy开始走n步, 之后慢指针和快指针同时走, 快指针走到最后一个节点的时候, 慢指针就会停到倒数第n个节点的前一个节点, 直接删除即可.
+
 
 ```cpp
 class Solution {
 public:
     ListNode* removeNthFromEnd(ListNode* head, int n) {
-        auto dummy = new ListNode(-1);
-        dummy->next = head;
-        ListNode *p = dummy, *q = dummy;
-        while (n --) p = p->next;
-        while (p->next) {
-            p = p->next, q = q->next;
-        }
-        q->next = q->next->next;
-        return dummy->next;
+       auto dummy = new ListNode(-1), cur = dummy;
+       dummy->next = head;
+       auto p = dummy;
+       for (int i = 0; i < n; i ++) p = p->next;
+       auto q = dummy;
+       // 注意, 这里要跳到要删除节点的前一个节点
+       while (p->next) p = p->next, q = q->next;
+       q->next = q->next->next;
+       return dummy->next;
     }
 };
-
 ```
 
 
 
 ## 20. *有效的括号(easy)
 
-* 遇到左括号就压栈, 遇到右括号就弹出.
+> https://leetcode.cn/problems/valid-parentheses/
+
+* 遇到左括号就压栈.
+* 如果遇到右括号需要注意几点:
+  * 第一, 只有栈顶的左括号和有括号成功匹配, 才弹出.
+  * 第二, 如果遇到右括号, 但是栈顶没有元素, 直接不匹配, 例如`]`.
+  * 第三, 如果遇到右括号, 但是栈顶不匹配, 那么直接就不匹配, 例如`(]`.
+  * 第二和第三需要特殊判断.
+
 
 ```cpp
 class Solution {
 public:
     bool isValid(string s) {
-        stack<char> stk;
-        for (auto c : s) {
+       stack<char> stk;
+       for (auto c : s) {
             if (c == '(' || c == '{' || c == '[') stk.push(c);
             else {
-                if (stk.size() == 0) return false;
+                if (stk.empty()) return false;
                 if (c == ')' && stk.top() == '(') stk.pop();
                 else if (c == '}' && stk.top() == '{') stk.pop();
                 else if (c == ']' && stk.top() == '[') stk.pop();
                 else return false;
             }
-        }
-        return stk.size() == 0;
+       }
+       return stk.empty();
     }
 };
 ```
@@ -246,71 +256,73 @@ public:
 
 ## 21. *合并两个有序的链表 (easy)
 
-* 和归并排序合并的过程差不多.
-* 注意, 不要忘记合并剩下的链表, 因为肯定有一个链表先走完.
+> https://leetcode.cn/problems/merge-two-sorted-lists/
+
+* 和归并排序合并区间的过程一样.
+* 首先需要枚举两个链表指针都存在的情况, 也就是`l1 && l2`.
+* 之后再枚举某一个链表没走完的情况, 也就是`while (l1) while (l2)`.
 
 ```cpp
 class Solution {
 public:
-    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
-        auto dummy = new ListNode(-1);
-        auto cur = dummy;
-        auto l1 = list1, l2 = list2;
+    ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {
+        auto dummy = new ListNode(-1), cur = dummy;
         while (l1 && l2) {
-            if (l1->val <= l2->val) {
-                cur = cur->next = new ListNode(l1->val);
-                l1 = l1->next;
-            }
-            else {
-                cur = cur->next = new ListNode(l2->val);
-                l2 = l2->next;
-            }
+            if (l1->val <= l2->val) cur = cur->next = new ListNode(l1->val), l1 = l1->next;
+            else cur = cur->next = new ListNode(l2->val), l2 = l2->next;
         }
-        if (l1) cur->next = l1;
-        if (l2) cur->next = l2;
-        
+        while (l1) cur = cur->next = new ListNode(l1->val), l1 = l1->next;
+        while (l2) cur = cur->next = new ListNode(l2->val), l2 = l2->next;
         return dummy->next;
     }
 };
-
 ```
 
 
 
 ## 22. *括号生成(medium)
 
+> https://leetcode.cn/problems/generate-parentheses/description/
+
 * 一个括号序列是合法的充要条件是:
 
   * 序列中, 左右括号数量相等.
   * 任意前缀, 左括号数量大于等于有括号数量.
 
-* 给定了n对括号, 那么序列中左右括号的数量一定相等, 那么对于括号序列的这`2n`个位置:
+* 给定了n对括号, 那么就有2n个坑位可以放置`(`和`)`, 那么搜索的顺序就是这样:
+* 只要之前左括号数量小于`n`, 那么当前位置就可以放左括号.
+  * 只要左括号数量大于右括号数量, 那么当前位置就可以放右括号.
+  * 总而言之
 
-  * 如果左括号的数量小于n, 那么就可以填`(`.
-  * 如果右括号数量小于n, 并且右括号数量小于左括号数量, 那么就可以填`)`.
-
-  * 递归即可.
 
 ```cpp
 class Solution {
 public:
     int n;
+    string path;
     vector<string> ans;
     vector<string> generateParenthesis(int _n) {
         n = _n;
-        dfs(0, 0, "");
+        dfs(0, 0);
         return ans;
     }
-    void dfs(int lc, int rc, string s) {
+    void dfs(int lc, int rc) {
         if (lc == n && rc == n) {
-            ans.push_back(s);
+            ans.push_back(path);
             return ;
         }
-        if (lc < n) dfs(lc + 1, rc, s + '(');
-        if (rc < n && rc < lc) dfs(lc, rc + 1, s + ')');
+        if (lc < n) {
+            path += '(';
+            dfs(lc + 1, rc);
+            path.pop_back();
+        }
+        if (rc < n && lc > rc) {
+            path += ')';
+            dfs(lc, rc + 1);
+            path.pop_back();
+        }
     }
 };
-
 ```
 
 
@@ -319,10 +331,13 @@ public:
 
 ## 23. *合并K个升序链表(hard)
 
+> https://leetcode.cn/problems/merge-k-sorted-lists/
+
 * 链表的k路归并问题, 可以采用堆排序解决.
   * 将每一个链表头节点插入堆.
   * 然后从堆中找到最小元素.
-  * 之后再将下一个头节点插入堆.
+  * 之后再将最小元素的下一个头节点插入堆.
+* 注意: 一开始将链表头节点插入堆时, 链表头可能为空, 需要注意判断.
 
 ```cpp
 class Solution {
@@ -336,8 +351,8 @@ public:
         auto dummy = new ListNode(-1);
         dummy->next = NULL;
         auto cur = dummy;
-
         priority_queue<ListNode*, vector<ListNode*>, cmp> heap;
+
         for (auto l: lists)
             if (l) heap.push(l);
             
@@ -349,6 +364,7 @@ public:
         return dummy->next;
     }
 };
+
 ```
 
 
@@ -357,52 +373,26 @@ public:
 
 ## 24. *两两交换链表中的节点(medium)
 
+> https://leetcode.cn/problems/swap-nodes-in-pairs/
+
 * 首先, 链表头节点可能没有, 所以需要虚拟头节点.
-* 其次, 如果要交换`p->a->b->b.next`中的节点`a`和`b`:
-  * 首先, 将`a, b`看成一个整体, 动外面的指针: `p->next = b`, `a->next = b->next`.
-  * 然后, 再动`a, b`内部的指针`b->next = a`.
+* 其次, 如果要两两交换链表中的节点, 需要在链表中, 把每两个节点看作一个整体, 假设这个整体的第一个节点是`r`, 最后一个节点是`q`.
+  * `r`的前一个节点是`p`.
+  * 那么首先需要调整整体的指针, `p->next = q, r->next = q->next`.
+  * 然后再调整整体内部的指针: `q->next = r`.
+  * 然后更新`p`, 指向下一个整体的前一个节点: `p = r`.
+  
 
 ```cpp
 class Solution {
 public:
     ListNode* swapPairs(ListNode* head) {
-        
-        auto dummy = new ListNode(-1);
-        dummy->next = head;
-
-        for (auto p = dummy; p->next && p->next->next;) {
-            auto a = p->next, b = a->next;
-            p->next = b;
-            a->next = b->next;
-            b->next = a;
-            p = a;
-        }
-
-        return dummy->next;
-    }
-};
-```
-
-
-
-## 25. *K个一组反转链表(hard)
-
-* 首先, 头节点会被改变, 因此要加上虚拟头节点.
-* 其次, 先找到这k个节点组成的一个集团, 以及这个集团的前一个节点`p`, 和最后的节点`q`.
-* 之后, 先动边界节点, 然后修改集团内部的节点.
-* 最后, 注意指针`p`的移动.
-
-```cpp
-class Solution {
-public:
-    ListNode* reverseKGroup(ListNode* head, int k) {
        auto dummy = new ListNode(-1);
        dummy->next = head;
 
-       for (auto p = dummy;; ) {
+       for (auto p = dummy; p->next && p->next->next; ) {
             auto q = p;
-            for (int i = 0; i < k && q; i ++) q = q->next;
-            if (!q) break;
+            for (int i = 0; i < 2 && q; i ++) q = q->next;
             auto u = p->next;
             auto a = p->next, b = p->next->next;
             p->next = q;
@@ -421,9 +411,59 @@ public:
 
 
 
-## 34. *二分插入(medium)
+## 25. *K个一组翻转链表(hard)
 
-* 整数二分边界问题.
+> https://leetcode.cn/problems/reverse-nodes-in-k-group/
+
+* 首先, 头节点会被改变, 因此要加上虚拟头节点.
+* 其次, 先找到这k个节点组成的一个集团, 以及这个集团的前一个节点`p`, 和最后的节点`q`.
+* 之后, 先动边界节点, 然后修改集团内部的节点.
+* 最后, 注意指针`p`的移动.
+
+```cpp
+class Solution {
+public:
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        auto dummy = new ListNode(-1);
+        dummy->next = head;
+
+        for (auto p = dummy; p->next && p->next->next;) {
+            auto q = p;
+            for (int i = 0; i < k && q; i ++) q = q->next;
+            if (!q) break;
+            auto u = p->next;
+            auto a = p->next, b = p->next->next;
+            p->next = q;
+            a->next = q->next;
+            while (a != q) {
+                auto c = b->next;
+                b->next = a;
+                a = b, b = c;
+            }
+            p = u;
+        }
+        return dummy->next;
+    }
+};
+```
+
+
+
+## 34. *在排序数组中查找元素的第一个和最后一个位置(medium)
+
+> https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
+
+* 整数二分的问题, 能够通过一个数组中的元素是否满足某个性质, 把数组分成两个部分.
+* 这两个部分有两个边界:
+  * 如果要求左边界: `int mid = l + (r - l) / 2 + 1`
+    * 满足左侧性质: `l = mid`
+    * 满足右侧性质: `r = mid - 1`
+
+  * 如果要求右边界: `int mid = l + (r - l) / 2`
+    * 满足左侧性质: `l = mid + 1`
+    * 满足右侧性质: `r = mid`
+
+* 注意实现时需要特判数组是空的情况.
 
 ```cpp
 class Solution {
@@ -457,16 +497,10 @@ public:
 
 ## 35. *搜索插入位置(easy)
 
-* 整数二分的边界: 假设左右两侧性质分别为`A`和`~A`
-  * 左边界: 
-    * `mid = l + (r - l) / 2 + 1`
-    * `A`: `l = mid`
-    * `~A`: `r = mid - 1`
-  * 右边界:
-    * `mid = l + (r - l) / 2`
-    * `A`: `l = mid + 1`
-    * `~A`: `r = mid`
-* 注意, 如果插入位置在最后, 那么需要特判, 因为二分只能二分到数组内合法的索引.
+> https://leetcode.cn/problems/search-insert-position/
+
+* 假设二分的性质是: `nums[i] < x`, 和`nums[i] >= x`, 那么插入的位置就是右边界.
+* 注意: 如果插入的位置是数组的末尾, 那么答案应该是`n`, 但是二分不会得到这个答案, 需要特判.
 
 ```cpp
 class Solution {
@@ -489,11 +523,11 @@ public:
 
 
 
-
-
 ## 39. *组合总和(medium)
 
-* 虽然每一个元素可以任意选择, 但是由于有总和是`target`的限制, 可以选择的个数也是有限的, 枚举每一个元素以及这个元素的选择次数即可.
+> https://leetcode.cn/problems/combination-sum/
+
+* 搜索的顺序是: 对于`candidates`数组中的每一个数, 枚举这个数被选择的次数.
 
 ```cpp
 class Solution {
@@ -525,31 +559,41 @@ public:
 
 
 
-## 41. *缺失的第一个整数(medium)
+## 41. *缺失的第一个正数(medium)
 
-* 思路:
-  * 将所有数值“归位”, 就是让`nums[i] = i`, 然后遍历数组, 如果有不符合的, 那么就找到了最小没出现的正整数.
+> https://leetcode.cn/problems/first-missing-positive/
+
+* 如果让数组中所有的正整数元素满足`nums[i] == i`, 那么从前到后遍历正整数, 第一个不满足`nums[i] != i`的就是缺失的第一个整数.
+
+  * 如果所有的正整数都满足, 那么缺失的第一个正整数就是`n + 1`.
+
+* 对于这段代码:
+
+  ```cpp
+  while (nums[i] >= 0 && nums[i] < n && nums[i] != nums[nums[i]])
+  	swap(nums[i], nums[nums[i]]);
+  ```
+
+  * 每一次交换, 就相当于把`nums[i]`这个值, 放到了以`nums[i]`为下标的位置, 每一次都可以排好一个值.
 
 ```cpp
 class Solution {
 public:
     int firstMissingPositive(vector<int>& nums) {
         int n = nums.size();
-        for (int i = 0; i < n; i ++) {
+        for (int i = 0; i < n; i ++)
             if (nums[i] != INT_MIN) nums[i] --;
-        }
-        for (int i = 0; i < n; i ++) {
-            while (nums[i] >= 0 && nums[i] < n && nums[nums[i]] != nums[i]) {
-                swap(nums[i], nums[nums[i]]);
-            }
-        }
-        for (int i = 0; i < n; i ++) {
-            if (nums[i] != i) return i + 1;
-        }
-        return n + 1;
-    } 
-};
 
+        for (int i = 0; i < n; i ++)
+            while (nums[i] >= 0 && nums[i] < n && nums[nums[i]] != nums[i])
+                swap(nums[i], nums[nums[i]]);
+                
+        for (int i = 0; i < n; i ++)
+            if (nums[i] != i)
+                return i + 1;
+        return n + 1;
+    }
+};
 ```
 
 
@@ -558,30 +602,33 @@ public:
 
 ## 42. *接雨水(hard)
 
-* 思路: 假设`l[i], r[i]`分别代表格子`h[i]`左右范围 (包括`h[i]`)的最大值, 那么这个格子对雨水的贡献量就是`min(l[i], r[i]) - h[i]`
+> https://leetcode.cn/problems/trapping-rain-water/
+
+* 一个格子`h[i]`对整体雨水的贡献量是: `min(l[i], r[i]) - h[i]`.
+  * `l[i], r[i]`分别表示格子`i`左右两侧(包括`h[i]`), 的最大的格子高度.
+
 
 ```cpp
 class Solution {
 public:
-    int trap(vector<int>& height) {
-       const int N = 20010;
-       int l[N], r[N];
-
-       int maxv = 0;
-       for (int i = 0; i < height.size(); i ++) {
-            maxv = max(maxv, height[i]);
+    int trap(vector<int>& h) {
+        int n = h.size();
+        vector<int> l(n), r(n);
+        
+        int maxv = 0;
+        for (int i = 0; i < n; i ++) {
+            maxv = max(maxv, h[i]);
             l[i] = maxv;
-       }
-       maxv = 0;
-       for (int i = height.size() - 1; i >= 0; i --) {
-            maxv = max(maxv, height[i]);
+        }
+        maxv = 0;
+        for (int i = n - 1; i >= 0; i --) {
+            maxv = max(maxv, h[i]);
             r[i] = maxv;
-       }
-       int res = 0;
-       for (int i = 0; i < height.size(); i ++) {
-            res += min(l[i], r[i]) - height[i];
-       }
-       return res;
+        }
+        int res = 0;
+        for (int i = 0; i < n; i ++)
+            res += min(l[i], r[i]) - h[i];
+        return res;
     }
 };
 ```
@@ -590,10 +637,12 @@ public:
 
 ## 45. *跳跃游戏II(medium)
 
-* 动态规划问题: 基于先验知识作出的最优选择, 也是全局视角下的最优选择.
-* 假设`f[i]`表示跳到`i`位置的最小步数.
-  * 那么`i`位置怎么才能从一个位置`j`一步跳到, 并且`j`离`i`最远呢.
-  * 就是找最小的`j`, 但是`j + nums[j] >= i`的.
+> https://leetcode.cn/problems/jump-game-ii/
+
+* 假设`f[i]`表示到达位置`i`所需要的最小跳跃次数.
+* 那么`f[i] = f[j] + 1`, 其中`j`是最小的, 能够一步跳到`i`的位置.
+* `i, j`的维护逻辑类似于双指针算法.
+* 注意, 这里`i`要从1开始, 因为`f[0] = 0`是一种特殊情况, 不能参与到循环中, 一旦进入循环就会被更新.
 
 ```cpp
 class Solution {
@@ -613,12 +662,12 @@ public:
 
 
 
-
-
 ## 46. *全排列(medium)
 
+> https://leetcode.cn/problems/permutations/
+
 * 本题是无重复元素的数组求全排列.
-* dfs时, 对于全排列的每一个位置, 枚举给定数组中的每一个元素, 看用哪一个元素放在这个位置, 选定位置后, 就递归到下一个位置.
+* 搜索顺序是: 对于每一个全排列上的坑位, 枚举这个坑位填哪一个数, 如果一个数被填了就需要记录, 防止重复填.
 
 ```cpp
 class Solution {
@@ -627,8 +676,7 @@ public:
     vector<int> path;
     vector<vector<int>> ans;
     vector<vector<int>> permute(vector<int>& nums) {
-        int n = nums.size();
-        st.resize(n);
+        st.resize(nums.size()); path.resize(nums.size());
         dfs(nums, 0);
         return ans;
     }
@@ -639,14 +687,13 @@ public:
         }
         for (int i = 0; i < nums.size(); i ++) {
             if (st[i]) continue;
-            st[i] = true;
-            path.push_back(nums[i]);
+            path[u] = nums[i]; st[i] = true;
             dfs(nums, u + 1);
             st[i] = false;
-            path.pop_back();
         }
     }
 };
+
 ```
 
 
@@ -656,7 +703,7 @@ public:
 ## 48. *旋转图像(medium)
 
 * 顺时针90度: 主对角线对称(左上-右下), 竖直轴线对称.
-* 逆时针90度: 水平轴线对称.
+* 逆时针90度: 主对角线对称(左上-右下), 水平轴线对称.
 * 顺时针/逆时针180度: 主对角线对称 + 副对角线对称.
 
 ```cpp

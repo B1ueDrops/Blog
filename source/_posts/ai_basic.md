@@ -1,5 +1,5 @@
 ---
-title: 构建AI模型理论与实战
+title: AI的基本模型和实现
 categories: AI-HPC
 mathjax: true
 ---

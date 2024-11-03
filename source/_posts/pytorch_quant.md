@@ -1,5 +1,5 @@
 ---
-title: 模型量化的理论和实战
+title: AI模型量化的理论和实现
 categories: AI-HPC
 mathjax: true
 ---
@@ -9,6 +9,90 @@ mathjax: true
 ## 模型量化的理论基础
 
 
+
+### 基本公式
+
+* 浮点数量化本质上是一个离散化算法, 这个算法将范围内的浮点数映射到整数.
+  * 假设整数的取值范围是$[I_{min}, I_{max}]$, 浮点数的取值范围是$[f_{min}, f_{max}]$.
+  * 对于一个浮点数$f$, 映射到对应整数$I$的方式可以是一种线性量化:
+
+$$
+I = round[I_{min} + \frac{I_{max} - I_{min}}{f_{max} - f_{min}} \times (f - f_{min})]
+$$
+
+* 这种线性量化方式有两个问题:
+
+  * $[f_{min}, f_{max}]$过于庞大, 导致很多浮点数都会映射到同一个整数$I$, rounding error过大.
+    * 解决方案: 在进行量化之前, 对于张量中的浮点数, 动态统计$f_{min}$和$f_{max}$, 然后映射, 统计的过程叫做Calibration.
+  * $f_{min}$和$f_{max}$距离数据分布集中的地方较远
+    * 解决方案: Calibration的过程中, 将$f_{min}$和$f_{max}$的值设置成数据分布集中区域的下界和上界, 超出上下界的部分直接映射成上下界, 这个过程叫clamp.
+
+* 实际的线性量化一般有两个参数分别是$s, z$, 其中$s$都是浮点数而$z$是整数, 量化方式为:
+  $$
+  I = clamp[round(\frac{f}{s} + z),\ INT\_MAX,\ INT\_MIN]
+  $$
+
+  * 其中, $s = \frac{f_{max} - f_{min}}{q_{max} - q_{min}}$, 其中$q_{max}, q_{min}$表示量化后整数数据类型的最大/最小值, $f_{max}, f_{min}$表示经过Calibration统计出的浮点数最大值和最小值.
+  * $z$表示浮点数的0.0映射到整数的位置.
+
+
+
+### 矩阵乘法的量化
+
+* 假设矩阵乘法$C = A \times B$, 每个矩阵的量化参数分别为:
+
+  * $A: S_a, Z_a$
+  * $B: S_b, Z_b$
+  * $C: S_c, Z_c$
+
+  * 注意: 在AI模型中, 其中的一个矩阵一般是Weights, 另一个矩阵是Activation, 得到的计算结果是下一层的Activation, Weights和Activation的量化参数一般是在Calibration阶段得到的.
+
+* 矩阵乘法可以写成:
+
+$$
+S_c(Q_c - Z_c) = S_a(Q_a - Z_a) \times S_b(Q_b - Z_b)
+$$
+
+* 整合后可以变成:
+  $$
+  Q_c = \frac{S_aS_b}{S_c}(Q_a - Z_a)(Q_b - Z_b) + Z_c = MQ + Z_c
+  $$
+
+* 其中, 除了$M = \frac{S_aS_b}{S_c}$以外, 所有的运算都是整数运算, $Q$可以提前计算好, 那么如何将$M$进行量化?
+
+  * 首先, 经过大量实验统计, $M$的范围都在$(0, 1)$范围内, 那么$M$就可以写成$M = M_0 \times 2^{-n}$, 相当于把一个整数小数点向左移动$n$位, $n$可以提前计算出来.
+
+* 自此, 就完成了矩阵乘法的量化, 卷积可以等价为矩阵乘法, 也可以量化.
+
+
+
+### 量化模型的基本结构
+
+<img src="./pytorch_quant/quantized_model.png" alt="quantized_model" style="zoom:50%;" />
+
+* 输入量化模型的Tensor可以是浮点/量化后的Activation.
+* 模型的每一层前后都会保存输入的Activation和输出的Activation的量化参数(量化参数可以体现Tensor的分布).
+* 每次infer时, 都会通过$Q_c = M_0 \times 2^{-n}(Q_a - Z_a)(Q_b - Z_b) + Z_c$进行输出, 输出的结果是量化后的Activation.
+
+
+
+### ReLU的量化
+
+* 没有量化的ReLU是:
+  $$
+  ReLU(x) = max(x, 0)
+  $$
+
+* 量化后的ReLU是:
+  $$
+  ReLU(x) = max(x, Z_o) = max(x, Z_i)
+  $$
+  
+
+* 推导:
+  * ReLU之后, 数据的分布会发生变化, 小于0的部分都会消失, 那么经过Calibration, $S_o, Z_o$都会发生变化.
+  * 但是实际上, 大于0的部分都没有变化, 如果要将这部分反量化, 就必须用原来的$S_i, Z_i$.
+  * 因此, 对于ReLU这个模块, 必须让$S_i = S_o, Z_i = Z_o$.
 
 
 
