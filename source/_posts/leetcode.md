@@ -652,7 +652,7 @@ public:
         vector<int> f(n);
 
         for (int i = 1, j = 0; i < n; i ++) {
-            while (j + nums[j] < i) j ++;
+            while (j < i && j + nums[j] < i) j ++;
             f[i] = f[j] + 1;
         }
         return f[n - 1];
@@ -698,9 +698,9 @@ public:
 
 
 
-
-
 ## 48. *旋转图像(medium)
+
+> https://leetcode.cn/problems/rotate-image/
 
 * 顺时针90度: 主对角线对称(左上-右下), 竖直轴线对称.
 * 逆时针90度: 主对角线对称(左上-右下), 水平轴线对称.
@@ -714,11 +714,9 @@ public:
        for (int i = 0; i < n; i ++)
             for (int j = 0; j < i; j ++)
                 swap(matrix[i][j], matrix[j][i]);
-
         for (int i = 0; i < n; i ++)
-            for (int j = 0, k = n - 1; j < k; j ++, k --)
+            for (int j = 0, k = m - 1; j < k; j ++, k --)
                 swap(matrix[i][j], matrix[i][k]);
-        
     }
 };
 ```
@@ -727,34 +725,35 @@ public:
 
 
 
-## 49. *字母异位词(medium)
+## 49. *字母异位词分组(medium)
 
-* 哈希表:
+> https://leetcode.cn/problems/group-anagrams/
 
-  * 思路: 一个单词的字母异位词, 指的是和它字母相同, 但是字母排列不同的所有单词组成的集合. 题目中要求集合中的单词必须在给定的数组中.
+* 这个题的题意是: 给定一个字符串的数组, 如果将这个数组中的元素分为若干个group, 每一个group中的所有字符串经过排序后都能得到同样的结果.
+* 那么直接用哈希表, key作为排序后的结果, value就是所有符合题意的字符串即可.
 
-  ```cpp
-  class Solution {
-  public:
-      vector<vector<string>> groupAnagrams(vector<string>& strs) {
-          unordered_map<string, vector<string>> hash;
-          for (auto &str: strs) {
-              string nstr = str;
-              sort(nstr.begin(), nstr.end());
-              hash[nstr].push_back(str);
-          }
-          vector<vector<string>> ans;
-          for (auto &item: hash) {
-              ans.push_back(item.second);
-          }
-          return ans;
-      }
-  };
-  ```
+```cpp
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> hash;
+        for (auto &str: strs) {
+            auto nstr = str;
+            sort(nstr.begin(), nstr.end());
+            hash[nstr].push_back(str);
+        }
+        vector<vector<string>> ans;
+        for (auto [_, s]: hash) ans.push_back(s);
+        return ans;
+    }
+};
+```
 
 
 
 ## 51. *N皇后 (hard)
+
+> https://leetcode.cn/problems/n-queens/
 
 * 用`col`, `dg`, `udg`分别记录每一列, 对角线/反对角线上是否有`Q`.
 * 遍历时先遍历每一行`u`, 然后遍历每一列`i`, 如果一个位置`(u, i)`在列, 对角线, 反对角线上都没有棋子, 那么就可以放下棋子, 然后递归到下一个位置. 
@@ -762,58 +761,58 @@ public:
 ```cpp
 class Solution {
 public:
-    vector<bool> col;
-    vector<bool> dg;
-    vector<bool> udg;
-    vector<string> g;
+    int n;
+    vector<bool> col, dg, udg;
+    vector<string> path;
     vector<vector<string>> ans;
-    vector<vector<string>> solveNQueens(int n) {
+    vector<vector<string>> solveNQueens(int _n) {
+        n = _n;
         col = vector<bool>(n, false);
         dg = vector<bool>(n, false);
         udg = vector<bool>(n, false);
-        g = vector<string>(n, string(n, '.'));
+        path = vector<string>(n, string(n, '.'));
         dfs(0);
         return ans;
     }
     void dfs(int u) {
-        int n = g.size();
         if (u == n) {
-            ans.push_back(g);
+            ans.push_back(path);
             return ;
         }
         for (int i = 0; i < n; i ++) {
-            if (col[i] || dg[u + i] || udg[n + u - i]) continue;
-            g[u][i] = 'Q';
-            col[i] = dg[u + i] = udg[n + u - i] = true;
+            if (col[i] || dg[u + i] || udg[n + i - u]) continue;
+            col[i] = dg[u + i] = udg[n + i - u] = true;
+            path[u][i] = 'Q';
             dfs(u + 1);
-            g[u][i] = '.';
-            col[i] = dg[u + i] = udg[n + u - i] = false;
+            path[u][i] = '.';
+            col[i] = dg[u + i] = udg[n + i - u] = false;
         }
     }
 };
+
 ```
-
-
-
 
 
 
 ## 53. *最大子数组和(medium)
 
-* 思路:
-  * 对于这样一个连续和, 要么一直累加, 要么就从一个元素开始重开, 直接遍历即可.
+> https://leetcode.cn/problems/maximum-subarray/
+
+* 假设`f[i]`表示以`i`结尾的所有子数组中, 和的最大值.
+* 那么状态转移就是: `f[i] = max(nums[i], f[i - 1] + nums[i])`.
+* 最后的答案就是求所有`f[i]`的最大值.
 
 ```cpp
 class Solution {
 public:
     int maxSubArray(vector<int>& nums) {
-       int ans = nums[0];
-       int k = 0;
-       for (auto x : nums) {
-            k = max(k + x, x);
-            ans = max(ans, k);
-       }
-       return ans;
+        int f = nums[0];
+        int ans = nums[0];
+        for (int i = 1; i < nums.size(); i ++) {
+            f = max(f + nums[i], nums[i]);
+            ans = max(ans, f);
+        }
+        return ans;
     }
 };
 ```
@@ -822,21 +821,20 @@ public:
 
 ## 54. *螺旋矩阵(medium)
 
-* 按照`dx, dy`向量方法遍历矩阵比较简单.
+> https://leetcode.cn/problems/spiral-matrix/
+
+* 遍历时, 一旦遇到下标越界/边界已经搜索过的情况, 就把`dx, dy`数组的方向改变一下即可.
+* 注意: x的正方向是下, y的正方向是右.
 
 ```cpp
 class Solution {
 public:
     vector<int> spiralOrder(vector<vector<int>>& matrix) {
         vector<int> ans;
-        if (matrix.empty()) return ans;
-
+        int dx[] = {0, 1, 0, -1};
+        int dy[] = {1, 0, -1, 0};
         int n = matrix.size(), m = matrix[0].size();
         vector<vector<bool>> st(n, vector<bool>(m, false));
-
-        int dx[] = { 0, 1, 0, -1 };
-        int dy[] = { 1, 0, -1, 0 };
-
         int x = 0, y = 0, d = 0;
         for (int k = 0; k < n * m; k ++) {
             ans.push_back(matrix[x][y]);
@@ -844,29 +842,30 @@ public:
             int a = x + dx[d], b = y + dy[d];
             if (a < 0 || a >= n || b < 0 || b >= m || st[a][b])
                 d = (d + 1) % 4;
-            x = x + dx[d], y = y + dy[d];
-        } 
+            x += dx[d], y += dy[d];
+        }
         return ans;
     }
 };
-
 ```
 
 
 
 ## 55. *跳跃游戏(medium)
 
-* 枚举数组中的每一个数`nums[i]`, 它能够跳到的最大的位置就是`i + nums[i]`.
+> https://leetcode.cn/problems/jump-game/
+
+* 对于数组中的每一个数`nums[i]`, 它能够跳到的最大的位置就是`i + nums[i]`.
 * 那么, 当遍历到`i`时, 如果之前能够跳到的最大位置`j < i`, 那么就无法到达这个位置, 因此, 就无法到达终点.
 
 ```cpp
 class Solution {
 public:
     bool canJump(vector<int>& nums) {
-        int range = 0;
-        for (int i = 0; i < nums.size(); i ++) {
-            if (range < i) return false;
-            range = max(range, i + nums[i]);
+        int f = 0 + nums[0];
+        for (int i = 1; i < nums.size(); i ++) {
+            if (f < i) return false;
+            f = max(f, i + nums[i]);
         }
         return true;
     }
@@ -879,11 +878,14 @@ public:
 
 ## 56. *合并区间(medium)
 
-* 该题的意思是, 对于给定的任意两个区间, 如果有交集, 那么就合并成一个区间, 最后返回剩下的区间.
-  * 首先, 所有区间按照左端点排序.
-  * 之后, 维护一个区间`[st, ed]`, 这个区间是右端点最大的区间, 然后遍历所有区间`[l, r]`:
-    * 如果`l <= ed`, 那么当前区间和维护的区间有交集, 直接合并`ed = max(ed, r)`
-    * 如果`l > ed`, 那么当前区间和维护的区间没有交集, 需要更新`st = l, ed = r`.
+> https://leetcode.cn/problems/merge-intervals/
+
+* 首先, 区间按照左端点排序.
+* 然后, 用`[st, ed]`维护当前右端点最大的区间, 然后依次枚举当前区间`[l, r]`:
+  * 如果`l <= ed`, 有交集, 那么直接更新`ed = max(ed, r)`.
+  * 如果`l > ed`, 没交集, 那么需要先把`[st, ed]`放在答案中, 然后更新区间`st = l, ed = r`.
+
+* 注意: 枚举完之后, 最后一个区间`[st, ed]`也要放到答案中.
 
 ```cpp
 class Solution {
@@ -891,31 +893,31 @@ public:
     vector<vector<int>> merge(vector<vector<int>>& intervals) {
         sort(intervals.begin(), intervals.end());
         vector<vector<int>> ans;
-
-        int st = -2e9, ed = -2e9;
-        for (auto ra: intervals) {
-            int l = ra[0], r = ra[1];
-            if (l <= ed) ed = max(ed, r);
+        int st = -1, ed = -1;
+        for (auto &range: intervals) {
+            int l = range[0], r = range[1];
+            if (l <= ed)
+                ed = max(ed, r);
             else {
-                if (ed != -2e9) ans.push_back({st, ed});
+                if (ed != -1) ans.push_back({st, ed});
                 st = l, ed = r;
             }
         }
-      // 不要忘记最后还要push_back一下
-        ans.push_back({st, ed});
+        if (ed != -1) ans.push_back({st, ed});
         return ans;
     }
 };
-
 ```
 
 
 
 ## 62. *不同路径(medium)
 
-> https://leetcode.cn/problems/word-break/
+> https://leetcode.cn/problems/unique-paths/
 
-* 注意这里是问的路径数量, 而不是路径长度, 状态转移方程是: `f[i][j] += f[i - 1][j]`.
+* 设`f[i][j]`表示从起点走到`(i, j)`的路径数量.
+* 首先初始化起点, 路径数量是1: `f[0][0] = 1`.
+* 之后更新状态: `f[i][j] += f[i - 1][j]`, 以及`f[i][j] += f[i][j - 1]`.
 
 ```cpp
 class Solution {
@@ -940,7 +942,11 @@ public:
 
 ## 64. *最小路径和(medium)
 
-* 注意: 如果DP要求最小值, 需要把`f`中的所有值都设置成最大 (除了初始位置).
+> https://leetcode.cn/problems/minimum-path-sum/
+
+* 设`f[i][j]`表示从起点走到`(i, j)`的最小路径和.
+* 首先初始化所有位置的`f[i][j]`为`INF`, 然后将起点`f[0][0] = grid[0][0];`
+* 之后更新状态: `f[i][j] = min(f[i - 1][j], f[i][j - 1]) + grid[i][j];`
 
 ```cpp
 class Solution {
@@ -969,8 +975,9 @@ public:
 
 ## 70. *爬楼梯 (easy)
 
-* 注意: 需要考虑Fib数列的值是否会爆`int`.
-* Fib数列的第0项是1, 第1项也是1.
+> https://leetcode.cn/problems/climbing-stairs/
+
+* 斐波那契数列的第0项是1, 第1项也是1.
 
 ```cpp
 class Solution {
@@ -1011,12 +1018,13 @@ public:
         vector<vector<int>> f(n + 1, vector<int>(m + 1, 0));
         for (int i = 0; i <= n; i ++) f[i][0] = i;
         for (int i = 0; i <= m; i ++) f[0][i] = i;
-
         for (int i = 1; i <= n; i ++)
             for (int j = 1; j <= m; j ++) {
                 f[i][j] = min(f[i - 1][j] + 1, f[i][j - 1] + 1);
-                if (word1[i] != word2[j]) f[i][j] = min(f[i][j], f[i - 1][j - 1] + 1);
-                else f[i][j] = min(f[i][j], f[i - 1][j - 1]);
+                if (word1[i] == word2[j])
+                    f[i][j] = min(f[i][j], f[i - 1][j - 1]);
+                else
+                    f[i][j] = min(f[i][j], f[i - 1][j - 1] + 1);
             }
         return f[n][m];
     }
@@ -1028,6 +1036,8 @@ public:
 
 
 ## 73. *矩阵置零(medium)
+
+> https://leetcode.cn/problems/set-matrix-zeroes/
 
 * 原地算法:
   * 首先记录一下第0行和第0列是否需要清0.
@@ -1041,38 +1051,37 @@ class Solution {
 public:
     void setZeroes(vector<vector<int>>& matrix) {
         int n = matrix.size(), m = matrix[0].size();
-        
-        bool row = 0, col = 0;
+        bool row = false, col = false;
         for (int i = 0; i < n; i ++)
-            if (!matrix[i][0]) col = 1;
+            if (!matrix[i][0])
+                col = true;
         for (int i = 0; i < m; i ++)
-            if (!matrix[0][i]) row = 1;
-
-        for (int i = 1; i < n; i ++) {
-            for (int j = 1; j < m; j ++) {
-                if (!matrix[i][j])
-                    matrix[i][0] = matrix[0][j] = 0;
-            }
-        }
-        for (int i = 1; i < n; i ++) {
+            if (!matrix[0][i])
+                row = true;
+        for (int i = 1; i < n; i ++)
+            for (int j = 1; j < m; j ++)
+                if (!matrix[i][j]) {
+                    matrix[i][0] = 0;
+                    matrix[0][j] = 0;
+                }
+        // 注意这里要从1开始遍历
+        for (int i = 1; i < n; i ++)
             if (!matrix[i][0]) {
-                for (int j = 0; j < m; j ++)
+                for (int j = 1; j < m; j ++)
                     matrix[i][j] = 0;
             }
-        }
-        for (int j = 1; j < m; j ++) {
-            if (!matrix[0][j]) {
-                for (int i = 0; i < n; i ++)
-                    matrix[i][j] = 0;
+        for (int i = 1; i < m; i ++)
+            if (!matrix[0][i]) {
+                for (int j = 1; j < n; j ++)
+                    matrix[j][i] = 0;
             }
+        if (row) {
+            for (int i = 0; i < m; i ++)
+                matrix[0][i] = 0;
         }
         if (col) {
             for (int i = 0; i < n; i ++)
                 matrix[i][0] = 0;
-        }
-        if (row) {
-            for (int i = 0; i < m; i ++)
-                matrix[0][i] = 0;
         }
     }
 };
@@ -1082,6 +1091,8 @@ public:
 
 ## 74. *搜索二维矩阵(medium)
 
+> https://leetcode.cn/problems/search-a-2d-matrix/
+
 * 二维矩阵和一维数组没有什么区别, 一位数组的下标`idx`分别除以/模矩阵列数就是在矩阵中的坐标`(idx / m, idx % m)`.
 
 ```cpp
@@ -1089,12 +1100,10 @@ class Solution {
 public:
     bool searchMatrix(vector<vector<int>>& matrix, int target) {
         int n = matrix.size(), m = matrix[0].size();
-        int s = n * m;
-        int l = 0, r = s - 1;
+        int l = 0, r = n * m - 1;
         while (l < r) {
             int mid = l + (r - l) / 2;
-            int x = mid / m, y = mid % m;
-            if (matrix[x][y] < target) l = mid + 1;
+            if (matrix[mid / m][mid % m] < target) l = mid + 1;
             else r = mid;
         }
         return matrix[l / m][l % m] == target;
@@ -1106,10 +1115,15 @@ public:
 
 ## 75. *颜色分类(medium)
 
-* 维护三个指针`i, j, k`:
-  * `[0, i]`处, 保证元素全是0.
-  * `[i+1, j]`处, 保证元素全是1.
-  * `[k, nums.size() - 1]`处, 保证元素全是2.
+> https://leetcode.cn/problems/sort-colors/
+
+* 核心思想是扫描数组的时候, 维护三个区域, 一个区域全是0, 一个区域全是1, 另一个区域全是2.
+
+* 维护三个指针`i, j, k`, `j`扫描数组:
+  * 如果`nums[j] == 0`, 那么`0`就放置到`i`处, 然后让`i`指针移动.
+  * 如果`nums[j] == 1`, 那么直接`j ++`.
+  * 如果`nums[j] == 2`, 那么直接交换到`k`指针处, 然后`k --`.
+
 
 ```cpp
 class Solution {
@@ -1117,8 +1131,6 @@ public:
     void sortColors(vector<int>& nums) {
         int i = 0, j = 0, k = nums.size() - 1;
         while (j <= k) {
-          	// 如果新元素是0, 那么需要交换到[0, i]领域
-          	// 注意, nums[i]一定是1, 因为j一定遍历过i的领域, 如果是2早就交换到后面了.
             if (nums[j] == 0) swap(nums[i ++], nums[j ++]);
             else if (nums[j] == 1) j ++;
             else if (nums[j] == 2) swap(nums[j], nums[k --]);
@@ -1129,37 +1141,31 @@ public:
 
 
 
-
-
 ## 76. *最小覆盖子串(hard)
 
-* 双指针:
-  * 思路: 向右移动指针, 直到完全覆盖`t`中的所有字符.
-  * 然后向左移动指针, 找到长度最小的, 也可以完全覆盖`t`中字符的最小子串.
-    * `hash[s[i]]`表示`t`中字符在`s`中出现的次数, 如果`hash[s[j]] + 1 > 0`, 那么表示如果`j`再向前移动, 就无法覆盖`t`中所有字符了.
+> https://leetcode.cn/problems/minimum-window-substring/
+
+* 思路: 当指针`i`向前移动时, 向后移动指针`j`, 直到子串完全覆盖`t`中的所有字符.
+* 然后向左移动指针, 找到长度最小的, 也可以完全覆盖`t`中字符的最小子串.
+  * `hash[s[i]]`表示`t`中字符在`s`中出现的次数, 如果`hash[s[j]] + 1 > 0`, 那么表示如果`j`再向前移动, 就无法覆盖`t`中所有字符了.
 
 ```cpp
 class Solution {
 public:
     string minWindow(string s, string t) {
-        int n = s.size(), m = t.size();
+        int n = s.size();
         unordered_map<char, int> hash;
         for (auto c: t) hash[c] ++;
         int tot = hash.size();
 
-        int k = 0;
-        int len = n;
+        int k = 0, len = n;
         string ans;
         for (int i = 0, j = 0; i < n; i ++) {
             if (hash.count(s[i]) && --hash[s[i]] == 0) k ++;
             if (k == tot) {
                 while (j < i) {
-                    if (hash.count(s[j])) {
-                        if (hash[s[j]] + 1 > 0) {
-                            break;
-                        }
-                        hash[s[j]] ++;
-                    }
+                    if (hash.count(s[j]) && hash[s[j]] + 1 > 0) break;
+                    if (hash.count(s[j])) hash[s[j]] ++;
                     j ++;
                 }
                 if (i - j + 1 <= len) {
@@ -1176,6 +1182,8 @@ public:
 
 
 ## 78. *子集(medium)
+
+> https://leetcode.cn/problems/subsets/
 
 * 递归写法:
   * 枚举数组中的每个数选/不选即可.

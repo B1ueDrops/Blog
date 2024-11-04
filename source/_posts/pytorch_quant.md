@@ -4,6 +4,8 @@ categories: AI-HPC
 mathjax: true
 ---
 
+[toc]
+
 
 
 ## 模型量化的理论基础
@@ -25,11 +27,11 @@ $$
   * $[f_{min}, f_{max}]$过于庞大, 导致很多浮点数都会映射到同一个整数$I$, rounding error过大.
     * 解决方案: 在进行量化之前, 对于张量中的浮点数, 动态统计$f_{min}$和$f_{max}$, 然后映射, 统计的过程叫做Calibration.
   * $f_{min}$和$f_{max}$距离数据分布集中的地方较远
-    * 解决方案: Calibration的过程中, 将$f_{min}$和$f_{max}$的值设置成数据分布集中区域的下界和上界, 超出上下界的部分直接映射成上下界, 这个过程叫clamp.
+    * 解决方案: Calibration的过程中, 将$f_{min}$和$f_{max}$的值设置成数据分布集中区域的下界和上界, 超出上下界的部分直接映射成上下界, 这个过程叫clip.
 
 * 实际的线性量化一般有两个参数分别是$s, z$, 其中$s$都是浮点数而$z$是整数, 量化方式为:
   $$
-  I = clamp[round(\frac{f}{s} + z),\ INT\_MAX,\ INT\_MIN]
+  I = clip[round(\frac{f}{s} + z),\ INT\_MAX,\ INT\_MIN]
   $$
 
   * 其中, $s = \frac{f_{max} - f_{min}}{q_{max} - q_{min}}$, 其中$q_{max}, q_{min}$表示量化后整数数据类型的最大/最小值, $f_{max}, f_{min}$表示经过Calibration统计出的浮点数最大值和最小值.
@@ -88,7 +90,6 @@ $$
   ReLU(x) = max(x, Z_o) = max(x, Z_i)
   $$
   
-
 * 推导:
   * ReLU之后, 数据的分布会发生变化, 小于0的部分都会消失, 那么经过Calibration, $S_o, Z_o$都会发生变化.
   * 但是实际上, 大于0的部分都没有变化, 如果要将这部分反量化, 就必须用原来的$S_i, Z_i$.
@@ -96,11 +97,93 @@ $$
 
 
 
+### Conv2d+BatchNorm
+
+* 在推理阶段, `Conv2d`层可以和`BatchNorm`层进行合并.
+
+* BatchNorm的计算过程如下, 假设batch size是`m`, $X_i, i \in [1, m]$是Batch中的一个数据.
+
+  * 首先计算均值和标准差:
+    $$
+    \mu = \frac{1}{m} \sum_{i=1}^mX_i\\\sigma = \sqrt{\frac{1}{m}\sum_{i=1}^{m}(X_i - \mu)^2}
+    $$
+    
+  * 然后将Batch中的每一个张量进行变换:
+    $$
+    Y_i = \gamma\frac{X_i  - \mu}{\sigma + \epsilon} + \beta
+    $$
+    
+    * 其中$\gamma$和$\beta$是BatchNorm的可学习参数, 在推理阶段, 参数是固定的.
+  
+* 卷积层的计算过程可以表示为: $Z = WX_i + B$.
+
+* 卷积层和BatchNorm层的输出可以表示为:
+  $$
+  Y_i = \gamma\frac{WX_i + B  - \mu}{\sigma + \epsilon} + \beta = \\ \frac{\gamma W}{\sigma + \epsilon}X_i + \frac{\gamma (B - \mu)}{\sigma + \epsilon} + \beta
+  $$
+
+  * 在推理的阶段, 所有的参数都是固定的, 只要把BatchNorm的参数合并到Conv2d即可.
 
 
-## Pytorch模型量化
 
-### 量化后端
+
+### Conv2d+ReLU
+
+* `Conv2d`和`ReLU`只有在量化的时候才能合并, 如果是全精度模型则无法合并.
+
+* 假设一个网络模块是`->Conv2d -> ReLU->`.
+  * 此时, 我不统计`Conv2d->ReLU`之间的这个Activation的量化参数, 只统计输入`Conv2d`的量化参数$S_i, Z_i$, 和ReLU输出的量化参数$S_o, Z_o$.
+  * 然后, 我把`Conv2d->ReLU`合并成一个模块`Conv2dReLU`, 直接用$S_i, Z_i, S_o, Z_o$作为前后Activation的量化参数, 就完成了Conv2d和ReLU的合并.
+  * 这个操作的本质是利用量化本身的`clip`操作实现ReLU.
+
+
+
+### Eltwise Add量化
+
+* Eltwise Add就是对相同尺寸/广播之后相同尺寸的张量, 按照元素级别进行相加.
+
+* 首先对于$f_3 = f_1 + f_2$, 用量化的式子展开:
+  $$
+  S_3(Q_3 - Z_3) = S_1(Q_1 - Z_1) + S_2(Q_2 - Z_2)
+  $$
+
+* 整理之后, 可以变成:
+  $$
+  Q_3 = \frac{S_1}{S_3}(Q_1 - Z_1) + \frac{S_2}{S_3}(Q_2 - Z_2) + Z_3
+  $$
+  
+
+* 其中的$\frac{S_1}{S_3}$和$\frac{S_2}{S_3}$可以用定点模拟.
+
+
+
+### Concat量化
+
+* Concat操作就是拼接两个张量, 例如:
+  $$
+  f_3 = [f_1, f_2]
+  $$
+  
+
+* 量化:
+  $$
+  S_3(Q_3 - Z_3) = [S_1(Q_1 - Z_1), S_2(Q_2 - Z_2)]
+  $$
+  
+
+* 那么最后结果就是:
+  $$
+  Q_3 = [\frac{S_1}{S_3}(Q_1 - Z_1) + Z_3, \frac{S_2}{S_3}(Q_2 - Z_2) + Z_3]
+  $$
+  
+
+
+
+## 模型量化pipeline
+
+
+
+### 指定量化后端
 
 * 首先, 需要明确模型需要跑在什么架构上, 然后指定后端:
 
@@ -110,6 +193,8 @@ $$
   # ARM架构
   torch.backends.quantized.engine = 'qnnpack'
   ```
+
+
 
 ### 量化分类
 
