@@ -449,6 +449,40 @@ public:
 
 
 
+## 31. *下一个排列 (medium)
+
+> https://leetcode.cn/problems/next-permutation/
+
+* 从后向前遍历, 找到第一个逆序点`k`, 也就是`nums[k - 1] < nums[k]`.
+  * `[k, nums.size() - 1]`这一段是反向升序的.
+  * 那么在`[k, nums.size() - 1]`这一段, 找到最小的, 但是大于`nums[k - 1]`的数, 交换到`nums[k - 1]`的位置上.
+  * 然后将`[k, nums.size() - 1]`这一段逆序 (也就是变成升序).
+* 直觉上讲, 这种操作相当于让序列的第一个转折点变大, 那么字典序就是变大, 让后面的序列变成正序, 后面的字典序最小, 也就是下一个字典序的位置.
+
+```cpp
+class Solution {
+public:
+    void nextPermutation(vector<int>& nums) {
+        int k = nums.size() - 1;
+        while (k > 0 && nums[k - 1] >= nums[k]) k --;
+        if (k <= 0) {
+            reverse(nums.begin(), nums.end());
+            return ;
+        }
+        else {
+            int t = k;
+            while (t < nums.size() && nums[t] > nums[k - 1]) t ++;
+            swap(nums[k - 1], nums[t - 1]);
+            reverse(nums.begin() + k, nums.end());
+        }
+    }
+};
+```
+
+
+
+
+
 ## 34. *在排序数组中查找元素的第一个和最后一个位置(medium)
 
 > https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
@@ -1235,7 +1269,10 @@ public:
 
 ## 79. *单词搜索(medium)
 
-* 从每一个格子位置开始DFS即可, 注意边界.
+> https://leetcode.cn/problems/word-search/
+
+* 遍历网格中的每一个格子, 从每一个格子开始进行搜索.
+  * 对于每一个格子, 如果它与当前单词字符相等, 就把格子设置为`.` (标记为已搜索过). 然后扩展到其他合法格子.
 
 ```cpp
 class Solution {
@@ -1272,8 +1309,10 @@ public:
 
 ## 84. *柱状图中最大的矩形(hard)
 
-* 首先思考如何枚举每一个矩形, 假设某个矩形的高度是`h`, 那么从左边, 从右边第一个比`h`小的位置的右侧/左侧就是边界.
-* 这个边界可以用单调栈预处理.
+> https://leetcode.cn/problems/largest-rectangle-in-histogram/
+
+* 对于每个柱子`h[i]`, 找到它左边, 右边第一个比它小的位置下标`l, r`.
+* 那么这个矩形的面积就是`(r - l + 1) * h[i]`, 枚举这个值就可以.
 
 ```cpp
 class Solution {
@@ -1312,6 +1351,8 @@ public:
 
 
 ## 94. *二叉树的中序遍历(easy)
+
+> https://leetcode.cn/problems/binary-tree-inorder-traversal/
 
 * 递归写法:
 
@@ -1363,6 +1404,8 @@ public:
 
 ## 98. *验证二叉搜索树(medium)
 
+> https://leetcode.cn/problems/validate-binary-search-tree/
+
 * dfs函数返回一个节点所在子树的元素最小值和最大值.
 * 递归向上比较左子树最大值, 右子树最小值和当前节点值的关系即可验证.
 
@@ -1401,6 +1444,8 @@ public:
 
 ## 101. *对称二叉树(easy)
 
+> https://leetcode.cn/problems/symmetric-tree/
+
 * 递归判断一个节点的左节点和右节点是否相等即可.
 
   ```cpp
@@ -1422,6 +1467,10 @@ public:
 
 
 ## 102. *二叉树的层序遍历
+
+> https://leetcode.cn/problems/binary-tree-level-order-traversal/
+
+* 注意: 层序遍历的话, 一定要首先特判根节点是否为`NULL`.
 
 ```cpp
 class Solution {
@@ -1456,6 +1505,8 @@ public:
 
 ## 104. *二叉树的最大深度(easy)
 
+> https://leetcode.cn/problems/maximum-depth-of-binary-tree/
+
 ```cpp
 class Solution {
 public:
@@ -1469,6 +1520,8 @@ public:
 
 
 ## 105. *从前序与中序遍历序列构造二叉树 (medium)
+
+> https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/
 
 ```cpp
 class Solution {
@@ -1484,6 +1537,7 @@ public:
        int r = preorder[pl];
        int k = hash[r];
        auto root = new TreeNode(r);
+      // 注意这里是(k - 1) - il + 1
        root->left = dfs(preorder, inorder, pl + 1, pl + 1 + k - 1 - il + 1 - 1, il, k - 1);
        root->right = dfs(preorder, inorder, pl + 1 + k - 1 - il + 1, pr, k + 1, ir);
        return root;
@@ -1497,6 +1551,8 @@ public:
 
 
 ## 108. *将有序数组转换为二叉搜索树(medium)
+
+> https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/
 
 * 从中点开始创造节点, 然后左子树和右子树从中点前后范围递归构建.
 
@@ -1521,10 +1577,12 @@ public:
 
 ## 114. *二叉树展开为链表(medium)
 
+> https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/
+
 * 从直观上来看, 需要把一个节点的左子树, 归并到这个节点和右节点之间.
 * 左子树有两个关键的节点:
   * 左子树根节点, 当前节点的右指针要指向左子树根节点.
-  * 当前节点中序遍历的前驱, 前驱的右节点需要只想右子树根节点.
+  * 当前节点中序遍历的前驱, 前驱的右节点需要指向右子树根节点.
 
 ```cpp
 class Solution {
@@ -1543,12 +1601,13 @@ public:
         }
     }
 };
-
 ```
 
 
 
 ## 118. *杨辉三角(easy)
+
+> https://leetcode.cn/problems/pascals-triangle/
 
 * 注意: 杨辉三角每一行的第一个数和最后一个数都是1.
 
@@ -1558,11 +1617,11 @@ public:
     vector<vector<int>> generate(int numRows) {
         vector<vector<int>> f;
         for (int i = 0; i < numRows; i ++) {
-            vector<int> line(i + 1);
-            line[0] = line[i] = 1;
+            vector<int> level(i + 1);
+            level[0] = level[i] = 1;
             for (int j = 1; j < i; j ++)
-                line[j] = f[i - 1][j - 1] + f[i - 1][j];
-            f.push_back(line);
+                level[j] = f[i - 1][j] + f[i - 1][j - 1];
+            f.push_back(level);
         }
         return f;
     }
@@ -1575,32 +1634,35 @@ public:
 
 ## 121. *买卖股票的最佳时机(easy)
 
+> https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/
+
 * 直接倒序遍历的过程中, 统计股票价格最大值即可.
 
   ```cpp
   class Solution {
   public:
       int maxProfit(vector<int>& prices) {
-          int v = -1;
-          int n = prices.size();
+          int v = -1, n = prices.size();
           int ans = 0;
           for (int i = n - 1; i >= 0; i --) {
-              if (v != -1) {
+              if (v == -1) v = prices[i];
+              else {
                   ans = max(ans, v - prices[i]);
                   v = max(v, prices[i]);
               }
-              else v = prices[i];
           }
           return ans;
       }
   };
   ```
-
   
 
 
 
+
 ## 124. *二叉树中的最大路径和(hard)
+
+> https://leetcode.cn/problems/binary-tree-maximum-path-sum/
 
 * `dfs`函数是从当前节点出发, 伸到子树中所有节点的单向路径的最大权值之和.
 * 那么对于一条路径, 他有三种情况:
@@ -1637,29 +1699,25 @@ public:
 
 ## 128. *最长连续序列(medium)
 
-* 哈希表:
-  * 思路: 
-    * 首先, 将数组中所有数字插入哈希表.
-    * 然后, 枚举每一个数字作为起点, 看最连续能到达哪里, 统计最大长度即可.
-  * 时间复杂度: $O(n)$
+> https://leetcode.cn/problems/longest-consecutive-sequence/
+
+* 首先, 将数组中所有数字插入哈希表.
+* 然后, 枚举数组中的每一个数字`x`, 将这个数字作为起点 (起点的意思就是`!hash.count(x - 1)`), 然后枚举`x + 1, x + 2, ...`, 如果一直在哈希表中, 那么序列就可以延伸, 直到有一个元素不在哈希表.
 
 ```cpp
 class Solution {
 public:
     int longestConsecutive(vector<int>& nums) {
-       unordered_set<int> hash;
-       for (auto x : nums) {
-            hash.insert(x);
-       }
-       int ans = 0;
-       for (auto x : nums) {
-            if (!hash.count(x - 1)) {
-                int y = x;
-                while (hash.count(y + 1)) y ++;
-                ans = max(ans, y - x + 1);
-            }
-       }
-       return ans;
+        unordered_set<int> hash;
+        for (auto x : nums) hash.insert(x);
+        int ans = 0;
+        for (auto x : nums) {
+            if (hash.count(x - 1)) continue;
+            int y = x + 1;
+            while (hash.count(y)) y ++;
+            ans = max(ans, y - x);
+        }
+        return ans;
     }
 };
 ```
@@ -1668,8 +1726,10 @@ public:
 
 ## 131. *分割回文串(medium)
 
+> https://leetcode.cn/problems/palindrome-partitioning/
+
 * 首先, 如果一个字符串是`aaaaa..`, 那么枚举分割方案的时间复杂度是$O(2^n)$, 所以这个问题是一个爆搜问题.
-* 其次, 枚举分割方案的方法是, 枚举一个起点`u`, 然后从`u`向后 (包括`u`), 枚举终点`i`, 枚举终点后, 递归到下一个起点`i + 1`.
+* 其次, 枚举**分割方案**的方法是, 枚举一个起点`u`, 然后从`u`向后 (包括`u`), 枚举终点`i`, 枚举终点后, 递归到下一个起点`i + 1`.
 * 可以用一个`f[i][j]`预处理`s[i, j]`是否是回文串, 递推式是:
   * `f[i][j] = f[i + 1][j - 1] && s[i] == s[j]`.
   * 注意由于要满足拓扑序, `i`要从后向前, `j`要从前向后.
@@ -1683,18 +1743,14 @@ public:
     vector<vector<string>> partition(string s) {
         int n = s.size();
         f = vector<vector<bool>>(n, vector<bool>(n, false));
-
-        for (int j = 0; j < n; j ++) {
-            for (int i = j; i >= 0; i --) {
+        for (int j = 0; j < n; j ++)
+            for (int i = n - 1; i >= 0; i --)
                 if (i == j) f[i][j] = true;
                 else if (i + 1 > j - 1) f[i][j] = (s[i] == s[j]);
-                else f[i][j] = (s[i] == s[j]) && f[i + 1][j - 1];
-            }
-        }
+                else f[i][j] = f[i + 1][j - 1] && (s[i] == s[j]);
         dfs(s, 0);
-        return ans;
+        return ans;    
     }
-
     void dfs(string &s, int u) {
         if (u == s.size()) {
             ans.push_back(path);
@@ -1708,12 +1764,13 @@ public:
         }
     }
 };
-
 ```
 
 
 
 ## 136. *只出现一次的数字(easy)
+
+> https://leetcode.cn/problems/single-number/
 
 * 直接对数组中所有元素进行异或就可以.
 
@@ -1731,6 +1788,8 @@ public:
 
 
 ## 139. *单词拆分(medium)
+
+> https://leetcode.cn/problems/word-break/
 
 * 设`f[i]`表示以`s[i]`结尾, 是否存在划分方式.
 * 那么假设`k < i`, 并且`s[k:i]`是在字典中出现的, 那么`f[i] = f[k - 1]`.
@@ -1773,6 +1832,8 @@ public:
 
 ## 138. *随机链表的复制
 
+> https://leetcode.cn/problems/copy-list-with-random-pointer/
+
 * 首先, 对于旧链表中的每一个节点, 在后面插入一个新的节点, 那么我就可以通过旧链表的位置相对关系, 推导出新链表的位置相对关系.
 * 之后, 如果要复制`random`边, 只需要让旧链表中的节点`p`, 让`p->next->random = p->random->next`.
   * 其中`p->next`是新链表中的对应节点, `p->random->next`就是`p->random`在新链表中的相对位置.
@@ -1782,29 +1843,23 @@ public:
 class Solution {
 public:
     Node* copyRandomList(Node* head) {
-       for (auto p = head; p ; p = p->next->next) {
+        for (auto p = head; p; p = p->next->next) {
             auto q = new Node(p->val);
             q->next = p->next;
             p->next = q;
-       }
-       for (auto p = head; p; p = p->next->next) {
-            if (p->random)
-                p->next->random = p->random->next;
-            else
-                p->next->random = NULL;
-       }
-       auto dummy = new Node(-1);
-       dummy->next = head;
-       auto cur = dummy;
-       for (auto p = head; p; p = p->next) {
-            auto q = p->next;
-            cur = cur->next = q;
+        }
+        for (auto p = head; p; p = p->next->next) {
+            if (p->random) p->next->random = p->random->next;
+            else p->next->random = NULL;
+        }
+        auto dummy = new Node(-1), cur = dummy;
+        for (auto p = head; p; p = p->next) {
+            cur = cur->next = p->next;
             p->next = p->next->next;
-       }
-       return dummy->next;
+        }
+        return dummy->next;
     }
 };
-
 ```
 
 
@@ -1813,32 +1868,32 @@ public:
 
 ## 141. *环形链表(easy)
 
-* 检测链表中有没有环:
-  * 首先特判链表为空, 或者只有一个节点的情况.
-  * 之后, 用快慢指针, 快指针一次两个, 慢指针一次一个, 最终相遇, 就证明有环.
+> https://leetcode.cn/problems/linked-list-cycle/
+
+* 用快慢指针, 快指针一次两个, 慢指针一次一个, 最终相遇, 就证明有环.
+* 注意, 如果链表只有一个节点, 那么当两个指针相等的时候可能都是`NULL`, 这个要特判一下.
 
 ```cpp
 class Solution {
 public:
     bool hasCycle(ListNode *head) {
-        if (!head || !head->next) return false;
-
-        ListNode *p = head, *q = head;        
+        auto p = head, q = head;
         while (p && q) {
             p = p->next;
             q = q->next;
             if (q) q = q->next;
-            if (p == q) return true;
+            if (q && p == q) return true;
         }
         return false;
     }
 };
-
 ```
 
 
 
 ## 142. *环形链表II (medium)
+
+> https://leetcode.cn/problems/linked-list-cycle-ii/
 
 * 继上一题, 如果要找环形链表的环入口:
   * 当快慢指针第一次相遇时, 让慢指针退后到起始点.
@@ -1848,7 +1903,6 @@ public:
 class Solution {
 public:
     ListNode *detectCycle(ListNode *head) {
-        if (!head || !head->next) return NULL;
         auto p = head, q = head;
         while (p && q) {
             p = p->next;
@@ -1858,9 +1912,7 @@ public:
         }
         if (!q) return NULL;
         p = head;
-        while (p != q) {
-            p = p->next, q = q->next;
-        }
+        while (p != q) p = p->next, q = q->next;
         return p;
     }
 };
@@ -1869,6 +1921,8 @@ public:
 
 
 ## 144. 二叉树的前序遍历(medium)
+
+> https://leetcode.cn/problems/binary-tree-preorder-traversal/
 
 * 递归写法:
 
@@ -1917,6 +1971,8 @@ public:
 
 ## 146. *LRU缓存(medium)
 
+> https://leetcode.cn/problems/lru-cache/
+
 * LRU缓存需要用一个双向链表和一个哈希表实现.
   * 双向链表: 存储实际的`key`和`value`.
   * 哈希表: 用于快速通过`key`获取双向链表节点的位置.
@@ -1936,55 +1992,54 @@ class LRUCache {
 public:
     int n;
     struct Node {
-        int key, val;
+        int key, value;
         Node *left, *right;
-        Node(int _key, int _val): key(_key), val(_val), left(NULL), right(NULL) {}
+        Node(int _key, int _value): key(_key), value(_value), left(NULL), right(NULL) {}
     } *L, *R;
     unordered_map<int, Node*> hash;
+
+    void remove(Node *u) {
+        u->right->left = u->left;
+        u->left->right = u->right;
+    }
+
+    void insert(Node *u) {
+        u->left = L;
+        u->right = L->right;
+        L->right->left = u;
+        L->right = u;
+    }
 
     LRUCache(int capacity) {
         n = capacity;
         L = new Node(-1, -1);
         R = new Node(-1, -1);
-        L->right = R;
-        R->left = L;
-    }
-
-    void remove(Node *p) {
-        p->right->left = p->left;
-        p->left->right = p->right;
-    }
-    void insert(Node *p) {
-        p->right = L->right;
-        p->left = L;
-        L->right->left = p;
-        L->right = p;
+        L->right = R, R->left = L;
     }
     
     int get(int key) {
         if (!hash.count(key)) return -1;
-        auto p = hash[key];
-        remove(p);
-        insert(p);
-        return p->val;
+        auto t = hash[key];
+        remove(t); insert(t);
+        return t->value;
     }
     
     void put(int key, int value) {
         if (hash.count(key)) {
-            auto p = hash[key];
-            p->val = value;
-            remove(p);
-            insert(p);
+            auto t = hash[key];
+            t->value = value;
+            remove(t); insert(t);
         }
         else {
             if (hash.size() == n) {
-                auto t = R->left;
-                remove(t);
-                hash.erase(t->key);
-                delete t;
+                auto p = R->left;
+                hash.erase(p->key);
+                remove(p);
+                delete p;
             }
-            hash[key] = new Node(key, value);
-            insert(hash[key]);
+            auto t = new Node(key, value);
+            hash[key] = t;
+            insert(t);
         }
     }
 };
@@ -2011,6 +2066,7 @@ public:
        for (int i = 1; i < n; i *= 2) {
             auto dummy = new ListNode(-1), cur = dummy;
             // 第二层以枚举由所有的两个归并区间
+         		// 注意这里一定是j <= n, 因为j = n证明区间里面只有一个元素, 也要单独做一层.
             for (int j = 1; j <= n; j += i * 2) {
                 // head存储归并区间开头
                 auto p = head, q = p;
@@ -2072,6 +2128,8 @@ public:
 
 ## 153. *寻找旋转排序数组中的最小值(medium)
 
+> https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/
+
 * 假设数组的第一个元素是`nums[0]`.
 * 数组的前半部分满足`nums[i] >= nums[0]`, 后半部分满足`nums[i] < nums[0]`, 以此来二分.
 * 如果数组完全单调递增, 那么最终二分出来的`nums[i] >= nums[0]`, 此时直接返回`nums[0]`.
@@ -2081,17 +2139,15 @@ class Solution {
 public:
     int findMin(vector<int>& nums) {
         int n = nums.size();
-        int t = nums[0];
         int l = 0, r = n - 1;
         while (l < r) {
             int mid = l + (r - l) / 2;
-            if (nums[mid] >= t) l = mid + 1;
+            if (nums[mid] >= nums[0]) l = mid + 1;
             else r = mid;
         }
         if (nums[l] >= nums[0]) return nums[0];
         else return nums[l];
     }
-
 };
 ```
 
@@ -2099,11 +2155,14 @@ public:
 
 
 
-
-
 ## 155. 最小栈(medium)
 
-* 直接开另外一个栈来维护最小值即可:
+> https://leetcode.cn/problems/min-stack/
+
+* 直接单独开一个栈, 专门用来存储最小值.
+* push时, 如果这个最小栈是空的, 或者要插入的值value小于最小栈栈顶, 那么就要向最小栈中插入.
+* pop时, 如果最小栈的栈顶等于当前栈要pop出去的元素, 那么最小栈就pop.
+* 对于`stack`来说, 要调用`top()`一定要保证栈不是空的!!
 
 ```cpp
 class MinStack {
@@ -2115,21 +2174,21 @@ public:
     }
     
     void push(int val) {
-        if (stk_min.empty() || val <= stk_min.top()) stk_min.push(val);
         stk.push(val);
+        if (stk_min.empty() || val <= stk_min.top()) stk_min.push(val);
     }
     
     void pop() {
-        if (stk_min.top() == stk.top()) stk_min.pop();
-        stk.pop(); 
+       if (stk_min.top() == stk.top()) stk_min.pop();
+       stk.pop();
     }
     
     int top() {
-        return stk.top();
+       return stk.top(); 
     }
     
     int getMin() {
-        return stk_min.top();
+       return stk_min.top(); 
     }
 };
 ```
@@ -2140,24 +2199,24 @@ public:
 
 ## 160. *相交链表(easy)
 
-* 思路: 
-  * 让两个指针同时向前走一步, 如果有一个指针走到尽头, 那么就把它放到第二个指针的头部继续走.
-  * 当两个指针相同时, 如果不为NULL, 那么就是相遇点, 否则就不是.
+> https://leetcode.cn/problems/intersection-of-two-linked-lists/
+
+* 让两个指针同时向前走一步, 如果有一个指针走到尽头, 那么就把它放到第二个指针的头部继续走.
+* 当两个指针相同时, 如果不为NULL, 那么就是相遇点, 否则就不是.
 
 ```cpp
 class Solution {
 public:
     ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
-        auto cur1 = headA, cur2 = headB;
-        while (cur1 != cur2) {
-            if (cur1) cur1 = cur1->next;
-            else cur1 = headB;
-            
-            if (cur2) cur2 = cur2->next;
-            else cur2 = headA;
+        auto p = headA, q = headB;
+        while (p != q) {
+            if (p) p = p->next;
+            else p = headB;
+            if (q) q = q->next;
+            else q = headA;
         }
-        if (cur1 == NULL) return NULL;
-        return cur1;
+        if (!p) return NULL;
+        return p;
     }
 };
 ```
@@ -2166,7 +2225,15 @@ public:
 
 ## 169. *多数元素(easy)
 
-* 摩尔投票算法: 使用$O(n)$时间复杂度, $O(1)$的空间复杂度, 找到一个数组中的众数:
+> https://leetcode.cn/problems/majority-element/
+
+* 摩尔投票算法: 使用$O(n)$时间复杂度, $O(1)$的空间复杂度, 找到一个数组中的众数.
+  * 从前到后遍历数组中的元素`x`, 并且维护一个当前候选人`r`和投票数`c`.
+  * 如果某个元素`x`等于`r`, 那么投票数`c ++`.
+  * 如果不等于`r`, 那么投票数`c --`.
+  * 如果投票数减到0, 那么`r`就要换人.
+  * 最终的`r`就是赢家.
+
 
 ```cpp
 class Solution {
@@ -2175,13 +2242,12 @@ public:
         int r = 0, c = 0;
         for (auto x : nums) {
             if (!c) r = x;
-            if (r == x) c ++;
+            if (x == r) c ++;
             else c --;
         }
         return r;
     }
 };
-
 ```
 
 
@@ -2190,7 +2256,12 @@ public:
 
 ## 189 *轮转数组(medium)
 
-* 思路: 反转数组的不同部分即可, 注意轮转的次数`k`要对数组的长度取模.
+> https://leetcode.cn/problems/rotate-array/
+
+* 这种题一般是把一个数组/序列的一部分移动到最前面的位置, 通用做法是:
+  * 先反转整个数组, 再分别反转数组的前面/后面的位置.
+
+* 注意: `k`可能是一个很大的异常值, 需要模上数组长度.
 
 ```cpp
 class Solution {
@@ -2208,10 +2279,9 @@ public:
 
 ## 198. *打家劫舍 (medium)
 
-* 如何判断一个问题是否是DP?
-  * 首先, 是求最优解.
-  * 其次, 可能的方案数是指数级别.
-* 状态机DP: `f[i][0]`表示第`i`个房子不打劫, `f[i][1]`表示打劫, 从后向前递推:
+> https://leetcode.cn/problems/house-robber/
+
+* 状态机DP: `f[i][0]`表示第`i`个房子不打劫, `f[i][1]`表示打劫, 从后向前递推即可.
 
 ```cpp
 class Solution {
@@ -2222,7 +2292,8 @@ public:
 
         f[0][0] = 0;
         f[0][1] = nums[0];
-        for (int i = 1; i < nums.size(); i ++) {
+
+        for (int i = 1; i < n; i ++) {
             f[i][0] = max(f[i - 1][0], f[i - 1][1]);
             f[i][1] = f[i - 1][0] + nums[i];
         }
@@ -2236,6 +2307,8 @@ public:
 
 
 ## 199. *二叉树的右视图(medium)
+
+> https://leetcode.cn/problems/binary-tree-right-side-view/
 
 * 右视图序列就是层序遍历中每一层最后一个节点组成的序列.
 
@@ -2269,30 +2342,33 @@ public:
 
 ## 200. *岛屿数量 (medium)
 
+> https://leetcode.cn/problems/number-of-islands/
+
 * Flood Fill算法:
   * 每次遇到一块陆地, 就从这个陆地为起点进行搜索, 从这个起点向四周扩散, 如果再次遇到陆地, 就递归搜索.
 
 ```cpp
 class Solution {
 public:
-    vector<vector<char>> g;
-    int dx[4] = {-1, 0, 1, 0};
-    int dy[4] = {0, 1, 0, -1};
     int numIslands(vector<vector<char>>& grid) {
-        g = grid;
         int ans = 0;
-        for (int i = 0; i < g.size(); i ++)
-            for (int j = 0; j < g[i].size(); j ++)
-                if (g[i][j] == '1')
-                    dfs(i, j), ans ++;
+        int n = grid.size(), m = grid[0].size();
+        for (int i = 0; i < n; i ++)
+            for (int j = 0; j < m; j ++)
+                if (grid[i][j] == '1')
+                    dfs(grid, i, j), ans ++;
         return ans;
     }
-    void dfs(int x, int y) {
-        g[x][y] = '0';
+    void dfs(vector<vector<char>> &grid, int x, int y) {
+        grid[x][y] = '0';
+        int n = grid.size(), m = grid[0].size();
+        int dx[] = {-1, 0, 1, 0};
+        int dy[] = {0, 1, 0, -1};
         for (int i = 0; i < 4; i ++) {
             int a = x + dx[i], b = y + dy[i];
-            if (a >= 0 && a < g.size() && b >= 0 && b < g[0].size() && g[a][b] == '1')
-                dfs(a, b);
+            if (a < 0 || a >= n || b < 0 || b >= m || grid[a][b] == '0')
+                continue;
+            dfs(grid, a, b);
         }
     }
 };
@@ -2303,6 +2379,8 @@ public:
 
 
 ## 206. *反转链表(easy)
+
+> https://leetcode.cn/problems/reverse-linked-list/
 
 * 递归方法: 注意先判断链表是否是空/只有一个节点.
 
@@ -2341,32 +2419,30 @@ public:
 
 ## 207. *课程表(medium)
 
-* 从先修课程到后置课程连接一条有向边.
+> https://leetcode.cn/problems/course-schedule/
+
+* 从先修课程到后置课程连接一条有向边, 组成一个有向图.
 * 然后用拓扑排序, 所有入度为0的节点先入队, 然后BFS, 每次扩展一层就把入度-1, 然后再次把入度为0的点入队.
-* 如果拓扑排序能把所有点遍历完全, 那么就证明符合要求.
+* 如果一个图有环, 那么当遍历到环的入口节点之后, 入口节点入度-1后还是1, 永远无法变成0, 那么这种节点就永远无法进入队列, 因此只要进入/弹出队列的节点数目小于`n`, 就证明有环.
 
 ```cpp
 class Solution {
 public:
     bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
         int n = numCourses;
-        vector<vector<int>> g(n);
         vector<int> d(n);
-
+        vector<vector<int>> g(n);
         for (auto &e: prerequisites) {
             int a = e[1], b = e[0];
-            g[a].push_back(b);
-            d[b] ++;
+            g[a].push_back(b); d[b] ++;
         }
         queue<int> q;
         for (int i = 0; i < n; i ++)
-            if (d[i] == 0)
-                q.push(i);
-
+            if (!d[i]) q.push(i);
+        
         int cnt = 0;
         while (q.size()) {
-            auto t = q.front();
-            q.pop();
+            auto t = q.front(); q.pop();
             for (auto u: g[t])
                 if (-- d[u] == 0)
                     q.push(u);
@@ -2380,6 +2456,8 @@ public:
 
 
 ## 208. *实现Trie(前缀树)
+
+> https://leetcode.cn/problems/implement-trie-prefix-tree/
 
 * 前缀树模板题.
 * 前缀树存储的元素需要有固定的字符集进行编码, 假设字符集中的元素个数为n, 那么前缀树就是一个n叉树.
@@ -2440,6 +2518,8 @@ public:
 
 ## 215. *数组中的第K个最大元素(medium)
 
+> https://leetcode.cn/problems/kth-largest-element-in-an-array/
+
 * 首先注意题目要求是第k个最大, 还是第k个最小.
 * 本题是快速选择算法.
 
@@ -2471,6 +2551,10 @@ public:
 
 ## 226. *翻转二叉树(easy)
 
+> https://leetcode.cn/problems/invert-binary-tree/
+
+* 首先递归翻转左子树和右子树, 然后将左子树和右子树进行交换即可.
+
 ```cpp
 class Solution {
 public:
@@ -2487,9 +2571,11 @@ public:
 
 
 
-## 230. *二叉搜索树中第K小的元素
+## 230. *二叉搜索树中第K小的元素(medium)
 
-* 中序遍历的过程中记录遍历节点的次数即可.
+> https://leetcode.cn/problems/kth-smallest-element-in-a-bst/
+
+* 中序遍历的过程中, 每次遍历一个节点, 就将计数器+1, 计数到`k`的时候, 就找到了第k小的元素.
 
 ```cpp
 class Solution {
@@ -2517,7 +2603,9 @@ public:
 
 
 
-## 234. *回文链表
+## 234. *回文链表(easy)
+
+> https://leetcode.cn/problems/palindrome-linked-list/
 
 * 首先, 找到链表的中间节点.
 * 之后, 将中间节点后面的链表反转.
@@ -2558,7 +2646,11 @@ public:
 
 
 
-## 236. *二叉树的最近公共祖先
+## 236. *二叉树的最近公共祖先(medium)
+
+> https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/
+
+* 两个节点的最近公共祖先就是同时包含两个节点的, 并且深度最深的节点.
 
 ```cpp
 class Solution {
@@ -2587,6 +2679,8 @@ public:
 
 
 ## 238. *除自身以外数组的乘积
+
+> https://leetcode.cn/problems/product-of-array-except-self/
 
 * 思路: 原地算法
   * 首先维护一个类似前缀和的数组, `s[i]`表示从`nums[0]`乘到`nums[i - 1]`.
@@ -2617,6 +2711,8 @@ public:
 
 ## 239. *滑动窗口最大值(hard)
 
+> https://leetcode.cn/problems/sliding-window-maximum/
+
 ```cpp
 class Solution {
 public:
@@ -2638,7 +2734,9 @@ public:
 
 
 
-## 240. *搜索二维矩阵
+## 240. *搜索二维矩阵II (medium)
+
+> https://leetcode.cn/problems/search-a-2d-matrix-ii/
 
 * 拿右上角/左下角的元素作为基准进行搜索即可.
 
@@ -2685,7 +2783,9 @@ public:
 
 
 
-## 283. *移动0(medium)
+## 283. *移动零(medium)
+
+> https://leetcode.cn/problems/move-zeroes/
 
 ```cpp
 class Solution {
@@ -2703,6 +2803,8 @@ public:
 
 
 ## 287. *寻找重复数(medium)
+
+> https://leetcode.cn/problems/find-the-duplicate-number/
 
 * 这个题等价于环型链表找环入口问题.
 * 对于一个`i`, 从`i`向`nums[i]`连一条边.
@@ -2734,6 +2836,8 @@ public:
 
 
 ## 295. *数据流的中位数(hard)
+
+> https://leetcode.cn/problems/find-median-from-data-stream/
 
 * 用`up`: 小根堆和`down`: 大根堆来维护.
 * 如果一个数小于等于`down.top()`那么就插到`down`中, 否则就插到`up`中.
@@ -2778,6 +2882,8 @@ public:
 
 
 ## 300. *最长递增子序列(medium)
+
+> https://leetcode.cn/problems/longest-increasing-subsequence/
 
 * 最长上升子序列模型.
 * 注意一点, `q`数组的长度要初始化成`n + 1`, 因为最长上升子序列的长度最小值就是1, 没有0, 避免出现下标问题 (因为长度值要作为下标).
@@ -2838,6 +2944,8 @@ public:
 
 ## 347. *前k个高频元素(medium)
 
+> https://leetcode.cn/problems/top-k-frequent-elements/
+
 * 首先统计一下数组中各个元素出现的次数.
 * 然后, 用计数排序的思想, 开一个`n + 1`长度的数组, 数组下标表示出现次数, 这个数组存储出现次数为`i`的元素有`nums[i]`种.
 * 然后反向遍历这个计数排序的数组即可得到答案.
@@ -2871,6 +2979,8 @@ public:
 
 
 ## 394. *字符串解码(medium)
+
+> https://leetcode.cn/problems/decode-string/
 
 * 这类题是一种前缀表达式的计算问题, 通用思路是用`dfs`.
   * `dfs`中, 用一个引用变量`u`记录处理到表达式的哪个位置.
@@ -2909,6 +3019,8 @@ public:
 
 ## 416. *分割等和子集
 
+> https://leetcode.cn/problems/partition-equal-subset-sum/
+
 * 这个题本质上是一个背包问题:
   * 每一个物品的体积就是`a[i]`.
   * 总体积是数组和`sum / 2`.
@@ -2938,7 +3050,9 @@ public:
 
 
 
-## 437. *路径总和 (medium)
+## 437. *路径总和III (medium)
+
+> https://leetcode.cn/problems/path-sum-iii/
 
 * 首先, 这道题类似于前缀和:
   * 要求在前缀和数组`s`中找到`l, r`, 使得`s[r] - s[l - 1] = k`.
@@ -2976,6 +3090,8 @@ public:
 
 ## 438 *找到字符串中所有字母异位词(medium)
 
+>  https://leetcode.cn/problems/find-all-anagrams-in-a-string/
+
 * 思路:
   * 判断两个字符串是否是字母异位词的充要条件是: 两个字符串的字符出现种类, 以及次数相同.
   * 直接维护一个`p.size()`的滑动窗口, 判断滑动窗口内的子串是否和`p`是字母异位词即可.
@@ -3009,6 +3125,8 @@ public:
 
 ## 543. *二叉树的直径(easy)
 
+> https://leetcode.cn/problems/diameter-of-binary-tree/
+
 ```cpp
 class Solution {
 public:
@@ -3034,6 +3152,8 @@ public:
 
 ## 560. *和为k的子数组 (medium)
 
+> https://leetcode.cn/problems/subarray-sum-equals-k/
+
 * 思路: 假设前缀和数组是`s`, 问题就等价于前缀和数组中是否存在`s[r] - s[l - 1] = k`, 和两数之和本质相同.
 
 ```cpp
@@ -3058,6 +3178,8 @@ public:
 
 
 ## 739. *每日温度(medium)
+
+> https://leetcode.cn/problems/daily-temperatures/
 
 * 单调栈问题可以用$O(n)$的时间复杂度求出一个元素左侧/右侧比他大/小, /具有单调性的最近的元素.
 * 如果要找到右边第一个比他大的元素, 那么在遍历它之前, 就需要有右侧的先验知识, 因此从右向左维护单调栈.
@@ -3086,6 +3208,8 @@ public:
 
 
 ## 763. *划分字母区间(medium)
+
+> https://leetcode.cn/problems/partition-labels/
 
 * 这道题的本质是区间问题, 对于每一种字符, 都有一个开始和结束位置, 这个位置看成一个一个区间, 最终合并区间就是分割方案.
 * 实际上只需维护一个所有区间能到达的最右范围`end`, 从前向后遍历, 如果最右范围`end = i`, 那么就说明`[0, i]`这一段已经和后面一段不可能产生交集, 因此就可以作为一个合法分割.
@@ -3117,6 +3241,8 @@ public:
 
 
 ## 994. *腐烂的🍊 (medium)
+
+> https://leetcode.cn/problems/rotting-oranges/
 
 * 多源BFS问题:
   * 直接把腐烂的橘子放入队列中宽搜即可.
