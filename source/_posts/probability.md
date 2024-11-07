@@ -1,6 +1,6 @@
 ---
 title: 概率论与数理统计
-categories: 控制基础
+categories: 数学
 mathjax: true
 ---
 

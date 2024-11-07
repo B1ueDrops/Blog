@@ -1,6 +1,6 @@
 ---
 title: 信号与系统
-categories: 控制基础
+categories: 数学
 mathjax: true
 ---
 

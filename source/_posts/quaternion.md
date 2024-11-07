@@ -1,6 +1,6 @@
 ---
 title: 描述旋转的几种方式
-categories: 控制基础
+categories: 数学
 mathjax: true
 ---
 

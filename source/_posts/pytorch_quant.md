@@ -29,12 +29,13 @@ $$
   * $f_{min}$和$f_{max}$距离数据分布集中的地方较远
     * 解决方案: Calibration的过程中, 将$f_{min}$和$f_{max}$的值设置成数据分布集中区域的下界和上界, 超出上下界的部分直接映射成上下界, 这个过程叫clip.
 
-* 实际的线性量化一般有两个参数分别是$s, z$, 其中$s$都是浮点数而$z$是整数, 量化方式为:
+* 实际的线性量化一般有两个参数分别是$s, z$, 其中$s$都是浮点数, 而$z$是整数, 量化方式为:
   $$
-  I = clip[round(\frac{f}{s} + z),\ INT\_MAX,\ INT\_MIN]
+  I = clip[round(\frac{f}{s}) + z,\ q_{max},\ q_{min}]
   $$
 
   * 其中, $s = \frac{f_{max} - f_{min}}{q_{max} - q_{min}}$, 其中$q_{max}, q_{min}$表示量化后整数数据类型的最大/最小值, $f_{max}, f_{min}$表示经过Calibration统计出的浮点数最大值和最小值.
+    * $s$一般大于1.0, 表示将浮点数区间缩减到量化区间$[q_{min}, q_{max}]$.
   * $z$表示浮点数的0.0映射到整数的位置.
 
 
@@ -72,9 +73,11 @@ $$
 
 <img src="./pytorch_quant/quantized_model.png" alt="quantized_model" style="zoom:50%;" />
 
-* 输入量化模型的Tensor可以是浮点/量化后的Activation.
 * 模型的每一层前后都会保存输入的Activation和输出的Activation的量化参数(量化参数可以体现Tensor的分布).
-* 每次infer时, 都会通过$Q_c = M_0 \times 2^{-n}(Q_a - Z_a)(Q_b - Z_b) + Z_c$进行输出, 输出的结果是量化后的Activation.
+  * 输入Activation的量化参数: $S_i, Z_i$.
+  * 模型权重的量化参数: $S_w, Z_w$.
+  * 输出Activation的量化参数: $S_o, Z_o$.
+* 每次infer时, 都会通过$Q_c = M_0 \times 2^{-n}(Q_a - Z_a)(Q_b - Z_b) + Z_c$ (矩阵乘法)进行输出, 输出的结果是量化后的Activation.
 
 
 
@@ -97,7 +100,7 @@ $$
 
 
 
-### Conv2d+BatchNorm
+### Conv2d-BatchNorm合并
 
 * 在推理阶段, `Conv2d`层可以和`BatchNorm`层进行合并.
 
@@ -127,7 +130,7 @@ $$
 
 
 
-### Conv2d+ReLU
+### Conv2d-ReLU合并
 
 * `Conv2d`和`ReLU`只有在量化的时候才能合并, 如果是全精度模型则无法合并.
 
@@ -152,7 +155,6 @@ $$
   Q_3 = \frac{S_1}{S_3}(Q_1 - Z_1) + \frac{S_2}{S_3}(Q_2 - Z_2) + Z_3
   $$
   
-
 * 其中的$\frac{S_1}{S_3}$和$\frac{S_2}{S_3}$可以用定点模拟.
 
 
@@ -164,13 +166,11 @@ $$
   f_3 = [f_1, f_2]
   $$
   
-
 * 量化:
   $$
   S_3(Q_3 - Z_3) = [S_1(Q_1 - Z_1), S_2(Q_2 - Z_2)]
   $$
   
-
 * 那么最后结果就是:
   $$
   Q_3 = [\frac{S_1}{S_3}(Q_1 - Z_1) + Z_3, \frac{S_2}{S_3}(Q_2 - Z_2) + Z_3]
@@ -179,20 +179,52 @@ $$
 
 
 
+### FakeQuantize
+
+* FakeQuantize是一个算子, 用来模拟量化操作产生的误差.
+
+* 假设输入FakeQuantize的是浮点张量$f$, FakeQuantize的输出就是:
+  $$
+  q(f) = s \times \{clip[round(\frac{f}{s}) + z, q_{min}, q_{max}] - z\}
+  $$
+
+* FakeQuantize的梯度: $\frac{\partial q(f)}{\partial f}$
+
+  * 首先要知道$\frac{d\ round(x)}{dx} = 1$.
+
+  * 然后最终的结果是:
+    $$
+    \frac{\partial q(f)}{\partial f} = \begin{cases}
+    1, f\in[q_{min}, q_{max}] \\
+    0, f \notin [q_{min}, q_{max}]
+    \end{cases}
+    $$
+
+  * $\frac{\partial q(f)}{\partial s}$和$\frac{\partial q(f)}{\partial z}$的求解同理, 这个梯度用于QAT训练时进行反向传播.
+
+
+
 ## 模型量化pipeline
+
+模型量化主要分为一下几个步骤:
+
+* 指定量化后端(CPU, GPU, 架构等).
+* PTQ (Post-Training Quantization).
+* 尝试退回将某些量化的部分.
+* QAT (Quantize-Aware Training).
 
 
 
 ### 指定量化后端
 
-* 首先, 需要明确模型需要跑在什么架构上, 然后指定后端:
+首先, 需要明确模型需要跑在什么架构上, 然后指定后端:
 
-  ```python
-  # x86架构
-  torch.backends.quantized.engine = 'x86'
-  # ARM架构
-  torch.backends.quantized.engine = 'qnnpack'
-  ```
+```python
+# x86架构
+torch.backends.quantized.engine = 'x86'
+# ARM架构
+torch.backends.quantized.engine = 'qnnpack'
+```
 
 
 
