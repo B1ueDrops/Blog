@@ -89,6 +89,86 @@ public:
 
 
 
+## 4. 寻找两个正序数组的中位数(hard)
+
+> https://leetcode.cn/problems/median-of-two-sorted-arrays/
+
+考虑这样一个问题:
+
+> 在两个排序的数组之间, 寻找第k小数.
+
+如果这个问题能够解决, 那么中位数就是第`(n + m) / 2`小的数.
+
+假设两个正序数组分别是$A$和$B$, 考虑$A[\frac{k}{2}]$和$B[\frac{k}{2}]$两个数:
+
+* 如果$A[\frac{k}{2}] < B[\frac{k}{2}]$, 那么$A, B$数组中, 小于等于$A[\frac{k}{2}]$的数的个数就小于$k$, 此时两个数组中第$k$小的数肯定不会在$A$数组第$\frac{k}{2}$个元素的左边.
+* 如果$A[\frac{k}{2}] > B[\frac{k}{2}]$, 那么$A, B$数组中, 小于等于$B[\frac{k}{2}]$的数的个数就小于$k$, 此时两个数组中第$k$小的数肯定不会在$B$数组第$\frac{k}{2}$个元素的左边.
+* 如果$A[\frac{k}{2}] = B[\frac{k}{2}]$, 那么$A, B$数组中, 小于等于$A[\frac{k}{2}]$或$B[\frac{k}{2}]$的数的个数就等于$k$, 此时$A[\frac{k}{2}]$或者$B[\frac{k}{2}]$就是第$k$小的数.
+
+根据以上分析, 定义一个函数, 函数的签名为`find(A, B, i, j, k)`, 表示给定两个数组$A, B$, 下标从$i, j$开始, 找到两个数组中第$k$小的数, 那么就可以用这个函数递归解决.
+
+时间复杂度是$O(logk)$, 由于$k$最多是$m + n$, 那么时间复杂度就是$O(log(m + n))$
+
+```cpp
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        int n = nums1.size(), m = nums2.size(), k = (n + m) / 2;
+        if ((n + m) % 2 == 0) {
+            int left = find(nums1, nums2, 0, 0, k);
+            int right = find(nums1, nums2, 0, 0, k + 1);
+            return (left + right) / 2.0;
+        }
+        else return find(nums1, nums2, 0, 0, k + 1);
+    }
+    int find(vector<int> &nums1, vector<int> &nums2, int i, int j, int k) {
+        int n = nums1.size(), m = nums2.size();
+        // nums1默认作为较小的数组
+        if (n - i > m - j) return find(nums2, nums1, j, i, k);
+        // 如果nums1为空
+        if (i == nums1.size()) return nums2[j + k - 1];
+        // 如果k == 1
+        if (k == 1) return min(nums1[i], nums2[j]);
+
+        int si = min((int)(nums1.size() - 1), i + k / 2 - 1);
+        int sj = j + (k - k / 2) - 1;
+        if (nums1[si] <= nums2[sj]) return find(nums1, nums2, si + 1, j, k - (si - i + 1));
+        else return find(nums1, nums2, i, sj + 1, k - (sj - j + 1));
+    }
+};
+```
+
+
+
+## 5. 最长回文子串(medium)
+
+> https://leetcode.cn/problems/longest-palindromic-substring/
+
+* 要枚举一个字符串中的所有回文串:
+  * 首先, 遍历字符串中所有的字符`s[i]`.
+  * 然后, 回文串可以分为两种, 奇数长度和偶数长度, 奇数长度从`i - 1`和`i + 1`进行扩展, 偶数长度从`i`和`i + 1`进行扩展.
+
+```cpp
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        string res;
+        for (int i = 0; i < s.size(); i ++) {
+            int l = i - 1, r = i + 1;
+            while (l >= 0 && r < s.size() && s[l] == s[r]) l --, r ++;
+            if (r - l - 1 > res.size()) res = s.substr(l + 1, r - l - 1);
+
+            l = i, r = i + 1;
+            while (l >= 0 && r < s.size() && s[l] == s[r]) l --, r ++;
+            if (r - l - 1 > res.size()) res = s.substr(l + 1, r - l - 1);
+        }
+        return res;
+    }
+};
+```
+
+
+
 
 
 ## 11. *盛水最多的容器(medium)
@@ -153,6 +233,42 @@ public:
 
 
 
+## 16. 最接近的三数之和(medium)
+
+> https://leetcode.cn/problems/3sum-closest/
+
+* 和三数之和完全一致, 只需要在求和`sum`的时候维护一个离`target`最近的`sum`值即可.
+
+```cpp
+class Solution {
+public:
+    typedef long long LL;
+    int threeSumClosest(vector<int>& nums, int target) {
+        sort(nums.begin(), nums.end());
+        int ans = 0x3f3f3f3f;
+        for (int i = 0; i < nums.size(); i ++) {
+            if (i && nums[i] == nums[i - 1]) continue;
+            int l = i + 1, r = nums.size() - 1;
+            while (l < r) {
+                LL sum = (LL)nums[i] + nums[l] + nums[r];
+                if (abs(sum - target) < abs(ans - target)) ans = sum;
+                if (sum < target) l ++;
+                else if (sum > target) r --;
+                else {
+                    do {l ++;} while (l < r && nums[l] == nums[l - 1]);
+                    do {r --;} while (l < r && nums[r] == nums[r + 1]);
+                }
+            }
+        }
+        return ans;
+    }
+};
+```
+
+
+
+
+
 ## 17. *电话号码的字母组合(medium)
 
 > https://leetcode.cn/problems/letter-combinations-of-a-phone-number/
@@ -187,6 +303,46 @@ public:
     }
 };
 ```
+
+
+
+## 18. 四数之和 (medium)
+
+> https://leetcode.cn/problems/4sum/description/
+
+* 和三数之和完全一致的做法, 只不过多了一层循环.
+* 注意: 1. 数组先要排序. 2. `sum`需要用`long long`来存储.
+
+```cpp
+class Solution {
+public:
+    typedef long long LL;
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> ans;
+        for (int i = 0; i < nums.size(); i ++) {
+            if (i && nums[i] == nums[i - 1]) continue;
+            for (int j = i + 1; j < nums.size(); j ++) {
+                if (j != i + 1 && nums[j] == nums[j - 1]) continue;
+                int l = j + 1, r = nums.size() - 1;
+                while (l < r) {
+                    LL sum = (LL)nums[i] + nums[j] + nums[l] + nums[r];
+                    if (sum < target) l ++;
+                    else if (sum > target) r --;
+                    else {
+                        ans.push_back({nums[i], nums[j], nums[l], nums[r]});
+                        do { l ++; } while (l < r && nums[l] == nums[l - 1]);
+                        do { r --; } while (l < r && nums[r] == nums[r + 1]);
+                    }
+                }
+            }
+        }
+        return ans;
+    }
+};
+```
+
+
 
 
 
@@ -554,6 +710,37 @@ public:
 };
 
 ```
+
+
+
+## 38. 外观数列(medium)
+
+> https://leetcode.cn/problems/count-and-say/description/
+
+* 本质上, 这个题就是在统计字符串中, 每一个连续相同字符的序列的长度, 直接用双指针统计即可.
+
+```cpp
+class Solution {
+public:
+    string countAndSay(int n) {
+        if (n == 1) return "1";
+        string s = countAndSay(n - 1);
+
+        string res;
+        for (int i = 0; i < s.size(); i ++) {
+            int j = i + 1;
+            while (j < s.size() && s[j] == s[i]) j ++;
+            int cnt = j - i;
+            res += cnt + '0';
+            res += s[i];
+            i = j - 1;
+        }
+        return res;
+    }
+};
+```
+
+
 
 
 

@@ -6,6 +6,258 @@ mathjax: true
 
 [toc]
 
+## 基础算法
+
+### 快速排序
+
+
+
+#### 快速排序
+
+> https://www.acwing.com/problem/content/787/
+
+* 快速排序平均时间复杂度是$O(nlogn)$, 空间复杂度是$O(logn)$, 最坏时间复杂度是$O(n^2)$.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 100010;
+
+int n, q[N];
+
+void quick_sort(int l, int r) {
+    if (l >= r) return ;
+    int i = l - 1, j = r + 1, x = q[l + (r - l) / 2];
+    while (i < j) {
+        while (q[++ i] < x);
+        while (q[-- j] > x);
+        if (i < j) swap(q[i], q[j]);
+    }
+    quick_sort(l, j), quick_sort(j + 1, r);
+}
+
+int main() {
+    
+    cin >> n;
+    for (int i = 0; i < n; i ++) cin >> q[i];
+    quick_sort(0, n - 1);
+    for (int i = 0; i < n; i ++) cout << q[i] << ' ';
+    return 0;
+}
+```
+
+
+
+#### 第k个数
+
+> https://www.acwing.com/problem/content/788/
+
+* 利用快速排序每次能够排好一个数的特性:
+  * 假设本次排好了数`x`, 那么左边有`sl`个数, 如果`k <= sl`, 那么第`k`个数就在左边.
+  * 因此, 直接递归到左边, 直到递归到第k个数即可.
+* 这种做法时间复杂度是$O(n)$, 证明如下:
+  * 第一次需要操作长度是$n$的序列, 第二次是$\frac{n}{2}$, 第三次是$\frac{n}{4}$...
+  * 最后的时间复杂度就是: $O(n) = n(1 + \frac{1}{2} + \frac{1}{4} + ...)$, 后面序列前n项和的极限是常数.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 100010;
+
+int n, k, q[N];
+
+int quick_sort(int l, int r, int k) {
+    if (l >= r) return q[l];
+    int i = l - 1, j = r + 1, x = q[l + (r - l) / 2];
+    while (i < j) {
+        while (q[++ i] < x);
+        while (q[-- j] > x);
+        if (i < j) swap(q[i], q[j]);
+    }
+    int sl = j - l + 1;
+    if (k <= sl) return quick_sort(l, j, k);
+    else return quick_sort(j + 1, r, k - sl);
+}
+
+int main() {
+    
+    cin >> n >> k;
+    for (int i = 0; i < n; i ++) cin >> q[i];
+    cout << quick_sort(0, n - 1, k) << endl;
+    return 0;
+}
+```
+
+
+
+### 归并排序
+
+
+
+#### 归并排序
+
+> https://www.acwing.com/problem/content/description/789/
+
+* 归并排序时间复杂度是$O(nlogn)$, 空间复杂度是$O(n)$.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 100010;
+
+int n;
+int a[N], tmp[N];
+
+void merge_sort(int l, int r) {
+    // 这里必须是>=, 如果=没有return, 只有一个元素会无限递归
+    if (l >= r) return ;
+    
+    int mid = l + (r - l) / 2;
+    merge_sort(l, mid), merge_sort(mid + 1, r);
+    
+    int i = l, j = mid + 1, k = 0;
+    while (i <= mid && j <= r) {
+        if (a[i] <= a[j]) tmp[k ++] = a[i ++];
+        else tmp[k ++] = a[j ++];
+    }
+    while (i <= mid) tmp[k ++] = a[i ++];
+    while (j <= r) tmp[k ++] = a[j ++];
+    
+    for (int i = l, j = 0; i <= r; i ++, j ++)
+        a[i] = tmp[j];
+}
+
+int main() {
+    
+    cin >> n;
+    for (int i = 0; i < n; i ++) cin >> a[i];
+    merge_sort(0, n - 1);
+    for (int i = 0; i < n; i ++) cout << a[i] << ' ';
+    return 0;
+}
+```
+
+
+
+#### 逆序对的数量
+
+> https://www.acwing.com/problem/content/790/
+
+* 在归并排序合并数组时, 如果发现了`a[i] > a[j]`, 那么从`a[i]`到`a[mid]`都可以和`a[j]`组成逆序对, 直接统计即可.
+* 注意, 数组如果是逆序, 那么逆序对的个数就可能是$C_{n}^2$个, 数量需要用`LL`来存储.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 100010;
+typedef long long LL;
+
+int n, q[N], tmp[N];
+
+LL merge_sort(int l, int r) {
+	if (l >= r) return 0;
+	
+	int mid = l + (r - l) / 2;
+	LL res = merge_sort(l, mid) + merge_sort(mid + 1, r);
+	
+	int i = l, j = mid + 1, k = 0;
+	while (i <= mid && j <= r) {
+		if (q[i] <= q[j]) tmp[k ++] = q[i ++];
+		else {
+			res += mid - i + 1;
+			tmp[k ++] = q[j ++];
+		}
+	}
+	while (i <= mid) tmp[k ++] = q[i ++];
+	while (j <= r) tmp[k ++] = q[j ++];
+
+	for (int i = l, j = 0; i <= r; i ++, j ++) {
+		q[i] = tmp[j];
+	}
+	return res;
+}
+
+int main() {
+
+	cin >> n;
+	for (int i = 0; i < n; i ++) {
+		cin >> q[i];
+	}
+	printf("%lld", merge_sort(0, n - 1));
+	return 0;
+}
+
+```
+
+
+
+### 双指针算法
+
+
+
+#### 数组元素的目标和
+
+> https://www.acwing.com/problem/content/802/
+
+* 从前到后, 遍历`a[i]`, 然后调整`j`指针, 直到`a[i] + b[j] <= x`, 然后判断是否相等即可.
+
+```cpp
+#include <iostream>
+using namespace std;
+const int N = 100010;
+
+int n, m, x, a[N], b[N];
+
+int main() {
+    
+    cin >> n >> m >> x;
+    for (int i = 0; i < n; i ++) cin >> a[i];
+    for (int i = 0; i < m; i ++) cin >> b[i];
+    
+    for (int i = 0, j = m - 1; i < n; i ++) {
+        while (j > 0 && a[i] + b[j] > x) j --;
+        if (a[i] + b[j] == x) cout << i << ' ' << j << endl;
+    }
+    return 0;
+}
+```
+
+
+
+#### 判断子序列
+
+> https://www.acwing.com/problem/content/2818/
+
+* 遍历大数组`b`中的每一个数字`b[i]`, 如果`b[i]`和`a[j]`相等, 就把`j`指针向前一步.
+* 如果`j`指针指到了`n`, 就表示`b`中, 按顺序出现了`a`中所有的元素, 就是子序列.
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+const int N = 100010;
+
+int n, m;
+int a[N], b[N];
+
+int main() {
+
+    cin >> n >> m;
+
+    for (int i = 0; i < n; i++) cin >> a[i];
+    for (int i = 0; i < m; i ++) cin >> b[i];
+    int j = 0;
+    for (int i = 0; i < m; i ++) {
+        if (j < n && a[j] == b[i]) j ++;
+    }
+    if (j == n) puts("Yes");
+    else puts("No");
+
+    return 0;
+}
+```
+
 
 
 

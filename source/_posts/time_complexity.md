@@ -1,5 +1,5 @@
 ---
-title: 时间复杂度
+title: 时间复杂度的一些知识
 categories: 算法
 mathjax: true
 ---
