@@ -260,6 +260,125 @@ int main() {
 
 
 
+## 数据结构
+
+### 栈
+
+#### 表达式求值
+
+> https://www.acwing.com/problem/content/3305/
+
+* 这个题考查的是用栈求中缀表达式的值.
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <unordered_map>
+
+using namespace std;
+
+// 运算符优先级
+unordered_map<char, int> pr = {
+  {'+', 1}, {'-', 1}, {'*', 2}, {'/', 2}  
+};
+
+stack<char> ops;
+stack<int> nums;
+
+void eval() {
+    
+    char c = ops.top(); ops.pop();
+    int b = nums.top(); nums.pop();
+    int a = nums.top(); nums.pop();
+    
+    if (c == '+') nums.push(a + b);
+    else if (c == '-') nums.push(a - b);
+    else if (c == '*') nums.push(a * b);
+    else nums.push(a / b);
+}
+
+int main() {
+    
+    string s;
+    cin >> s;
+    
+    for (int i = 0; i < s.size(); i ++) {
+        char c = s[i];
+        // 左括号入栈
+        if (c == '(') ops.push(c);
+        // 右括号需要一直eval, 直到栈顶是(为止
+        else if (c == ')') {
+            while (ops.size() && ops.top() != '(') eval();
+            ops.pop();
+        }
+        // 如果是数字, 就入栈
+        else if (isdigit(c)) {
+            int j = i, x = 0;
+            while (j < s.size() && isdigit(s[j])) x = x * 10 + s[j ++] - '0';
+            nums.push(x);
+            i = j - 1;
+        }
+        // 如果是运算符, 就需要把栈顶高优先级的先算完.
+        else {
+            while (ops.size() && pr[ops.top()] >= pr[c]) eval();
+            ops.push(c);
+        }
+    }
+    while (ops.size()) eval();
+    
+    cout << nums.top() << endl;
+    return 0;
+}
+```
+
+
+
+### 队列
+
+#### 滑动窗口
+
+> https://www.acwing.com/problem/content/90/
+
+* 滑动窗口本质上也是一个单调栈, 单调栈中, 每一个元素的下面一个元素, 都是离他最近, 又比他大/小的元素.
+* 这样, 我用单调栈存储下标, 然后维护一个滑动窗口的边界, 每次的队头, 就是滑动窗口的最大/最小值.
+
+```cpp
+#include <iostream>
+#include <queue>
+
+using namespace std;
+const int N = 1000010;
+int n, k, a[N];
+int hh = 0, tt = -1;
+int q[N];
+
+int main() {
+
+	cin >> n >> k;
+	for (int i = 0; i < n; i ++) cin >> a[i];
+
+	for (int i = 0; i < n; i ++) {
+		if (i - k + 1 > q[hh]) hh ++;
+		while (hh <= tt && a[i] <= a[q[tt]]) tt --;
+		q[ ++ tt] = i;
+		if (i - k + 1 >= 0) cout << a[q[hh]] << ' ';
+	}
+  
+	hh = 0, tt = -1;
+	cout << endl;
+  
+	for (int i = 0; i < n; i ++) {
+		if (i - k + 1 > q[hh]) hh ++;
+		while (hh <= tt && a[i] >= a[q[tt]]) tt --;
+		q[ ++ tt] = i;
+		if (i - k + 1 >= 0) cout << a[q[hh]] << ' ';
+	}
+	return 0;
+}
+```
+
+
+
 
 
 ## 动态规划

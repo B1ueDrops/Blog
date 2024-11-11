@@ -1535,6 +1535,40 @@ public:
 
 
 
+## 92. 反转链表 II (medium)
+
+> https://leetcode.cn/problems/reverse-linked-list-ii/
+
+* 首先, 找到第`left-1`个节点, 和`right`节点, 操作`[left, right]`这一组节点边界的指针.
+* 之后, 按照反转链表迭代的写法, 反转`[left, right]`内部的节点.
+
+```cpp
+class Solution {
+public:
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        auto dummy = new ListNode(-1); dummy->next = head;
+        auto p = dummy, q = dummy;
+        for (int i = 0; i < left - 1; i ++) p = p->next;
+        for (int i = 0; i < right; i ++) q = q->next;
+        
+        auto u = p->next, v = p->next->next;
+        p->next->next = q->next;
+        p->next = q;
+        while (u != q) {
+
+            auto r = v->next;
+            v->next = u;
+            u = v, v = r;
+        }
+        return dummy->next;
+    }
+};
+```
+
+
+
+
+
 
 
 ## 94. *二叉树的中序遍历(easy)
@@ -2347,7 +2381,7 @@ public:
 > https://leetcode.cn/problems/min-stack/
 
 * 直接单独开一个栈, 专门用来存储最小值.
-* push时, 如果这个最小栈是空的, 或者要插入的值value小于最小栈栈顶, 那么就要向最小栈中插入.
+* push时, 如果这个最小栈是空的, 或者要插入的值value小于等于(注意, 一定是小于等于)最小栈栈顶, 那么就要向最小栈中插入.
 * pop时, 如果最小栈的栈顶等于当前栈要pop出去的元素, 那么最小栈就pop.
 * 对于`stack`来说, 要调用`top()`一定要保证栈不是空的!!
 
