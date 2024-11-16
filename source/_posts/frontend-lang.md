@@ -1,448 +1,155 @@
 ---
-title: Javascript原理与实战
+title: 使用Vue快速搭建网站原型
 categories: 编程语言
 ---
 
 
 
-## `HTML`
+## 环境配置
 
-> MDN官方文档: https://developer.mozilla.org/zh-CN/
+* 安装客户端:
 
-* HTML文档是一个树形结构(DOM):
-
-```html
-<html>
-  
-  <head>
-  </head>
-  
-  <body>
-  </body>
-  
-</html>
-```
-
-* `<head>`用来存储文档的配置信息.
-* `<body>`用来存储文档内容.
-
-* `<head>`中的标签:
-  * `<title>`: 改变浏览器tab栏的内容/搜索引擎item的内容.
-  * `<meta>`: 用来存储一些元数据, 例如`charset`.
-    * `<meta name="description" content="哈哈哈哈">`
-    * `<meta name="keywords" content="tag1,tag2">`, 这个也是用在搜索引擎中.
-  * 网站Logo: `<link rel="icon" href="路径">`
-* 单行/多行注释: `<!-- haha -->`
-
-* 最根本的两个标签:
-
-  * `<span>`: 行内元素, 默认不带回车.
-  * `<div>`: 块级元素, 默认带回车.
-  * 其他标签都是`<span>/<div>`扩展来的.
-
-* **标题标签:**
-
-  * `<h1> ~ <h6>`
-
-* **段落标签:**
-
-  * `<p>`
-  * 本质上是对`<div>`做了一些限制.
-  * 会把其中的回车和空格过滤, 如果不需要过滤, 就用`<pre>`
-
-* HTML中的转义字符:
-
-  * `<: &lt;`
-  * `>: &gt;`
-  * 空格: `&nbsp;`
-
-* **回车标签:** `<br>`
-
-* **样式标签:**
-
-  * 背景黄色: `<mark>`
-  * 斜体: `<i>`
-  * 加粗: `<b>`
-
-* **图片标签:** `<img>`
-
-  * 行内标签
-
-  ```html
-  <img src="地址" alt="图片加载不出来显示什么" width="" height="">
-  ```
-
-* **音频标签: **`<audio>`: 
-
-  * `<controls>`表示加上音频控制, 暂停快进等.
-
-  * `<source>`表示多个音频源, 如果第一个加载不出来会尝试加载第二个.
-  
-  * 如果都没办法播放, 就会显示`无法播放`.
-
-
-  ```html
-  <audio controls>
-      <source src="/audios/sound1" type="audio/mpeg"/>
-      <source src="/audios/sound2" type="audio/mpeg"/>
-    	无法播放
-  </audio>
-  ```
-
-* 视频标签: `<video>`
-
-  ```html
-  <video controls width="300">
-  	<source src="..." type="video/mp4"/>
-    <source src="..." type="video/mp4"/>
-  </video>
-  ```
-
-* 超链接标签: `<a>`
-
-  ```html
-  <a href="你要跳到的超链接地址">哈哈哈</a>
-  ```
-
-  
-
-
-
-
-
-## `Javascript`
-
-
-
-### `ES6`语法糖
-
-* `bind()`函数:
-
-  * 在Javascript中, 函数里的`this`指的是执行时的调用者, 而不是定义时所在的对象, 例如:
-
-    ```javascript
-    const person = {
-      name: "ligaog",
-      talk: function() {
-        console.log(this);
-      }
-    };
-    
-    // 这里的this是person
-    person.talk();
-    
-    const talk = person.talk;
-    // 这里的this是window (window托管全局)
-    talk();
-    ```
-
-  * 但是, 如果不想`this`改变的话, 可以用`bind`函数:
-
-    * `const talk = person.talk.bind(person)`.
-    * `bind()`里面传入`this`到底是谁, 就可以用谁去调这个函数.
-
-* 箭头函数:
-
-  * 箭头函数是对普通匿名函数的简化:
-
-    ```javascript
-    function (a, b) {x
-      return a + b;
-    }
-    
-    (a, b) => a + b;
-    ```
-
-  * 在箭头函数中使用`this`, this始终指向父级作用域, 不用`this`绑定.
-
-    ```javascript
-    const person = {
-      talk: function() {
-        setTimeout(function() {
-          console.log(this);
-        }, 1000);
-      }
-    };
-    
-    person.talk();  // 输出Window
-    
-    // 箭头函数
-    const person = {
-      talk: function() {
-        setTimeout(() => {
-          console.log(this);
-        }, 1000);
-      }
-    };
-    
-    person.talk();  // 输出 {talk: f}
-    ```
-
-* 对象解构:
-
-  ```javascript
-  const person = {
-    name: "ligaog",
-    age: 18
-  };
-  
-  const name = person.name;
-  const age = person.age;
-  
-  // 语法糖
-  const { name: my_name, age: my_age } = person;
-  ```
-
-* 数组展开: `...a`表示把`a`中的元素铺开
-
-  ```javascript
-  let a = [1, 2, 3];
-  let b = [4, 5, 6];
-  // [1, 2, 3, 4, 5, 6]
-  let c = [...a, ...b];
-  ```
-
-* Export Default和Export区别:
-
-  * `export`: 可以`export`多个, `import`时需要加上`{}`, 名称需要匹配 (用别名用`as`).
-  * `export default`: 只能`export default`一个, `import`时不用`{}`, 名称不需要匹配.
-
-
-
-## `Vue3`
-
-
-
-### 创建项目
-
-* 安装Vue命令行客户端:
-
-  ```bash
+  ```shell
   npm i -g @vue/cli
   ```
 
+* 创建项目, 并且带上插件`vue-router`和`vuex`:
 
-* 要创建Vue项目: 
-
-  ```bash
-  vue create <项目名字>
+  ```shell
+  vue create <project-name>
+  vue add router
+  vue add vuex
+  vue add vuetify
   ```
 
+* 之后启动调试:
 
-  * 插件: 
-
-    * `vue-router`
-    * `vuex`
-    * `vuetify`
-    * `electron-builder`: 如果不需要GUI的话不需要选.
-
-    ```bash
-    vue add router
-    vue add vuex
-    vue add vuetify
-    vue add electron-builder
-    ```
-    
-* 启动项目:
-
-  ```bash
-  # 调试环境
+  ```shell
   vue serve
-  
-  # 生产环境
-  vue build
-  
-  # electron gui
-  npm run electron:serve
   ```
 
-* 路由文件: `src/router/index.js`
+* 之后, 在`src/router/index.js`中, 将所有`createWebHashHistory`替换为`createWebHistory`.
+  * 用于去除浏览器地址栏中的`#`
 
 
-  * 将`createWebHashHistory`改成`createWebHistory`, 浏览器地址栏就不会出现`#`.
 
-* 主页面: `src/public/index.html`
+## 组件定义
 
-### 组件定义
+假设一个组件文件叫`MyComponent.vue`.
 
-* 需要这样写
+* 它的起始文件结构是:
 
-* ```js
+```vue
+<template></template>
+<style scoped></style>
+<script>
+// @是src/
+import NavBar from '@/components/NavBar.vue'
+export default {
+  name: 'MyComponent', // 你当前组件的名字
+  // 所有用到的子组件
+  components: {
+    NavBar,
+  }
+}
+</script>
+```
+
+
+
+
+
+### 插槽(slot)
+
+* 组件参数用插槽`slot`定义, 假设组件有三个参数叫做`header, main, footer`, 那么:
+
+  ```vue
+  <template>
+  <!- 三个参数 ->
+  	<slot name="header"></slot>
+  	<slot name="main"></slot>
+  	<slot name="footer"></slot>
+  </template>
+  
+  <style scoped></style>
+  
+  <script>
+  // @是src/
+  import NavBar from '@/components/NavBar.vue'
   export default {
-    name: '你当前组件的名字',
-    // 你当前组件中用到的所有子组件
+    name: 'MyComponent', // 你当前组件的名字
+    // 所有用到的子组件
     components: {
       NavBar,
     }
   }
+  </script>
   ```
 
-### 父组件调用子组件
+* 父组件使用子组件时:
 
-* `slot`插槽相当于子组件的参数
-
-* 父组件中调用子组件时:
-
-  * ```vue
-    <!--父组件-->
-    <template>
-    	<Child>
-      	hahaha
-      </Child>
-    </template>
-    ```
-  
-  * 子组件会把`hahaha`渲染到`slot`中:
-
-    ```vue
-    <template>
-    	<!-hahaha会被填充到这里-->
-    	<slot></slot>
-    </template>
-    ```
-  
-  
-  
-  > 多个参数的情况
-  
-  * 子组件叫`MainFrame.vue`, 有三个参数
-  
-    ```vue
-    <!-- MainFrame.vue -->
-    <template>
-    	<slot name="header"></slot>
-    	<slot name="main"></slot>
-    	<slot name="footer"></slot>
-    </template>
-    ```
-  
-  * 如果在其他组件中想要调用这个组件, 并且向`slot`中填充内容:
-  
-    ```vue
-    <MainFrame>
-      
-    	<template #header>
-      	<!-- 这里放header内容 -->
+  ```vue
+  <MyComponent>
+      <template #header>
+        <!-- 这里放header内容 -->
       </template>
-      
       <template #main>
-      	<!-- 这里放main内容 -->
+        <!-- 这里放main内容 -->
       </template>
-      
       <template #footer>
-      	<!-- 这里放footer内容 -->
+        <!-- 这里放footer内容 -->
       </template>
-      
-    </MainFrame>
-    ```
-  
-
-
-
-### 父组件给子组件传递数据
-
-* 首先在父组件中定义数据:
-
-  ```js
-  import { ref, reactive } from 'vue'
-  
-  export default {
-  	setup() {
-      // 定义的数据
-      // reactive只可以定义Object
-    	const user = reactive({
-        name: 'haha',
-        age: 18
-      })
-      // ref可以定义其他类型变量
-      const myname = ref('haha')
-      /* ref定义的值需要用myname.value进行访问/修改 */
-      // 最后return出去
-      return {
-        user, myname
-      }
-  	} 
-  }
+  </MyComponent>
   ```
 
-* 给子组件传递数据:
 
-  ```html
-  <Child :user=”user“>
-  ```
 
-  * 这个`:`是`v-bind`的缩写, 当使用`:`的时候, 后面的`""`里面就不是字符串, 而是一个表达式, 其他标签也可以使用:
+### 成员变量
 
-    ```html
-    <img :src="photo.address">
+* 在一个组件中定义成员变量的步骤如下:
+
+  * 第一步, 在`<script>`中, 导入:
+
+    ```javascript
+    import { ref, reactive } from 'vue'
     ```
 
-* 子组件接收数据:
+  * 第二步, 在`export default`中, 定义`setup()`函数, 定义数据, 并且`return`出去:
 
-  ```js
-  export default {
+    ```javascript
+    import { ref, reactive } from 'vue'
     
-    props: {
-      // 接收的参数
-      user: {
-        type: Object,
-        required: true
-      }
+    export default {
+    	setup() {
+        // reactive只可以定义Object
+      	const user = reactive({
+          name: 'haha',
+          age: 18
+        })
+        // ref可以定义其他类型变量
+        const myname = ref('haha')
+        /* ref定义的值需要用myname.value进行访问/修改 */
+        // 最后return出去
+        return {
+          user, myname
+        }
+    	} 
     }
-  }
-  ```
-
-  * 然后, 在`template`中, 直接用`{{ user.username }}`展示即可.
-
-* 如果子组件需要一些通过基本数据组合而成的数据:
-
-  ```js
-  import { computed } from 'vue'
-  
-  export default {
-    
-    setup(props) {
-      let fullName = computed(() => {
-        props.user.userName + props.user.lastName
-      })
-      
-      return {
-        fullName,
-      }
-    }
-  }
-  ```
-
-  * 也就是说`setup`中既可以定义数据, 也可以用父组件传的参数.
+    ```
 
 
 
-### 控制标签显示
 
-* 如果要用一个变量控制标签是否显示, 可以用`v-if`
+### 成员函数
 
-  ```html
-  <button v-if="!user.is_followed">
-    +关注
-  </button>
-  ```
+* 成员函数需要在`setup(props)`中定义, 并且需要使用箭头函数:
 
-* `v-if`对应`v-else`, 表示`v-if`条件不满足就显示`v-else`的东西.
-
-
-
-### 绑定事件
-
-#### 组件内部事件
-
-* 在组件的`setup`中定义所有用到的函数:
-
-  ```js
+  ```javascript
   export default {
     
     setup(props) {
       
-      let handler = (a) => {
+      let handler = (param) => {
         //...
       }
       
@@ -454,106 +161,214 @@ categories: 编程语言
   }
   ```
 
-* 然后用`@` 绑定:
-
-  ```html
-  <!--click是点击事件-->
-  <button @click="handler(a)">
-    
-  </button>
-  ```
-
   
 
 
 
-#### 子组件更新父组件信息
+### 接口数据
 
-* 首先, 子组件中事件的处理函数, 使用`context.emit`, 调用父组件中的处理函数:
+* 组件可以定义一些数据, 这些数据让父组件传进来:
 
-  ```js
+  * 需要在`export default`中定义一个对象`props`.
+
+  ```javascript
   export default {
-    
-    setup(props, context) {
-      // follow是父组件的事件
-      context.emit('follow', 参数1, 参数2)
-    }
-  }
-  ```
-
-* 然后在父组件调用子组件时, 绑定一个`follow`事件:
-
-  ```html
-  <!--第一个follow是事件, 第二个是函数-->
-  <Child @follow="follow"></Child>
-  ```
-
-* 然后在父组件的`setup`中更新即可.
-
-
-
-### 循环标签
-
-* 用`v-for`, 但是需要保证`key`是唯一的(不推荐使用下标)
-
-  ```html
-  <div v-for="item in array" :key="item.id">
-    <!--会把里面的东西循环-->
-  </div>
-  ```
-
-
-
-### 组件内容绑定到变量
-
-* 首先需要在`setup`中定义一个变量:
-
-  ```js
-  export default {
-    
-    setup(props, context) {
-      
-      let myname = ref('haha')
-      
-      return {
-        myname
+    props: {
+      // 接收的参数
+      user: {
+        type: Object,
+        required: true
       }
     }
   }
   ```
 
-* 然后, 在标签中, 用`v-model`进行绑定:
+* 如果组件内部需要使用这些数据, 只要在`setup`函数中加上`props`参数, 然后用`props.user.username`访问即可.
 
-  ```html
-  <textarea v-model='content'>
-  </textarea>
+* 如果父组件例化子组件, 那么只需要用`:`后面加上子组件`props`中定义的数据即可.
+
+  ```vue
+  <Child :user="..."></Child>
   ```
 
-* 然后, 在输入框内输入什么, `content`就会显示什么, 在`template`中也可以用`{{ content }}`实时渲染.
 
 
 
-### 配置路由
+### 路由数据
 
-* 在`src/router/index.js`中, 导入所有组件配置.
-  * 这样可以通过地址栏切换页面.
+* 当前组件中的数据有可能来自于URL中的参数.
 
-* 每一项中:
+* 如果当前组件需要定义路由数据, 首先, 需要在`src/router.js`中定义好接口:
 
-  ```js
+  ```javascript
   const routes = [
     {
-      // 这里, 最好最后面一个字符是/
-      path: '/userprofile/',
+      path: '/userprofile/:userId/',
       name: 'userprofile',
       component: UserProfileView
     }
   ]
   ```
 
+* 之后, 可以用`vue-router`在组件内部访问:
+
+  ```javascript
+  import { useRoute } from 'vue-router'
+  
+  export default {
+  
+    setup() {
+      const route = userRoute();
+      // 访问路由中的变量
+      console.log(route.params.userId);
+    }
+  }
+  ```
+
+
+
+### 全局数据
+
+* 如果要在一个组件中访问全局数据, 首先要导入`vuex`
+
+  ```javascript
+  import { useStore } from 'vuex'
+  ```
+
+* 然后在`setup`函数中, 用`store.state.user`进行访问.
+
+  ```javascript
+  export default {
+    setup() {
+      const store = useStore();
+      console.log(store.state.user);
+    }
+  }
+  ```
+
   
 
-#### 重定向
+
+
+## 数据绑定
+
+
+
+### 动态计算绑定
+
+* 组件在`setup(props)`中定义了数据, 如果要由这些数据通过计算生成新的数据, 并且数据改变后, 计算结果也要动态改变, 就需要用到`compute`:
+
+  ```javascript
+  import { compute } from 'vue'
+  
+  export default {
+    
+    setup(props) {
+      let fullName = computed(() => {
+        props.user.userName + props.user.lastName
+      })
+      
+      return {fullName}
+    }
+  }
+  ```
+
+
+
+### 单向绑定
+
+* 我需要将定义在组件中的数据, 渲染到标签中, 并且数据一变, 标签中渲染的内容也变.
+
+* 这时候需要用到`v-bind`:
+
+  ```vue
+  <Component :prop1="user">
+  </Component>
+  ```
+
+  * 这个时候, 组件`Component`中的参数`prop1`会绑定到当前组件数据`user`.
+
+
+
+### 双向绑定
+
+* 双向绑定不仅需要将组件中的数据绑定到标签, 并且用户修改数据后, 要同步到组件数据.
+
+* 这时候需要用到`v-model`属性, 但是不是所有组件都支持`v-model`, 一般是表单等组件支持.
+
+  ```vue
+  <Form :items="showed_items" v-model="selected_item"></Form>
+  ```
+
+
+
+## 事件模型
+
+
+
+### 内部事件
+
+* 用`@` 在组件内部绑定事件:
+
+  ```html
+  <!--click是点击事件, handler是组件的成员函数-->
+  <button @click="handler(a)">
+    
+  </button>
+  ```
+
+
+
+### 接口事件
+
+* 当前组件有可能需要处理子组件传递上来的事件.
+
+* 首先, 在当前组件中, 例化子组件时, 需要让子组件知道自己有哪些处理函数:
+
+  ```vue
+  <!--func1是告诉子组件, 我当前组件有一个函数叫func1, 但是当前组件内部的处理函数叫follow-->
+  <Child @func1="follow"></Child>
+  ```
+
+* 在子组件中, 使用`context.emit`调用父组件的预留的处理函数:
+
+  ```javascript
+  export default {
+    setup(props, context) {
+      // follow是父组件的事件
+      context.emit('func1', 参数1, 参数2)
+    }
+  }
+  ```
+
+  
+
+
+
+## 路由模型
+
+路由的配置文件在`src/router/index.js`中.
+
+如果某个页面需要根据不同路由, 显示不同的组件, 那么只需要用`<router-view />`标签即可.
+
+
+
+### 路由绑定组件
+
+```js
+const routes = [
+  {
+    // 这里, 最好最后面一个字符是/
+    path: '/userprofile/',
+    name: 'userprofile',
+    component: UserProfileView
+  }
+]
+```
+
+
+
+### 重定向
 
   如果地址栏输入不存在的路由, 需要重定向到一个404页面, 可以在`routes`上加上:
 
@@ -568,51 +383,18 @@ categories: 编程语言
 
 
 
-#### 路由参数给Vue组件
+### 切换路由
 
-* 浏览器路由中传参数给Vue组件:
+* 首先在当前组件中导入:
 
-  * 首先, `routes`里面:
+  ```javascript
+  // @表示src目录
+  import router from '@/router/index'
+  ```
 
-    ```javascript
-    const routes = [
-      {
-        path: '/userprofile/:userId/',
-        name: 'userprofile',
-        component: UserProfileView
-      }
-    ]
-    ```
+* 然后, 在绑定的事件函数进行路由切换:
 
-  * 然后, 在组件`UserProfileView`中:
-
-    ```javascript
-    import { useRoute } from 'vue-router'
-    
-    export default {
-      
-      setup() {
-        const route = userRoute();
-        // 访问路由中的变量
-        console.log(route.params.userId);
-      }
-    }
-    ```
-
-    
-
-#### Vue组件点击切换路由
-
-* 首先导入:
-
-```javascript
-// @表示src目录
-import router from '@/router/index'
-```
-
-* 然后, 在绑定的事件函数中:
-
-  ```js
+  ```javascript
   router.push({
     path: "/userprofile",
   	params: {
@@ -624,70 +406,122 @@ import router from '@/router/index'
 
 
 
-### `vuex`维护全局状态
 
-* `vuex`中的所有文件在`store/`中.
+## 全局数据模型
 
-* 全局状态可以分模块存储, 每一个模块对应一个`.js`文件, 每一个`js`文件的格式是:
+全局数据在`src/store/index.js`中, 在这个文件中, 需要定义全局数据, 以及操作全局数据的接口.
+
+这个文件的大概长这个样子:
+
+```javascript
+import { createStore } from 'vuex'
+
+export default createStore({
+  state: {
+    use_dataset: false
+  },
+  getters: {
+  },
+  mutations: {
+    set_use_dataset(state, set_value) {
+      state.use_dataset = set_value
+    }
+  },
+  actions: {
+  },
+  modules: {
+  }
+})
+
+```
+
+
+
+### 定义全局数据
+
+在`state`中可以定义全局数据:
+
+```javascript
+import { createStore } from 'vuex'
+
+export default createStore({
+  state: {
+    use_dataset: false,
+    user: {
+      username: 'hello',
+      password: '123'
+    }
+  },
+})
+```
+
+
+
+### 定义全局数据更新方法
+
+* 第一步, 在`mutations`中定义同步更新的操作:
+
+  * 这里, 同步更新的操作可以理解为`setter`方法, 里面不能有异步操作 (例如从云端获取数据等).
 
   ```javascript
-  const ModuleUser = {
-    state: {
-      
-    },
-    getters: {
-      
-    },
+  export default createStore({
     mutations: {
-      update(state, ...) {
-       
+      // 第一个参数必须是state
+      updateUser(state, user) {
+        state.user = user;
       }
-    },
+    }
+  })
+  ```
+
+* 第二步, 在`actions`中定义复杂的更新操作, 这一步可以有异步, 比如用`ajax`访问某个链接获取数据等.
+
+  * `actions`中不能直接修改`state`, 需要借助`mutations`完成修改.
+
+  ```javascript
+  export default createStore({
     actions: {
-      
-    },
-    modules: {
-      
+      // 第一个参数必须是context
+      updateUserAction(context, user) {
+        // 调用mutations中的方法
+        context.commit("updateUser", {user: user})
+      }
     }
-  };
-  
-  export default ModuleUser;
+  })
   ```
 
-  * `state`: 定义全局要维护的状态.
-  * `getters`: 通过状态变量计算得到的值.
-  * `mutations`: 更新状态变量的操作, 不是异步操作.
-  * `actions`: 对`state`变量的一些操作, 是异步操作.
-  * `modules`: 需要用到的子模块.
+* 第三步, 如果在某个组件中需要更新全局数据:
 
+  * 可以用`store.commit`调用`mutations`中的方法:
 
-
-#### actions中调用mutations
-
-* 在`actions`中定义的函数需要加上一个参数叫`context`.
-  * 然后用`context.commit('函数名字', {'函数参数'})`
-
-
-
-#### 组件中使用全局变量
-
-* 在组件中:
-
-  ```html
-  <script>
-  	
-    import { useStore } from 'vuex';
+    ```javascript
+    import { useStore } from 'vuex'
     
-    setup() {
-      const store = useStore();
-      
-      // 获取变量
-      
-      // 使用actions中的函数
-      store.dispatch('函数名称', {'函数参数'});
-      // 调用mutations中的函数用store.commit();
-      // 用法和dispatch一样
+    export default {
+      setup() {
+        const store = useStore();
+        // store.dispatch调用
+        store.commit("updateUserAction", {
+          user: user
+        })
+      }
     }
-  </script>
-  ```
-
+    ```
+  
+  * 可以用`store.dispatch`调用`actions`中的方法:
+  
+    ```javascript
+    import { useStore } from 'vuex'
+    
+    export default {
+      setup() {
+        const store = useStore();
+        // store.dispatch调用
+        store.dispatch("updateUserAction", {
+          user: user
+        })
+      }
+    }
+    ```
+  
+  
