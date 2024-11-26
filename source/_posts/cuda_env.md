@@ -433,15 +433,39 @@ void query_gpu() {
 
 
 
+## Warp Divergence
+
+* GPU的编程模型是SIMT, 也就是说, 一个Warp中的32个线程是同时执行一条指令的.
+
+  * 那么一个Warp中的32个线程就是共用一个PC和一个栈空间.
+
+* 此时, 如果你的CUDA Kernel中, 出现了分支, 并且32个线程中, 有一部分走的是`if`分支, 另一部分走了`else`分支, 此时就不满足SIMT的要求.
+
+* GPU的做法是:
+
+  * 选择一个分支的线程先执行, 另一部分线程先被mask.
+  * 执行完之后, 再执行被mask的线程.
+  * 如果分支内的线程因为访存等原因被stall, 那么GPU会调度到其他的Warp执行.
+
+  这种做法会带来性能上的下降, 叫做Warp Divergence.
+
+* 在NVIDIA Volta架构之后, 引入了**independent thread scheduling**:
+  * Warp内部的每一个线程都有独立的PC和栈空间.
+  * 架构仍然遵循SIMT, 如果遇到了分支, 还是一个分支的线程先执行, 另一部分线程被mask.
+  * 但不一样的是, 如果分支内的线程因为访存被stall, GPU可以调度Warp内部被mask的线程继续执行, 而不是跨Warp的调度.
+    * 这样可以模拟TLP (Thread-Level Parallelism)的效果.
+
+
+
 ## Reduce算子优化
 
 * Reduce算子是一类算子, 给定N个数值, 求最大/最小/求和/均值/异或等操作.
 
-
+* 下面的例子是: 给定N个数, 求它们的总和.
 
 ### Reduce baseline
 
-用一个Block和一个Grid做累加:
+用一个Block和一个Thread, 然后在kernel中做累加.
 
 ```cpp
 #include <stdio.h>
@@ -489,6 +513,87 @@ int main() {
     if (*hz != ground_truth) printf("Test Failed...");
     printf("Reduce Latency: %.2fms\n", miliseconds);
 
+    cudaFree(dx); cudaFree(dz);
+    free(hx); free(hz);
+    return 0;
+}
+```
+
+
+
+### Reduce v0
+
+* 用256个Threads, 然后用`N / 256`个Blocks.
+* 每一个Block分别进行`N / block_size`的累加运算.
+* 每一个Block中, 首先将数据从显存中放到Block的Shared Memory中, 然后在Shared Memory里操作.
+
+```cpp
+// 0.53ms
+#include <bits/stdc++.h>
+
+template<int block_size>
+__global__ void reduce_v0(float *dx, float *dz) {
+    __shared__ float smem[block_size];
+    int local_tid = threadIdx.x;
+    /* 对全局数组的操作要用全局的id */
+    int global_tid = blockIdx.x * block_size + threadIdx.x;
+    smem[local_tid] = dx[global_tid];
+    /* 保证每一个线程都写入shared memory后在进行操作 */
+    __syncthreads();
+    for (int index = 1; index < blockDim.x; index *= 2) {
+        if (local_tid % (index * 2) == 0)
+            smem[local_tid] += smem[local_tid + index];
+        __syncthreads();
+    }
+    if (local_tid == 0) dz[blockIdx.x] = smem[0];
+}
+
+int main() {
+
+    cudaDeviceProp device_prop;
+    cudaGetDeviceProperties(&device_prop, 0);
+
+    const int N = 25600000;
+    const int block_size = 256;
+    const int grid_size = std::min(
+        (N + 256 - 1) / 256,
+        device_prop.maxGridSize[0]
+    );
+
+    float *hx = (float *)malloc(N * sizeof(float));
+    for (int i = 0; i < N; i ++) hx[i] = 1.0f;
+
+    float *dx, *dz;
+    cudaMalloc((void **)&dx, N * sizeof(float));
+    cudaMalloc((void **)&dz, grid_size * sizeof(float));
+
+    float ground_truth = N * 1.0f;
+
+    cudaMemcpy(dx, hx, N * sizeof(float), cudaMemcpyHostToDevice);
+    dim3 grid(grid_size);
+    dim3 block(block_size);
+
+    cudaEvent_t start, stop;
+    float miliseconds = 0.0f;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+    reduce_v0<block_size><<<grid, block>>>(dx, dz);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&miliseconds, start, stop);
+
+    float *hz = (float *)malloc(grid_size * sizeof(float));
+    cudaMemcpy(hz, dz, grid_size * sizeof(float), cudaMemcpyDeviceToHost);
+
+    float res = 0;
+    for (int i = 0; i < grid_size; i ++) res += hz[i];
+
+    std::cout << res << std::endl;
+    if (fabs(res - ground_truth) > 1e-6) printf("Not Right\n");
+    else printf("Right\n");
+
+    printf("Latency: %.2fmilisecs\n", miliseconds);
     cudaFree(dx); cudaFree(dz);
     free(hx); free(hz);
     return 0;
