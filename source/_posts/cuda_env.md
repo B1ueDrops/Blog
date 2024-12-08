@@ -6,28 +6,6 @@ mathjax: true
 
 
 
-## 配环境
-
-> CUDA ToolKit下载地址:  https://developer.nvidia.com/cuda-toolkit-archive
-
-* CUDA有两个组成部分, 一个是显卡驱动, 一个是CUDA Toolkit.
-
-  * 可以通过`nvidia-smi`查看驱动/CUDA Toolkit的版本.
-  * CUDA Toolkit的版本也可以通过`nvcc --version`查看.
-  
-* 配置CUDA环境需要有以下几个步骤:
-
-  * 第一, 查看GPU上的Software Specification, 找到GPU硬件对于显卡驱动的要求.
-  * 第二, 配置好相应的显卡驱动之后, 直接下载对应的CUDA Toolkit即可, 每一个Toolkit对应一个最低版本的显卡驱动.
-
-* 确定好CUDA Toolkit的版本之后, 需要安装cuda运行时和nvcc编译器:
-
-  ```bash
-  ```
-
-
-
-
 ## CUDA编程模型
 
 * CUDA的编程模型叫SIMT (Single Instruction Multiple Threads).
