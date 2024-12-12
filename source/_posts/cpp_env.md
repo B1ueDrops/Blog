@@ -71,10 +71,13 @@ mathjax: true
   	"cmake.cmakePath": "cmake",
   	"clangd.path": "/home/ligaog/clangd_18.1.3/bin/clangd",
   	"clangd.arguments": [
+      "--query-driver=/path/to/g++"
   		"--compile-commands-dir=${workspaceFolder}/"
   	]
   }
   ```
+
+  * 注意这里的`--query-driver`, 如果你用的编译器是`clang`, 就不用加, 如果用的是`gcc/g++`就要加.
 
 * 然后配置`.vscode/tasks.json`, 注意编译的时候要加上`-g`选项方便调试.
 

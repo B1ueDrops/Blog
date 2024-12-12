@@ -24,6 +24,8 @@ mathjax: true
   unsigned int global_tid = blockDim.x * blockIdx.x + threadIdx.x;
   ```
 
+  * `blockDim.x`是一个Block中线程个数, 乘上`blockIdx.x`就是整块的线程个数, 然后再加上线程的`id`.
+
 * 如果`Grid`是二维, `Block`是一维, 那么全局id可以是:
 
   ```cpp
@@ -315,7 +317,7 @@ __host__ __device__ int run_cpu_gpu() {
 
 > CUDA Kernel中使用`for`循环:
 
-* 如果数据量很大的话, 很有可能显卡上的所有线程一次处理不了, 这个时候就需要循环做SIMT操作.
+* 如果数据量很大的话, 很有可能显卡上的所有线程运行一次处理不全, 这个时候就需要循环做SIMT操作.
 
 * CUDA Kernel中写法如下:
 
@@ -328,7 +330,8 @@ __host__ __device__ int run_cpu_gpu() {
   }
   ```
 
-  * 其中这个`N`是每个线程处理数据的数据边界.
+  * 其中这个`N`是数据总数.
+  * `blockDim.x`是每一个Block的线程个数, `gridDim.x`是一个Grid的Block个数.
 
 
 

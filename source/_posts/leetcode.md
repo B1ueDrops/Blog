@@ -3544,3 +3544,52 @@ public:
 };
 ```
 
+
+
+## 1301. 最大得分的路径数目(hard)
+
+> https://leetcode.cn/problems/number-of-paths-with-max-score/
+
+* 这个题有策略问题,  可以简化代码:
+  * 第一, 从右下走到左上是对称的, 但是代码难度不一样, 首先把这个题转化成左上到右下.
+  * 第二, 函数参数原来是`board`, 太长了, 直接改成`a`就行.
+  * 第三, 函数内部的`S`可以直接改成`‘0’`, 因为后期动态规划, `a[i][j] - '0'`直接就是0值.
+* 注意`f`要初始化成`-INF`, 因为如果初始化成0, 即使某个位置`(x, y)`到达不了, 但是`(x, y)`周围的值也能把它更新, 但是如果初始化为`-INF`, 即使怎么更新, 如果最终小于0, 那么都是非法值, 容易判断.
+* 求方案数目`g[i][j]`的方法:
+  * 首先你要知道`f[i][j]`是谁转移来的:
+    * 求出`f[i - 1][j], f[i][j - 1], f[i - 1][j - 1]`的最大值, 然后看最大值等于谁.
+    * 最大值等于谁, 那么`g[i][j]`就加谁.
+
+```cpp
+class Solution {
+public:
+    vector<int> pathsWithMaxScore(vector<string>& a) {
+        int n = a.size(), m = a[0].size();
+        a[n - 1][m - 1] = '0';
+        const int INF = 0x3f3f3f3f, mod = 1e9 + 7;
+        vector<vector<int>> f(n, vector<int>(m, -INF));
+        vector<vector<int>> g(n, vector<int>(m));
+        f[0][0] = 0, g[0][0] = 1;
+
+        for (int i = 0; i < n; i ++) {
+            for (int j = 0; j < m; j ++) {
+                if (!i && !j || a[i][j] == 'X') continue;
+                int &p = f[i][j], &q = g[i][j];
+                if (i) p = max(p, f[i - 1][j]);
+                if (j) p = max(p, f[i][j - 1]);
+                if (i && j) p = max(p, f[i - 1][j - 1]);
+                if (i && p == f[i - 1][j])
+                    q = (q + g[i - 1][j]) % mod;
+                if (j && p == f[i][j - 1])
+                    q = (q + g[i][j - 1]) % mod;
+                if (i && j && p == f[i - 1][j - 1])
+                    q = (q + g[i - 1][j - 1]) % mod;
+                p += a[i][j] - '0';
+            }
+        }
+        if (f[n - 1][m - 1] < 0) return {0, 0};
+        return { f[n - 1][m - 1], g[n - 1][m - 1] };
+    }
+};
+```
+
